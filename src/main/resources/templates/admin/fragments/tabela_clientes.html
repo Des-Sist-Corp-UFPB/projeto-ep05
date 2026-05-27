@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:fragment="tabela">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+        <tr>
+            <th>Nome</th>
+            <th>E-mail</th>
+            <th>Status</th>
+            <th class="text-end">Ações</th>
+        </tr>
+        </thead>
+        <tbody id="clientes-body">
+        <tr th:if="${clientes.empty}">
+            <td colspan="4" class="text-center text-muted py-4">Nenhum cliente encontrado.</td>
+        </tr>
+        <tr th:each="cliente : ${clientes}" th:id="'cliente-' + ${cliente.id}">
+            <td class="fw-semibold" th:text="${cliente.nome}">Nome</td>
+            <td class="text-muted" th:text="${cliente.email}">email@email.com</td>
+            <td>
+                <span th:if="${cliente.status.name() == 'ATIVO'}" class="badge bg-success-subtle text-success border border-success-subtle">Ativo</span>
+                <span th:if="${cliente.status.name() == 'BLOQUEADO'}" class="badge bg-danger-subtle text-danger border border-danger-subtle">Bloqueado</span>
+            </td>
+            <td class="text-end">
+                <button class="btn btn-sm btn-outline-warning"
+                        th:hx-post="@{/admin/clientes/{id}/bloquear(id=${cliente.id})}"
+                        th:hx-target="'#cliente-' + ${cliente.id}"
+                        hx-swap="outerHTML"
+                        hx-confirm="Deseja alterar o status deste cliente?"
+                        th:text="${cliente.status.name() == 'ATIVO' ? 'Bloquear' : 'Desbloquear'}">
+                    Bloquear
+                </button>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <nav th:if="${clientes.totalPages > 1}">
+        <ul class="pagination pagination-sm justify-content-center">
+            <li class="page-item" th:classappend="${paginaAtual == 0} ? 'disabled'">
+                <a class="page-link"
+                   th:hx-get="@{/admin/clientes(pagina=${paginaAtual - 1}, busca=${busca})}"
+                   hx-target="#tabela-container" hx-swap="innerHTML">Anterior</a>
+            </li>
+            <li class="page-item" th:each="i : ${#numbers.sequence(0, clientes.totalPages - 1)}"
+                th:classappend="${i == paginaAtual} ? 'active'">
+                <a class="page-link" th:text="${i + 1}"
+                   th:hx-get="@{/admin/clientes(pagina=${i}, busca=${busca})}"
+                   hx-target="#tabela-container" hx-swap="innerHTML">1</a>
+            </li>
+            <li class="page-item" th:classappend="${paginaAtual == clientes.totalPages - 1} ? 'disabled'">
+                <a class="page-link"
+                   th:hx-get="@{/admin/clientes(pagina=${paginaAtual + 1}, busca=${busca})}"
+                   hx-target="#tabela-container" hx-swap="innerHTML">Próximo</a>
+            </li>
+        </ul>
+    </nav>
+</th:block>
+</body>
+</html>

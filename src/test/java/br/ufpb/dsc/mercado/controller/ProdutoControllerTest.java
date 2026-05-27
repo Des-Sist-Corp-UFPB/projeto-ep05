@@ -94,8 +94,10 @@ class ProdutoControllerTest {
         produtoRepository.deleteAll();
 
         // Cria um produto de teste para os cenários que precisam de dado existente
+        // Usando o construtor completo: (nome, descricao, preco, categoria, estoque)
+        // categoria = null é permitido (campo opcional no banco)
         produtoCadastrado = produtoRepository.save(
-                new Produto("Arroz Integral", "Arroz integral tipo 1", new BigDecimal("8.99"))
+                new Produto("Arroz Integral", "Arroz integral tipo 1", new BigDecimal("8.99"), null, 10)
         );
     }
 
@@ -157,7 +159,8 @@ class ProdutoControllerTest {
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                         .param("nome", "Feijão Preto")
                         .param("descricao", "Feijão preto premium")
-                        .param("preco", "7.50"))
+                        .param("preco", "7.50")
+                        .param("estoque", "5"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("produtos/fragments/linha :: linha"))
                 .andExpect(model().attributeExists("produto"))

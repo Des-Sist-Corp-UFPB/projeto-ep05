@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:fragment="tabela">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+        <tr>
+            <th>Nome</th>
+            <th>E-mail</th>
+            <th>Status</th>
+            <th class="text-end">Ações</th>
+        </tr>
+        </thead>
+        <tbody id="admins-body">
+        <tr th:if="${admins.empty}">
+            <td colspan="4" class="text-center text-muted py-4">Nenhum administrador encontrado.</td>
+        </tr>
+        <tr th:each="admin : ${admins}" th:id="'admin-' + ${admin.id}" th:fragment="linha">
+            <td>
+                <div class="fw-semibold" th:text="${admin.nome}">Nome</div>
+            </td>
+            <td class="text-muted" th:text="${admin.email}">email@email.com</td>
+            <td>
+                <span th:if="${admin.status.name() == 'ATIVO'}" class="badge bg-success-subtle text-success border border-success-subtle">Ativo</span>
+                <span th:if="${admin.status.name() == 'BLOQUEADO'}" class="badge bg-danger-subtle text-danger border border-danger-subtle">Bloqueado</span>
+            </td>
+            <td class="text-end">
+                <button class="btn btn-sm btn-outline-warning"
+                        th:hx-post="@{/sysadmin/admins/{id}/bloquear(id=${admin.id})}"
+                        hx-target="closest tr"
+                        hx-swap="outerHTML"
+                        hx-confirm="Deseja alterar o status deste administrador?"
+                        th:text="${admin.status.name() == 'ATIVO' ? 'Bloquear' : 'Desbloquear'}">
+                    Bloquear
+                </button>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <!-- Paginação -->
+    <nav th:if="${admins.totalPages > 1}">
+        <ul class="pagination pagination-sm justify-content-center">
+            <li class="page-item" th:classappend="${paginaAtual == 0} ? 'disabled'">
+                <a class="page-link"
+                   th:hx-get="@{/sysadmin/admins(pagina=${paginaAtual - 1}, busca=${busca})}"
+                   hx-target="#tabela-container" hx-swap="innerHTML">Anterior</a>
+            </li>
+            <li class="page-item" th:each="i : ${#numbers.sequence(0, admins.totalPages - 1)}"
+                th:classappend="${i == paginaAtual} ? 'active'">
+                <a class="page-link" th:text="${i + 1}"
+                   th:hx-get="@{/sysadmin/admins(pagina=${i}, busca=${busca})}"
+                   hx-target="#tabela-container" hx-swap="innerHTML">1</a>
+            </li>
+            <li class="page-item" th:classappend="${paginaAtual == admins.totalPages - 1} ? 'disabled'">
+                <a class="page-link"
+                   th:hx-get="@{/sysadmin/admins(pagina=${paginaAtual + 1}, busca=${busca})}"
+                   hx-target="#tabela-container" hx-swap="innerHTML">Próximo</a>
+            </li>
+        </ul>
+    </nav>
+</th:block>
+</body>
+</html>

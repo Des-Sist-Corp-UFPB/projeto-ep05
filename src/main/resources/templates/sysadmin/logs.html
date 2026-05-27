@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-BR"
+      xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout(~{::main})}">
+<head><title>Logs e Auditoria</title></head>
+<body>
+<main>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1">Logs &amp; Auditoria</h1>
+            <p class="text-muted mb-0">Registro de ações críticas e eventos de segurança</p>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <ul class="list-group list-group-flush">
+                <li th:if="${logs.empty}" class="list-group-item text-center text-muted py-4">
+                    Nenhum log disponível.
+                </li>
+                <li th:each="log : ${logs}" class="list-group-item py-3 px-4">
+                    <div class="d-flex align-items-start gap-3">
+                        <span th:if="${log.contains('SECURITY')}" class="badge bg-danger mt-1">SEGURANÇA</span>
+                        <span th:if="${log.contains('SYSADMIN')}" class="badge bg-primary mt-1">SYSADMIN</span>
+                        <span th:if="${log.contains('ADMIN')  and !log.contains('SYSADMIN')}" class="badge bg-info mt-1">ADMIN</span>
+                        <span th:if="${log.contains('SYSTEM')}" class="badge bg-secondary mt-1">SISTEMA</span>
+                        <code class="small text-muted" th:text="${log}">log entry</code>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</main>
+</body>
+</html>

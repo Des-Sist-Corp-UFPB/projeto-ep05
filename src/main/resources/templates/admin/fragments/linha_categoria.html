@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<body>
+<tr th:fragment="linha" th:id="'cat-' + ${categoria.id}">
+    <td class="fw-semibold" th:text="${categoria.nome}">Nome</td>
+    <td class="text-muted" th:text="${categoria.descricao}">Descrição</td>
+    <td class="text-end">
+        <button class="btn btn-sm btn-outline-primary me-1"
+                th:hx-get="@{/admin/categorias/{id}/editar(id=${categoria.id})}"
+                hx-target="#modal-container"
+                hx-swap="innerHTML">
+            Editar
+        </button>
+        <button class="btn btn-sm btn-outline-danger"
+                th:hx-delete="@{/admin/categorias/{id}(id=${categoria.id})}"
+                th:hx-target="'#cat-' + ${categoria.id}"
+                hx-swap="outerHTML"
+                hx-confirm="Deseja excluir esta categoria?">
+            Excluir
+        </button>
+    </td>
+</tr>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:fragment="modal">
+    <div class="modal fade" id="pedidoModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-semibold">
+                        Pedido #<span th:text="${pedido.id}">1</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <div class="p-3 bg-light rounded-3">
+                                <div class="text-muted small mb-1">Cliente</div>
+                                <div class="fw-semibold" th:text="${pedido.cliente.nome}">Nome</div>
+                                <div class="text-muted small" th:text="${pedido.cliente.email}">email</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3 bg-light rounded-3">
+                                <div class="text-muted small mb-1">Endereço de Entrega</div>
+                                <div class="small" th:if="${pedido.enderecoEntrega != null}"
+                                     th:text="${pedido.enderecoEntrega.logradouro + ', ' + pedido.enderecoEntrega.numero + ' — ' + pedido.enderecoEntrega.cidade + '/' + pedido.enderecoEntrega.estado}">
+                                    Endereço
+                                </div>
+                                <div class="small text-muted" th:if="${pedido.enderecoEntrega == null}">Não informado</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Itens do pedido -->
+                    <h6 class="fw-semibold mb-2">Itens</h6>
+                    <table class="table table-sm mb-3">
+                        <thead class="table-light">
+                        <tr>
+                            <th>Produto</th>
+                            <th class="text-center">Qtd</th>
+                            <th class="text-end">Preço Unit.</th>
+                            <th class="text-end">Subtotal</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="item : ${pedido.itens}">
+                            <td th:text="${item.produto.nome}">Produto</td>
+                            <td class="text-center" th:text="${item.quantidade}">1</td>
+                            <td class="text-end" th:text="${'R$ ' + #numbers.formatDecimal(item.precoUnitario, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</td>
+                            <td class="text-end fw-semibold"
+                                th:text="${'R$ ' + #numbers.formatDecimal(item.precoUnitario.multiply(new java.math.BigDecimal(item.quantidade)), 1, 'POINT', 2, 'COMMA')}">R$ 0,00</td>
+                        </tr>
+                        </tbody>
+                        <tfoot>
+                        <tr>
+                            <td colspan="3" class="text-end text-muted">Subtotal</td>
+                            <td class="text-end" th:text="${'R$ ' + #numbers.formatDecimal(pedido.totalProdutos, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</td>
+                        </tr>
+                        <tr th:if="${pedido.totalDesconto != null and pedido.totalDesconto.compareTo(java.math.BigDecimal.ZERO) > 0}">
+                            <td colspan="3" class="text-end text-success">Desconto</td>
+                            <td class="text-end text-success" th:text="${'- R$ ' + #numbers.formatDecimal(pedido.totalDesconto, 1, 'POINT', 2, 'COMMA')}">- R$ 0,00</td>
+                        </tr>
+                        <tr class="fw-bold">
+                            <td colspan="3" class="text-end">Total</td>
+                            <td class="text-end text-primary" th:text="${'R$ ' + #numbers.formatDecimal(pedido.totalGeral, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</td>
+                        </tr>
+                        </tfoot>
+                    </table>
+
+                    <!-- Atualizar Status -->
+                    <h6 class="fw-semibold mb-2">Atualizar Status</h6>
+                    <form th:hx-post="@{/admin/pedidos/{id}/status(id=${pedido.id})}"
+                          th:hx-target="'#pedido-' + ${pedido.id}"
+                          hx-swap="outerHTML"
+                          class="d-flex gap-2 mb-3">
+                        <select name="status" class="form-select form-select-sm">
+                            <option th:each="s : ${statusList}"
+                                    th:value="${s}"
+                                    th:selected="${s == pedido.status}"
+                                    th:text="${s.name().replace('_', ' ')}">Status</option>
+                        </select>
+                        <button type="submit" class="btn btn-primary btn-sm text-nowrap">Salvar Status</button>
+                    </form>
+
+                    <!-- Código de Rastreamento -->
+                    <h6 class="fw-semibold mb-2">Código de Rastreamento</h6>
+                    <form th:hx-post="@{/admin/pedidos/{id}/rastreamento(id=${pedido.id})}"
+                          th:hx-target="'#pedido-' + ${pedido.id}"
+                          hx-swap="outerHTML"
+                          class="d-flex gap-2">
+                        <input type="text" name="codigoRastreamento" class="form-control form-control-sm"
+                               th:value="${pedido.codigoRastreamento}"
+                               placeholder="Ex: BR123456789BR"/>
+                        <button type="submit" class="btn btn-outline-primary btn-sm text-nowrap">Salvar Rastreamento</button>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</th:block>
+</body>
+</html>

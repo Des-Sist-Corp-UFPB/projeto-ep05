@@ -56,6 +56,9 @@ class ProdutoServiceTest {
     @Mock
     private ProdutoRepository produtoRepository;
 
+    @Mock
+    private br.ufpb.dsc.mercado.repository.CategoriaRepository categoriaRepository;
+
     // @InjectMocks cria uma instância real do ProdutoService
     // e injeta automaticamente o @Mock acima no construtor
     @InjectMocks
@@ -71,10 +74,12 @@ class ProdutoServiceTest {
      */
     @BeforeEach
     void setUp() {
-        produtoExistente = new Produto("Arroz Integral", "Arroz integral tipo 1", new BigDecimal("8.99"));
+        // Construtor completo: (nome, descricao, preco, categoria, estoque)
+        produtoExistente = new Produto("Arroz Integral", "Arroz integral tipo 1", new BigDecimal("8.99"), null, 10);
         produtoExistente.setId(1L);
 
-        formValido = new ProdutoForm("Feijão Preto", "Feijão preto premium", new BigDecimal("7.50"));
+        // ProdutoForm é um record com 7 campos: (nome, descricao, preco, categoriaId, estoque, ativo, imagensUrls)
+        formValido = new ProdutoForm("Feijão Preto", "Feijão preto premium", new BigDecimal("7.50"), null, 5, true, null);
     }
 
     // =========================================================================
@@ -123,7 +128,7 @@ class ProdutoServiceTest {
     void criar_comFormValido_deveSalvarERetornarProduto() {
         // GIVEN
         // Simula o save() retornando um produto com ID gerado pelo banco
-        Produto produtoSalvo = new Produto(formValido.nome(), formValido.descricao(), formValido.preco());
+        Produto produtoSalvo = new Produto(formValido.nome(), formValido.descricao(), formValido.preco(), null, formValido.estoque());
         produtoSalvo.setId(2L);
         when(produtoRepository.save(any(Produto.class))).thenReturn(produtoSalvo);
 
@@ -151,7 +156,7 @@ class ProdutoServiceTest {
         when(produtoRepository.findById(1L)).thenReturn(Optional.of(produtoExistente));
         when(produtoRepository.save(any(Produto.class))).thenReturn(produtoExistente);
 
-        ProdutoForm formAtualizado = new ProdutoForm("Arroz Branco", "Arroz branco tipo 1", new BigDecimal("5.99"));
+        ProdutoForm formAtualizado = new ProdutoForm("Arroz Branco", "Arroz branco tipo 1", new BigDecimal("5.99"), null, 8, true, null);
 
         // WHEN
         Produto resultado = produtoService.atualizar(1L, formAtualizado);

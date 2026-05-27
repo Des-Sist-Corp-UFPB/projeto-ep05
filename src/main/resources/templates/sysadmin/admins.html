@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR"
+      xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout(~{::main})}">
+<head><title>Administradores</title></head>
+<body>
+<main>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1">Administradores</h1>
+            <p class="text-muted mb-0">Gerencie os administradores da plataforma</p>
+        </div>
+        <button class="btn btn-primary"
+                hx-get="/sysadmin/admins/novo"
+                hx-target="#modal-container"
+                hx-swap="innerHTML">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                 class="bi bi-plus-lg me-1" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2"/>
+            </svg>
+            Novo Admin
+        </button>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+                                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
+                            </svg>
+                        </span>
+                        <input type="search" name="busca" class="form-control"
+                               placeholder="Buscar por nome ou e-mail..."
+                               th:value="${busca}"
+                               hx-get="/sysadmin/admins"
+                               hx-trigger="keyup changed delay:400ms, search"
+                               hx-target="#tabela-container"
+                               hx-swap="innerHTML"/>
+                    </div>
+                </div>
+            </div>
+            <div id="tabela-container">
+                <th:block th:insert="~{sysadmin/fragments/tabela_admins :: tabela}"></th:block>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

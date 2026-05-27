@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:fragment="modal">
+    <div class="modal fade" id="categoriaModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-semibold"
+                        th:text="${categoria != null ? 'Editar Categoria' : 'Nova Categoria'}">Categoria</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <!-- Criação -->
+                <form th:if="${categoria == null}"
+                      hx-post="/admin/categorias"
+                      hx-target="#categorias-body"
+                      hx-swap="afterbegin">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">Nome</label>
+                            <input type="text" name="nome" class="form-control"
+                                   th:value="${form.nome}" placeholder="Ex: Eletrônicos" required/>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">Descrição</label>
+                            <textarea name="descricao" class="form-control" rows="3"
+                                      th:text="${form.descricao}" placeholder="Descrição opcional"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar</button>
+                    </div>
+                </form>
+                <!-- Edição -->
+                <form th:if="${categoria != null}"
+                      th:hx-put="@{/admin/categorias/{id}(id=${categoria.id})}"
+                      th:hx-target="'#cat-' + ${categoria.id}"
+                      hx-swap="outerHTML">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">Nome</label>
+                            <input type="text" name="nome" class="form-control"
+                                   th:value="${form.nome}" required/>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">Descrição</label>
+                            <textarea name="descricao" class="form-control" rows="3"
+                                      th:text="${form.descricao}"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Atualizar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</th:block>
+</body>
+</html>

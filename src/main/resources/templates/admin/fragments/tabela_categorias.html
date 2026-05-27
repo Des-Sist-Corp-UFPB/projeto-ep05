@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:fragment="tabela">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+        <tr>
+            <th>Nome</th>
+            <th>Descrição</th>
+            <th class="text-end">Ações</th>
+        </tr>
+        </thead>
+        <tbody id="categorias-body">
+        <tr th:if="${categorias.empty}">
+            <td colspan="3" class="text-center text-muted py-4">Nenhuma categoria cadastrada.</td>
+        </tr>
+        <tr th:each="cat : ${categorias}" th:id="'cat-' + ${cat.id}">
+            <td class="fw-semibold" th:text="${cat.nome}">Nome</td>
+            <td class="text-muted" th:text="${cat.descricao}">Descrição</td>
+            <td class="text-end">
+                <button class="btn btn-sm btn-outline-primary me-1"
+                        th:hx-get="@{/admin/categorias/{id}/editar(id=${cat.id})}"
+                        hx-target="#modal-container"
+                        hx-swap="innerHTML">
+                    Editar
+                </button>
+                <button class="btn btn-sm btn-outline-danger"
+                        th:hx-delete="@{/admin/categorias/{id}(id=${cat.id})}"
+                        th:hx-target="'#cat-' + ${cat.id}"
+                        hx-swap="outerHTML"
+                        hx-confirm="Deseja excluir esta categoria?">
+                    Excluir
+                </button>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <nav th:if="${categorias.totalPages > 1}">
+        <ul class="pagination pagination-sm justify-content-center">
+            <li class="page-item" th:classappend="${paginaAtual == 0} ? 'disabled'">
+                <a class="page-link"
+                   th:hx-get="@{/admin/categorias(pagina=${paginaAtual - 1})}"
+                   hx-target="#tabela-container" hx-swap="innerHTML">Anterior</a>
+            </li>
+            <li class="page-item" th:each="i : ${#numbers.sequence(0, categorias.totalPages - 1)}"
+                th:classappend="${i == paginaAtual} ? 'active'">
+                <a class="page-link" th:text="${i + 1}"
+                   th:hx-get="@{/admin/categorias(pagina=${i})}"
+                   hx-target="#tabela-container" hx-swap="innerHTML">1</a>
+            </li>
+            <li class="page-item" th:classappend="${paginaAtual == categorias.totalPages - 1} ? 'disabled'">
+                <a class="page-link"
+                   th:hx-get="@{/admin/categorias(pagina=${paginaAtual + 1})}"
+                   hx-target="#tabela-container" hx-swap="innerHTML">Próximo</a>
+            </li>
+        </ul>
+    </nav>
+</th:block>
+</body>
+</html>

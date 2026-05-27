@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<body>
+<tr th:fragment="linha" th:id="'admin-' + ${admin.id}">
+    <td>
+        <div class="fw-semibold" th:text="${admin.nome}">Nome</div>
+    </td>
+    <td class="text-muted" th:text="${admin.email}">email@email.com</td>
+    <td>
+        <span th:if="${admin.status.name() == 'ATIVO'}" class="badge bg-success-subtle text-success border border-success-subtle">Ativo</span>
+        <span th:if="${admin.status.name() == 'BLOQUEADO'}" class="badge bg-danger-subtle text-danger border border-danger-subtle">Bloqueado</span>
+    </td>
+    <td class="text-end">
+        <button class="btn btn-sm btn-outline-warning"
+                th:hx-post="@{/sysadmin/admins/{id}/bloquear(id=${admin.id})}"
+                hx-target="closest tr"
+                hx-swap="outerHTML"
+                hx-confirm="Deseja alterar o status deste administrador?"
+                th:text="${admin.status.name() == 'ATIVO' ? 'Bloquear' : 'Desbloquear'}">
+            Bloquear
+        </button>
+    </td>
+</tr>
+</body>
+</html>

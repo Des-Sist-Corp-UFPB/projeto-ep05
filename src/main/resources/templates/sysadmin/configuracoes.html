@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-BR"
+      xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout(~{::main})}">
+<head><title>Configurações do Sistema</title></head>
+<body>
+<main>
+    <div class="mb-4">
+        <h1 class="h3 mb-1">Configurações do Sistema</h1>
+        <p class="text-muted mb-0">Parâmetros globais da plataforma Mercado DSC</p>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header fw-semibold">Chaves de API</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Gateway de Pagamento (Token)</label>
+                        <input type="password" class="form-control" value="sk_live_••••••••••••••••" disabled/>
+                        <div class="form-text">Configurado via variável de ambiente <code>PAYMENT_API_KEY</code></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">API de Frete</label>
+                        <input type="password" class="form-control" value="frete_••••••••" disabled/>
+                        <div class="form-text">Configurado via variável de ambiente <code>SHIPPING_API_KEY</code></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header fw-semibold">E-mail SMTP</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Servidor</label>
+                        <input type="text" class="form-control" value="smtp.mercado.dsc.ufpb.br" disabled/>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Porta</label>
+                        <input type="text" class="form-control" value="587 (STARTTLS)" disabled/>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Remetente padrão</label>
+                        <input type="text" class="form-control" value="noreply@mercado.dsc.ufpb.br" disabled/>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header fw-semibold">Taxas Globais</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Frete padrão (simulado)</label>
+                        <div class="input-group">
+                            <span class="input-group-text">R$</span>
+                            <input type="number" class="form-control" value="15.00" disabled/>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Limite de itens por pedido</label>
+                        <input type="number" class="form-control" value="50" disabled/>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-warning">
+                <div class="card-header fw-semibold text-warning">Zona de Perigo</div>
+                <div class="card-body">
+                    <p class="text-muted small">Estas ações são irreversíveis e afetam toda a plataforma.</p>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-danger btn-sm" disabled>Limpar Cache do Sistema</button>
+                        <button class="btn btn-outline-danger btn-sm" disabled>Forçar Logout de Todos os Usuários</button>
+                    </div>
+                    <div class="form-text mt-2">Funcionalidades disponíveis em versões futuras.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

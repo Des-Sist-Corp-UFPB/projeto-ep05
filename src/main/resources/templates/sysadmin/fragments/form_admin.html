@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:fragment="modal">
+    <div class="modal fade" id="adminModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-semibold">Novo Administrador</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form th:action="@{/sysadmin/admins}" method="post"
+                      hx-post="/sysadmin/admins"
+                      hx-target="#admins-body"
+                      hx-swap="afterbegin">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">Nome</label>
+                            <input type="text" name="nome" class="form-control"
+                                   th:classappend="${#fields.hasErrors('nome')} ? 'is-invalid'"
+                                   th:value="${form.nome}" placeholder="Nome completo" required/>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('nome')}"
+                                 th:errors="*{nome}">Erro</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">E-mail</label>
+                            <input type="email" name="email" class="form-control"
+                                   th:classappend="${#fields.hasErrors('email')} ? 'is-invalid'"
+                                   th:value="${form.email}" placeholder="admin@mercado.com" required/>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('email')}"
+                                 th:errors="*{email}">Erro</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">Senha</label>
+                            <input type="password" name="senha" class="form-control"
+                                   th:classappend="${#fields.hasErrors('senha')} ? 'is-invalid'"
+                                   placeholder="Mínimo 6 caracteres" required/>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('senha')}"
+                                 th:errors="*{senha}">Erro</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Criar Administrador</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</th:block>
+</body>
+</html>

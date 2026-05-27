@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="pt-BR"
+      xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout(~{::main})}">
+<head><title>Pedidos</title></head>
+<body>
+<main>
+    <div class="mb-4">
+        <h1 class="h3 mb-1">Pedidos</h1>
+        <p class="text-muted mb-0">Acompanhe e atualize o status dos pedidos</p>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div id="tabela-container">
+                <th:block th:insert="~{admin/fragments/tabela_pedidos :: tabela}"></th:block>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>
