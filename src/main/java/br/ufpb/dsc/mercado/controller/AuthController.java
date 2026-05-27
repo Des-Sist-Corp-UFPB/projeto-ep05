@@ -20,9 +20,9 @@ import org.springframework.web.bind.annotation.GetMapping;
  * </ol>
  *
  * <p>A URL de processamento do login ({@code POST /login}) é gerenciada <em>internamente</em>
- * pelo Spring Security — não precisamos (nem devemos) criar um método para ela aqui.
+ * pelo Spring Security — não precisamos (nem devemos) criar um método para ela aqui. 
  *
- * @author DSC - UFPB Campus IV
+ * @author DSC - UFPB Campus IV 
  */
 @Controller
 public class AuthController {
