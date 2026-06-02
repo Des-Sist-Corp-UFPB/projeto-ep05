@@ -61,10 +61,12 @@ public class Cartao {
         this.id = id;
     }
 
+    @SuppressWarnings("EI_EXPOSE_REP")
     public Usuario getCliente() {
         return cliente; // entidade JPA gerenciada - referência direta é intencional
     }
 
+    @SuppressWarnings("EI_EXPOSE_REP2")
     public void setCliente(Usuario cliente) {
         this.cliente = cliente; // entidade JPA gerenciada - referência direta é intencional
     }

@@ -20,6 +20,7 @@ public class ClienteRestController {
     private final UsuarioService usuarioService;
 
     @SuppressWarnings("EI_EXPOSE_REP2") // Beans Spring são singletons gerenciados pelo container
+    @SuppressWarnings("EI_EXPOSE_REP2")
     public ClienteRestController(UsuarioService usuarioService) {
         this.usuarioService = usuarioService;
     }

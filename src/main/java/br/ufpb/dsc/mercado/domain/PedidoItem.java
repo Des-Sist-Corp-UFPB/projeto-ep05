@@ -34,6 +34,7 @@ public class PedidoItem {
     public PedidoItem() {
     }
 
+    @SuppressWarnings({"EI_EXPOSE_REP2"})
     public PedidoItem(Pedido pedido, Produto produto, Integer quantidade, BigDecimal precoUnitario) {
         this.pedido = pedido;
         this.produto = produto;
@@ -49,18 +50,22 @@ public class PedidoItem {
         this.id = id;
     }
 
+    @SuppressWarnings("EI_EXPOSE_REP")
     public Pedido getPedido() {
         return pedido; // entidade JPA gerenciada - referência direta é intencional
     }
 
+    @SuppressWarnings("EI_EXPOSE_REP2")
     public void setPedido(Pedido pedido) {
         this.pedido = pedido; // entidade JPA gerenciada - referência direta é intencional
     }
 
+    @SuppressWarnings("EI_EXPOSE_REP")
     public Produto getProduto() {
         return produto; // entidade JPA gerenciada - referência direta é intencional
     }
 
+    @SuppressWarnings("EI_EXPOSE_REP2")
     public void setProduto(Produto produto) {
         this.produto = produto; // entidade JPA gerenciada - referência direta é intencional
     }

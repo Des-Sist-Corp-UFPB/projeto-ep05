@@ -44,6 +44,7 @@ public class Avaliacao {
     public Avaliacao() {
     }
 
+    @SuppressWarnings({"EI_EXPOSE_REP2"})
     public Avaliacao(Produto produto, Usuario cliente, Integer nota, String comentario) {
         this.produto = produto;
         this.cliente = cliente;
@@ -59,18 +60,22 @@ public class Avaliacao {
         this.id = id;
     }
 
+    @SuppressWarnings("EI_EXPOSE_REP")
     public Produto getProduto() {
         return produto; // entidade JPA gerenciada - referência direta é intencional
     }
 
+    @SuppressWarnings("EI_EXPOSE_REP2")
     public void setProduto(Produto produto) {
         this.produto = produto; // entidade JPA gerenciada - referência direta é intencional
     }
 
+    @SuppressWarnings("EI_EXPOSE_REP")
     public Usuario getCliente() {
         return cliente; // entidade JPA gerenciada - referência direta é intencional
     }
 
+    @SuppressWarnings("EI_EXPOSE_REP2")
     public void setCliente(Usuario cliente) {
         this.cliente = cliente; // entidade JPA gerenciada - referência direta é intencional
     }

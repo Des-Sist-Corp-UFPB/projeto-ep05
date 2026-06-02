@@ -31,6 +31,7 @@ public class ProdutoImagem {
     public ProdutoImagem() {
     }
 
+    @SuppressWarnings("EI_EXPOSE_REP2")
     public ProdutoImagem(Produto produto, String url) {
         this.produto = produto;
         this.url = url;
@@ -44,10 +45,12 @@ public class ProdutoImagem {
         this.id = id;
     }
 
+    @SuppressWarnings("EI_EXPOSE_REP")
     public Produto getProduto() {
         return produto; // entidade JPA gerenciada - referência direta é intencional
     }
 
+    @SuppressWarnings("EI_EXPOSE_REP2")
     public void setProduto(Produto produto) {
         this.produto = produto; // entidade JPA gerenciada - referência direta é intencional
     }

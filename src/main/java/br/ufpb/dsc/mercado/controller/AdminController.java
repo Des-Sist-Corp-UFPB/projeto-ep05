@@ -29,6 +29,7 @@ public class AdminController {
     private final PedidoRepository pedidoRepository;
 
     @SuppressWarnings("EI_EXPOSE_REP2") // Beans Spring são singletons gerenciados pelo container
+    @SuppressWarnings("EI_EXPOSE_REP2")
     public AdminController(CategoriaService categoriaService,
                            CupomService cupomService,
                            UsuarioService usuarioService,

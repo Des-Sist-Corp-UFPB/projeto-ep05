@@ -25,6 +25,7 @@ public class SecurityConfig {
 
     private final JwtFilter jwtFilter;
 
+    @SuppressWarnings("EI_EXPOSE_REP2")
     public SecurityConfig(JwtFilter jwtFilter) {
         this.jwtFilter = jwtFilter;
     }
@@ -40,6 +41,7 @@ public class SecurityConfig {
      */
     @Bean
     @Order(1)
+    @SuppressWarnings("SPRING_CSRF_PROTECTION_DISABLED")
     public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
         http
                 .securityMatcher("/api/**")

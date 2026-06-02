@@ -71,6 +71,7 @@ public class Produto {
     public Produto() {
     }
 
+    @SuppressWarnings("EI_EXPOSE_REP2")
     public Produto(String nome, String descricao, BigDecimal preco, Categoria categoria, Integer estoque) {
         this.nome = nome;
         this.descricao = descricao;
@@ -112,10 +113,12 @@ public class Produto {
         this.preco = preco;
     }
 
+    @SuppressWarnings("EI_EXPOSE_REP")
     public Categoria getCategoria() {
         return categoria; // entidade JPA gerenciada - referência direta é intencional
     }
 
+    @SuppressWarnings("EI_EXPOSE_REP2")
     public void setCategoria(Categoria categoria) {
         this.categoria = categoria; // entidade JPA gerenciada - referência direta é intencional
     }

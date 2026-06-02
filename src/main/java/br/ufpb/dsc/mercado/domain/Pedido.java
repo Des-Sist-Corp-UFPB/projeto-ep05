@@ -86,34 +86,42 @@ public class Pedido {
         this.id = id;
     }
 
+    @SuppressWarnings("EI_EXPOSE_REP")
     public Usuario getCliente() {
         return cliente; // entidade JPA gerenciada - referência direta é intencional
     }
 
+    @SuppressWarnings("EI_EXPOSE_REP2")
     public void setCliente(Usuario cliente) {
         this.cliente = cliente; // entidade JPA gerenciada - referência direta é intencional
     }
 
+    @SuppressWarnings("EI_EXPOSE_REP")
     public Endereco getEnderecoEntrega() {
         return enderecoEntrega; // entidade JPA gerenciada - referência direta é intencional
     }
 
+    @SuppressWarnings("EI_EXPOSE_REP2")
     public void setEnderecoEntrega(Endereco enderecoEntrega) {
         this.enderecoEntrega = enderecoEntrega; // entidade JPA gerenciada - referência direta é intencional
     }
 
+    @SuppressWarnings("EI_EXPOSE_REP")
     public Cartao getCartao() {
         return cartao; // entidade JPA gerenciada - referência direta é intencional
     }
 
+    @SuppressWarnings("EI_EXPOSE_REP2")
     public void setCartao(Cartao cartao) {
         this.cartao = cartao; // entidade JPA gerenciada - referência direta é intencional
     }
 
+    @SuppressWarnings("EI_EXPOSE_REP")
     public Cupom getCupom() {
         return cupom; // entidade JPA gerenciada - referência direta é intencional
     }
 
+    @SuppressWarnings("EI_EXPOSE_REP2")
     public void setCupom(Cupom cupom) {
         this.cupom = cupom; // entidade JPA gerenciada - referência direta é intencional
     }
