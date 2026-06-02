@@ -1,0 +1,30 @@
+# =============================================================================
+# Dockerfile — TEST
+# =============================================================================
+# Roda os testes automatizados (mvn test) dentro do container.
+# Não gera JAR final — o objetivo é apenas executar a suíte de testes.
+#
+# Fluxo:
+#   1. Copia o pom.xml e baixa dependências (camada cacheada pelo Docker)
+#   2. Copia o código-fonte
+#   3. Executa mvn test com o perfil "test" ativo
+#
+# ATENÇÃO: Esta imagem contém o JDK completo e código-fonte.
+#          NUNCA use em produção.
+# =============================================================================
+
+FROM maven:3.9.9-eclipse-temurin-21 AS test
+
+WORKDIR /app
+
+# Copia o pom.xml primeiro — camada cacheada enquanto as dependências não mudam
+COPY pom.xml .
+RUN mvn dependency:go-offline -B -q
+
+# Copia o código-fonte completo (src/main e src/test)
+COPY src ./src
+
+# Executa os testes com o perfil test ativo.
+# -Dspring.profiles.active=test garante que o application-test.yml seja carregado.
+# -B = modo batch (sem cores, sem interatividade) — ideal para CI/CD
+CMD ["mvn", "test", "-B", "-Dspring.profiles.active=test"]

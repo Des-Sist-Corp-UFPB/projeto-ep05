@@ -1,5 +1,6 @@
 package br.ufpb.dsc.mercado.controller;
 
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
@@ -27,22 +28,23 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class AuthController {
 
-    /**
-     * Serve a página de login customizada.
-     *
-     * <p>O Spring Security redireciona automaticamente para esta URL quando
-     * o usuário tenta acessar um recurso protegido sem estar autenticado.
-     * Isso é configurado em {@link SecurityConfig} com {@code .loginPage("/login")}.
-     *
-     * <p>O Thymeleaf recebe parâmetros {@code ?error} e {@code ?logout} automaticamente
-     * na URL quando há erro de autenticação ou logout bem-sucedido, respectivamente.
-     * O template usa {@code th:if="${param.error}"} para exibir mensagens.
-     *
-     * @return nome do template Thymeleaf da página de login
-     */
     @GetMapping("/login")
     public String login() {
-        // Retorna o template em src/main/resources/templates/auth/login.html
         return "auth/login";
+    }
+
+    /**
+     * Rota raiz "/" — redireciona para o painel correto conforme o papel do usuário.
+     * Evita o erro "No static resource ." quando o Spring Security tenta redirecionar
+     * para "/" após o login ou quando o usuário acessa a raiz diretamente.
+     */
+    @GetMapping("/")
+    public String raiz(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return "redirect:/login";
+        }
+        boolean isSysAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_SYSADMIN"));
+        return isSysAdmin ? "redirect:/sysadmin/dashboard" : "redirect:/admin/dashboard";
     }
 }

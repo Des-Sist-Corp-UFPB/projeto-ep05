@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR"
+      xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout(~{::main})}">
+<head><title>Painel Admin</title></head>
+<body>
+<main>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1 fw-bold">Painel do Administrador</h1>
+            <p class="text-muted mb-0">Visão geral da loja Sweet Delights</p>
+        </div>
+        <span class="badge bg-primary px-3 py-2 fs-6">ADMIN</span>
+    </div>
+
+    <!-- Cards de métricas -->
+    <div class="row g-4 mb-5">
+        <div class="col-sm-6 col-xl-4">
+            <div class="card h-100" style="border-left: 4px solid var(--cor-botao);">
+                <div class="card-body">
+                    <div class="text-muted small mb-2">Total de Pedidos</div>
+                    <div class="h2 fw-bold text-primary mb-1" th:text="${totalPedidos}">0</div>
+                    <a th:href="@{/admin/pedidos}" class="small text-decoration-none text-muted">Ver pedidos →</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-4">
+            <div class="card h-100" style="border-left: 4px solid var(--cor-botao-secundario);">
+                <div class="card-body">
+                    <div class="text-muted small mb-2">Clientes Cadastrados</div>
+                    <div class="h2 fw-bold text-success mb-1" th:text="${totalClientes}">0</div>
+                    <a th:href="@{/admin/clientes}" class="small text-decoration-none text-muted">Ver clientes →</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-4">
+            <div class="card h-100" style="border-left: 4px solid var(--cor-backgroundDetails);">
+                <div class="card-body">
+                    <div class="text-muted small mb-2">Faturamento Total</div>
+                    <div class="h2 fw-bold mb-1" style="color:#7c3aed;"
+                         th:text="${'R$ ' + #numbers.formatDecimal(faturamentoTotal, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</div>
+                    <span class="small text-muted">Todos os pedidos</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Acesso rápido -->
+    <div class="card">
+        <div class="card-header fw-semibold">Acesso rápido</div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-6 col-md-4">
+                    <a th:href="@{/produtos}" class="btn btn-outline-primary w-100">
+                        🏷️ Produtos
+                    </a>
+                </div>
+                <div class="col-6 col-md-4">
+                    <a th:href="@{/admin/categorias}" class="btn btn-outline-secondary w-100">
+                        📂 Categorias
+                    </a>
+                </div>
+                <div class="col-6 col-md-4">
+                    <a th:href="@{/admin/cupons}" class="btn btn-outline-warning w-100">
+                        🎟️ Cupons
+                    </a>
+                </div>
+                <div class="col-6 col-md-4">
+                    <a th:href="@{/admin/pedidos}" class="btn btn-outline-success w-100">
+                        📦 Pedidos
+                    </a>
+                </div>
+                <div class="col-6 col-md-4">
+                    <a th:href="@{/admin/clientes}" class="btn btn-outline-info w-100">
+                        🧑 Clientes
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

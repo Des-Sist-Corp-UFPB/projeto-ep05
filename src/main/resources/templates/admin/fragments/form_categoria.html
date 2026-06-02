@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="modal" class="modal fade" id="categoriaModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold"
+                    th:text="${categoria != null} ? 'Editar Categoria' : 'Nova Categoria'">
+                    Categoria
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+
+                <!-- Modo criação -->
+                <form th:if="${categoria == null}"
+                      hx-post="/admin/categorias"
+                      hx-target="#tabela-categorias"
+                      hx-swap="outerHTML"
+                      th:object="${form}">
+
+                    <div th:if="${#fields.hasGlobalErrors()}"
+                         class="alert alert-danger small py-2 mb-3">
+                        <span th:each="err : ${#fields.globalErrors()}" th:text="${err}"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nome</label>
+                        <input type="text" th:field="*{nome}" class="form-control"
+                               th:classappend="${#fields.hasErrors('nome')} ? 'is-invalid'"
+                               placeholder="Ex.: Bolos"/>
+                        <div class="invalid-feedback" th:errors="*{nome}"></div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Descrição <span class="text-muted small">(opcional)</span></label>
+                        <input type="text" th:field="*{descricao}" class="form-control"
+                               placeholder="Breve descrição da categoria"/>
+                    </div>
+
+                    <div class="d-flex gap-2 justify-content-end">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Criar Categoria</button>
+                    </div>
+                </form>
+
+                <!-- Modo edição -->
+                <form th:if="${categoria != null}"
+                      th:hx-put="@{/admin/categorias/{id}(id=${categoria.id})}"
+                      hx-target="#tabela-categorias"
+                      hx-swap="outerHTML"
+                      th:object="${form}">
+
+                    <div th:if="${#fields.hasGlobalErrors()}"
+                         class="alert alert-danger small py-2 mb-3">
+                        <span th:each="err : ${#fields.globalErrors()}" th:text="${err}"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nome</label>
+                        <input type="text" th:field="*{nome}" class="form-control"
+                               th:classappend="${#fields.hasErrors('nome')} ? 'is-invalid'"/>
+                        <div class="invalid-feedback" th:errors="*{nome}"></div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Descrição <span class="text-muted small">(opcional)</span></label>
+                        <input type="text" th:field="*{descricao}" class="form-control"/>
+                    </div>
+
+                    <div class="d-flex gap-2 justify-content-end">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar alterações</button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

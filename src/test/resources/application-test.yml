@@ -1,19 +1,27 @@
 spring:
+  datasource:
+    # Banco dedicado para testes — separado do dev para não poluir dados reais
+    url: jdbc:postgresql://localhost:5432/mercado_test
+    username: mercado
+    password: mercado123
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      # validate: o Hibernate verifica o schema mas não modifica nada.
-      # O Flyway cria as tabelas via migrações antes dos testes iniciarem.
-      ddl-auto: validate
+      # create-drop: cria o schema antes dos testes e apaga ao terminar.
+      # Ideal para testes: sempre começa com banco limpo e previsível.
+      ddl-auto: create-drop
     show-sql: true
     properties:
       hibernate:
         format_sql: true
   flyway:
     enabled: true
-    # Testcontainers + @ServiceConnection configura automaticamente a URL do banco.
-    # O Flyway executa as migrações no container PostgreSQL antes dos testes.
     locations: classpath:db/migration
+    # clean-on-validation-error: limpa e recria o banco se o schema divergir.
+    # Seguro em test porque os dados de teste nunca devem ser persistidos.
+    clean-on-validation-error: true
 
 logging:
   level:
     br.ufpb.dsc.mercado: DEBUG
+    org.springframework.web: DEBUG
