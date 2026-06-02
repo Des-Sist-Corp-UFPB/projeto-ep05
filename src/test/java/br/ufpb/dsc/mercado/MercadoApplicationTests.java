@@ -2,9 +2,8 @@ package br.ufpb.dsc.mercado;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -13,7 +12,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * Teste de carregamento do contexto Spring Boot.
  *
  * <p><strong>O que este teste verifica?</strong><br>
- * {@code @SpringBootTest} inicializa o contexto completo do Spring Boot (Sweet Delights Manager) e verifica se
+ * {@code @SpringBootTest} inicializa o contexto completo do Spring Boot e verifica se
  * todos os beans são criados corretamente, sem erros de configuração ou dependências
  * circulares. É o teste mais básico e deve sempre passar.
  *
@@ -35,23 +34,10 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers
 class MercadoApplicationTests {
 
-    /**
-     * Verifica que o contexto Spring Boot carrega sem erros.
-     *
-     * <p>Se este teste falhar, significa que há algum problema de configuração:
-     * bean faltando, propriedade incorreta, dependência circular, etc.
-     * É o primeiro teste a executar e o mais importante para detectar problemas de setup.
-     */
-
     @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15");
+    @ServiceConnection
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
 
-    @DynamicPropertySource
-    static void props(DynamicPropertyRegistry r) {
-        r.add("spring.datasource.url", postgres::getJdbcUrl);
-        r.add("spring.datasource.username", postgres::getUsername);
-        r.add("spring.datasource.password", postgres::getPassword);
-    }
     @Test
     void contextLoads() {
         // Se chegar aqui sem lançar exceção, o contexto carregou com sucesso

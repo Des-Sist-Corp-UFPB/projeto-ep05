@@ -144,6 +144,16 @@ public class Produto {
         this.imagens = imagens == null ? new ArrayList<>() : new ArrayList<>(imagens);
     }
 
+    /** Limpa todas as imagens do produto (opera na lista interna). */
+    public void clearImagens() {
+        this.imagens.clear();
+    }
+
+    /** Adiciona uma imagem ao produto (opera na lista interna). */
+    public void addImagem(ProdutoImagem imagem) {
+        this.imagens.add(imagem);
+    }
+
     public List<Avaliacao> getAvaliacoes() {
         return Collections.unmodifiableList(avaliacoes);
     }

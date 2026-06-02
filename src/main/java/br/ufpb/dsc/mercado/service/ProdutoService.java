@@ -129,7 +129,7 @@ public class ProdutoService {
 
     private void atualizarImagens(Produto produto, String imagensUrlsStr) {
         // Remove as antigas
-        produto.getImagens().clear();
+        produto.clearImagens();
 
         if (StringUtils.hasText(imagensUrlsStr)) {
             // Separa URLs por vírgula ou por linha
@@ -139,7 +139,7 @@ public class ProdutoService {
                     .collect(Collectors.toList());
 
             for (String url : urls) {
-                produto.getImagens().add(new ProdutoImagem(produto, url));
+                produto.addImagem(new ProdutoImagem(produto, url));
             }
         }
     }

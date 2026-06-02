@@ -66,23 +66,23 @@ public class DatabaseSeeder implements CommandLineRunner {
             // Semear Produtos
             if (produtoRepository.count() == 0) {
                 Produto p1 = new Produto("Smartphone Galaxy S24", "Smartphone Samsung Galaxy S24 Ultra 512GB", BigDecimal.valueOf(5499.00), eletronicos, 15);
-                p1.getImagens().add(new ProdutoImagem(p1, "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=500"));
+                p1.addImagem(new ProdutoImagem(p1, "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=500"));
                 produtoRepository.save(p1);
 
                 Produto p2 = new Produto("Notebook Dell Inspiron", "Notebook Dell Inspiron Intel Core i5 16GB SSD 512GB", BigDecimal.valueOf(3899.00), eletronicos, 8);
-                p2.getImagens().add(new ProdutoImagem(p2, "https://images.unsplash.com/photo-1496181130204-7552cc145cdb?w=500"));
+                p2.addImagem(new ProdutoImagem(p2, "https://images.unsplash.com/photo-1496181130204-7552cc145cdb?w=500"));
                 produtoRepository.save(p2);
 
                 Produto p3 = new Produto("Livro Design Patterns", "Livro Padrões de Projetos de Software do GoF", BigDecimal.valueOf(189.90), livros, 30);
-                p3.getImagens().add(new ProdutoImagem(p3, "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500"));
+                p3.addImagem(new ProdutoImagem(p3, "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500"));
                 produtoRepository.save(p3);
 
                 Produto p4 = new Produto("Livro Clean Code", "Livro Código Limpo por Robert C. Martin", BigDecimal.valueOf(95.00), livros, 40);
-                p4.getImagens().add(new ProdutoImagem(p4, "https://images.unsplash.com/photo-1532012197267-da84d127e765?w=500"));
+                p4.addImagem(new ProdutoImagem(p4, "https://images.unsplash.com/photo-1532012197267-da84d127e765?w=500"));
                 produtoRepository.save(p4);
 
                 Produto p5 = new Produto("Tênis Esportivo Run", "Tênis esportivo para corrida de alto impacto", BigDecimal.valueOf(299.90), vestuario, 20);
-                p5.getImagens().add(new ProdutoImagem(p5, "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500"));
+                p5.addImagem(new ProdutoImagem(p5, "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500"));
                 produtoRepository.save(p5);
                 
                 System.out.println("=== BANCO DE DADOS SEMEADO COM PRODUTOS E CATEGORIAS ===");
