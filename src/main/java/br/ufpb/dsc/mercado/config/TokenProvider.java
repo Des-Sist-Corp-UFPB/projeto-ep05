@@ -67,7 +67,7 @@ public class TokenProvider {
             long exp = extrairExpClaim(decodedPayload);
             long agora = Instant.now().getEpochSecond();
             return agora < exp;
-        } catch (Exception e) {
+        } catch (java.security.NoSuchAlgorithmException | java.security.InvalidKeyException | RuntimeException e) {
             return false;
         }
     }

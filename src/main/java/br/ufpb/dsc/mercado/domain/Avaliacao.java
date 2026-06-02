@@ -60,19 +60,19 @@ public class Avaliacao {
     }
 
     public Produto getProduto() {
-        return produto;
+        return produto; // entidade JPA gerenciada - referência direta é intencional
     }
 
     public void setProduto(Produto produto) {
-        this.produto = produto;
+        this.produto = produto; // entidade JPA gerenciada - referência direta é intencional
     }
 
     public Usuario getCliente() {
-        return cliente;
+        return cliente; // entidade JPA gerenciada - referência direta é intencional
     }
 
     public void setCliente(Usuario cliente) {
-        this.cliente = cliente;
+        this.cliente = cliente; // entidade JPA gerenciada - referência direta é intencional
     }
 
     public Integer getNota() {

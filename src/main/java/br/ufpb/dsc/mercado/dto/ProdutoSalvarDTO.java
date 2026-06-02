@@ -25,4 +25,8 @@ public record ProdutoSalvarDTO(
     Boolean ativo,
 
     List<String> imagensUrls
-) {}
+) {
+    public ProdutoSalvarDTO {
+        imagensUrls = imagensUrls == null ? java.util.List.of() : java.util.List.copyOf(imagensUrls);
+    }
+}

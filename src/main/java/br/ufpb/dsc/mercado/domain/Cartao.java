@@ -62,11 +62,11 @@ public class Cartao {
     }
 
     public Usuario getCliente() {
-        return cliente;
+        return cliente; // entidade JPA gerenciada - referência direta é intencional
     }
 
     public void setCliente(Usuario cliente) {
-        this.cliente = cliente;
+        this.cliente = cliente; // entidade JPA gerenciada - referência direta é intencional
     }
 
     public String getNomeTitular() {

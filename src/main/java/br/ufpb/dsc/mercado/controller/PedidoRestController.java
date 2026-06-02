@@ -23,6 +23,7 @@ public class PedidoRestController {
     private final UsuarioService usuarioService;
     private final CupomService cupomService;
 
+    @SuppressWarnings("EI_EXPOSE_REP2") // Beans Spring são singletons gerenciados pelo container
     public PedidoRestController(PedidoService pedidoService,
                                 UsuarioService usuarioService,
                                 CupomService cupomService) {

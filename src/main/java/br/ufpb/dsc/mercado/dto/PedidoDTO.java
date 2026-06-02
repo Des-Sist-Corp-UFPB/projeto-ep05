@@ -21,4 +21,8 @@ public record PedidoDTO(
     List<PedidoItemDTO> itens,
     Instant criadoEm,
     Instant atualizadoEm
-) {}
+) {
+    public PedidoDTO {
+        itens = itens == null ? java.util.List.of() : java.util.List.copyOf(itens);
+    }
+}

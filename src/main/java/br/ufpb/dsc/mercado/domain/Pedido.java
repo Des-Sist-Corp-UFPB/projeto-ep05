@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Entity
@@ -86,35 +87,35 @@ public class Pedido {
     }
 
     public Usuario getCliente() {
-        return cliente;
+        return cliente; // entidade JPA gerenciada - referência direta é intencional
     }
 
     public void setCliente(Usuario cliente) {
-        this.cliente = cliente;
+        this.cliente = cliente; // entidade JPA gerenciada - referência direta é intencional
     }
 
     public Endereco getEnderecoEntrega() {
-        return enderecoEntrega;
+        return enderecoEntrega; // entidade JPA gerenciada - referência direta é intencional
     }
 
     public void setEnderecoEntrega(Endereco enderecoEntrega) {
-        this.enderecoEntrega = enderecoEntrega;
+        this.enderecoEntrega = enderecoEntrega; // entidade JPA gerenciada - referência direta é intencional
     }
 
     public Cartao getCartao() {
-        return cartao;
+        return cartao; // entidade JPA gerenciada - referência direta é intencional
     }
 
     public void setCartao(Cartao cartao) {
-        this.cartao = cartao;
+        this.cartao = cartao; // entidade JPA gerenciada - referência direta é intencional
     }
 
     public Cupom getCupom() {
-        return cupom;
+        return cupom; // entidade JPA gerenciada - referência direta é intencional
     }
 
     public void setCupom(Cupom cupom) {
-        this.cupom = cupom;
+        this.cupom = cupom; // entidade JPA gerenciada - referência direta é intencional
     }
 
     public StatusPedido getStatus() {
@@ -158,11 +159,11 @@ public class Pedido {
     }
 
     public List<PedidoItem> getItens() {
-        return itens;
+        return Collections.unmodifiableList(itens);
     }
 
     public void setItens(List<PedidoItem> itens) {
-        this.itens = itens;
+        this.itens = itens == null ? new ArrayList<>() : new ArrayList<>(itens);
     }
 
     public Instant getCriadoEm() {

@@ -21,6 +21,7 @@ public class AuthRestController {
     private final TokenProvider tokenProvider;
     private final PasswordEncoder passwordEncoder;
 
+    @SuppressWarnings("EI_EXPOSE_REP2") // Beans Spring são singletons gerenciados pelo container
     public AuthRestController(UsuarioService usuarioService,
                               TokenProvider tokenProvider,
                               PasswordEncoder passwordEncoder) {

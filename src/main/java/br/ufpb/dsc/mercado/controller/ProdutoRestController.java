@@ -29,6 +29,7 @@ public class ProdutoRestController {
     private final AvaliacaoService avaliacaoService;
     private final UsuarioService usuarioService;
 
+    @SuppressWarnings("EI_EXPOSE_REP2") // Beans Spring são singletons gerenciados pelo container
     public ProdutoRestController(ProdutoService produtoService,
                                  CategoriaService categoriaService,
                                  AvaliacaoService avaliacaoService,

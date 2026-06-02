@@ -21,6 +21,7 @@ public class AvaliacaoService {
     private final ProdutoRepository produtoRepository;
     private final UsuarioService usuarioService;
 
+    @SuppressWarnings("EI_EXPOSE_REP2") // Beans Spring são singletons gerenciados pelo container
     public AvaliacaoService(AvaliacaoRepository avaliacaoRepository,
                             ProdutoRepository produtoRepository,
                             UsuarioService usuarioService) {

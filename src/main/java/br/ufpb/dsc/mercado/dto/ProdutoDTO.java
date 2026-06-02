@@ -14,4 +14,8 @@ public record ProdutoDTO(
     Boolean ativo,
     List<String> imagensUrls,
     Double notaMedia
-) {}
+) {
+    public ProdutoDTO {
+        imagensUrls = imagensUrls == null ? java.util.List.of() : java.util.List.copyOf(imagensUrls);
+    }
+}

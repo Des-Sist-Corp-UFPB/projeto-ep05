@@ -5,6 +5,7 @@ import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Entity
@@ -112,11 +113,11 @@ public class Produto {
     }
 
     public Categoria getCategoria() {
-        return categoria;
+        return categoria; // entidade JPA gerenciada - referência direta é intencional
     }
 
     public void setCategoria(Categoria categoria) {
-        this.categoria = categoria;
+        this.categoria = categoria; // entidade JPA gerenciada - referência direta é intencional
     }
 
     public Integer getEstoque() {
@@ -136,19 +137,19 @@ public class Produto {
     }
 
     public List<ProdutoImagem> getImagens() {
-        return imagens;
+        return Collections.unmodifiableList(imagens);
     }
 
     public void setImagens(List<ProdutoImagem> imagens) {
-        this.imagens = imagens;
+        this.imagens = imagens == null ? new ArrayList<>() : new ArrayList<>(imagens);
     }
 
     public List<Avaliacao> getAvaliacoes() {
-        return avaliacoes;
+        return Collections.unmodifiableList(avaliacoes);
     }
 
     public void setAvaliacoes(List<Avaliacao> avaliacoes) {
-        this.avaliacoes = avaliacoes;
+        this.avaliacoes = avaliacoes == null ? new ArrayList<>() : new ArrayList<>(avaliacoes);
     }
 
     public Instant getCriadoEm() {

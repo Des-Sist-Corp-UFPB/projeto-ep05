@@ -15,4 +15,8 @@ public record CheckoutRequest(
 
     @NotEmpty(message = "O carrinho de compras não pode estar vazio")
     List<CartItemRequest> itens
-) {}
+) {
+    public CheckoutRequest {
+        itens = itens == null ? java.util.List.of() : java.util.List.copyOf(itens);
+    }
+}

@@ -45,11 +45,11 @@ public class ProdutoImagem {
     }
 
     public Produto getProduto() {
-        return produto;
+        return produto; // entidade JPA gerenciada - referência direta é intencional
     }
 
     public void setProduto(Produto produto) {
-        this.produto = produto;
+        this.produto = produto; // entidade JPA gerenciada - referência direta é intencional
     }
 
     public String getUrl() {

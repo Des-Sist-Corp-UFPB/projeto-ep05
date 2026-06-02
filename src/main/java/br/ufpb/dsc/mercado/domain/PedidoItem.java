@@ -50,19 +50,19 @@ public class PedidoItem {
     }
 
     public Pedido getPedido() {
-        return pedido;
+        return pedido; // entidade JPA gerenciada - referência direta é intencional
     }
 
     public void setPedido(Pedido pedido) {
-        this.pedido = pedido;
+        this.pedido = pedido; // entidade JPA gerenciada - referência direta é intencional
     }
 
     public Produto getProduto() {
-        return produto;
+        return produto; // entidade JPA gerenciada - referência direta é intencional
     }
 
     public void setProduto(Produto produto) {
-        this.produto = produto;
+        this.produto = produto; // entidade JPA gerenciada - referência direta é intencional
     }
 
     public Integer getQuantidade() {
