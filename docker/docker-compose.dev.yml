@@ -2,16 +2,23 @@
 # Docker Compose — DESENVOLVIMENTO
 # =============================================================================
 # Sobe o ambiente completo de desenvolvimento com:
-#   - app:      Aplicação Spring Boot com hot-reload
-#   - postgres: Banco de dados PostgreSQL 16
-#   - adminer:  Interface web para inspecionar o banco (http://localhost:8888)
-#   - trivy:    Scanner de vulnerabilidades (roda uma vez e sai)
+#   - postgres:  Banco PostgreSQL 16 com dados PERSISTIDOS em volume nomeado
+#   - app:       Aplicação Spring Boot com hot-reload
+#   - adminer:   Interface web para inspecionar o banco (http://localhost:8888)
+#   - trivy:     Scanner de vulnerabilidades (perfil opcional: --profile scan)
 #
 # Como usar:
 #   docker compose -f docker/docker-compose.dev.yml up
 #   docker compose -f docker/docker-compose.dev.yml up --build  # forçar rebuild
 #
-# Para rodar só o banco:
+# ⚠️  ATENÇÃO — DADOS PERSISTIDOS:
+#   O volume "postgres-dev-data" sobrevive ao `docker compose down`.
+#   Para parar sem perder dados:
+#     docker compose -f docker/docker-compose.dev.yml down          ✅ dados preservados
+#   Para apagar TUDO (dados incluídos) — use apenas se quiser resetar o banco:
+#     docker compose -f docker/docker-compose.dev.yml down -v       ❌ APAGA OS DADOS
+#
+# Para rodar só o banco (sem a aplicação):
 #   docker compose -f docker/docker-compose.dev.yml up postgres adminer
 # =============================================================================
 
@@ -19,6 +26,8 @@ services:
 
   # ---------------------------------------------------------------------------
   # Banco de dados PostgreSQL
+  # Volume nomeado garante persistência entre `docker compose down` e `up`.
+  # Apenas `down -v` ou `docker volume rm` apaga os dados.
   # ---------------------------------------------------------------------------
   postgres:
     image: postgres:16-alpine
@@ -30,17 +39,21 @@ services:
     ports:
       - "5432:5432"
     volumes:
+      # Volume NOMEADO — gerenciado pelo Docker, persiste entre restarts.
+      # Para inspecionar: docker volume inspect sweet-delights_postgres-dev-data
       - postgres-dev-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U mercado -d mercado_dev"]
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
     networks:
       - mercado-net
 
   # ---------------------------------------------------------------------------
-  # Aplicação Spring Boot (hot-reload)
+  # Aplicação Spring Boot (hot-reload via Spring DevTools)
+  # O código-fonte é montado como volume — salvar um .java reinicia a app.
   # ---------------------------------------------------------------------------
   app:
     build:
@@ -49,15 +62,16 @@ services:
     container_name: mercado-app-dev
     environment:
       SPRING_PROFILES_ACTIVE: dev
+      # Sobrescreve a URL do application-dev.yml para usar o hostname do container
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mercado_dev
       SPRING_DATASOURCE_USERNAME: mercado
       SPRING_DATASOURCE_PASSWORD: mercado123
     ports:
       - "8080:8080"
     volumes:
-      # Monta o código-fonte para hot-reload
+      # Hot-reload: monta o código-fonte para o Spring DevTools detectar mudanças
       - ../src:/app/src
-      # Persistir dependências Maven (evita re-download a cada restart)
+      # Cache Maven: evita re-download das dependências a cada rebuild
       - maven-cache:/root/.m2
     depends_on:
       postgres:
@@ -66,9 +80,10 @@ services:
       - mercado-net
 
   # ---------------------------------------------------------------------------
-  # Adminer: interface web para o banco de dados
+  # Adminer: interface web para gerenciar o banco
   # Acesse: http://localhost:8888
-  # Servidor: postgres | Banco: mercado_dev | Usuário: mercado | Senha: mercado123
+  # Sistema: PostgreSQL | Servidor: postgres | Banco: mercado_dev
+  # Usuário: mercado | Senha: mercado123
   # ---------------------------------------------------------------------------
   adminer:
     image: adminer:latest
@@ -81,7 +96,7 @@ services:
       - mercado-net
 
   # ---------------------------------------------------------------------------
-  # Trivy: scanner de vulnerabilidades (roda e sai — profile: scan)
+  # Trivy: scanner de vulnerabilidades (perfil opcional)
   # Uso: docker compose -f docker/docker-compose.dev.yml --profile scan up trivy
   # ---------------------------------------------------------------------------
   trivy:
@@ -97,6 +112,8 @@ services:
       - mercado-net
 
 volumes:
+  # ⚠️  Este volume persiste os dados do banco entre restarts.
+  # Para apagar: docker compose -f docker/docker-compose.dev.yml down -v
   postgres-dev-data:
   maven-cache:
   trivy-cache:

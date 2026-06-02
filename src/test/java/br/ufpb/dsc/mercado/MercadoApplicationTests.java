@@ -8,7 +8,7 @@ import org.springframework.test.context.ActiveProfiles;
  * Teste de carregamento do contexto Spring Boot.
  *
  * <p><strong>O que este teste verifica?</strong><br>
- * {@code @SpringBootTest} inicializa o contexto completo do Spring Boot e verifica se
+ * {@code @SpringBootTest} inicializa o contexto completo do Spring Boot (Sweet Delights Manager) e verifica se
  * todos os beans são criados corretamente, sem erros de configuração ou dependências
  * circulares. É o teste mais básico e deve sempre passar.
  *

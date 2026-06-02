@@ -68,7 +68,7 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         // Recursos estáticos e login público
-                        .requestMatchers("/webjars/**", "/css/**", "/js/**", "/actuator/health", "/login").permitAll()
+                        .requestMatchers("/webjars/**", "/css/**", "/js/**", "/actuator/health", "/login", "/").permitAll()
                         // SysAdmin
                         .requestMatchers("/sysadmin/**").hasRole("SYSADMIN")
                         // Admin
@@ -82,10 +82,11 @@ public class SecurityConfig {
                         .successHandler((request, response, authentication) -> {
                             var authorities = authentication.getAuthorities();
                             boolean isSysAdmin = authorities.stream().anyMatch(a -> a.getAuthority().equals("ROLE_SYSADMIN"));
+                            String contextPath = request.getContextPath();
                             if (isSysAdmin) {
-                                response.sendRedirect("/sysadmin/dashboard");
+                                response.sendRedirect(contextPath + "/sysadmin/dashboard");
                             } else {
-                                response.sendRedirect("/admin/dashboard");
+                                response.sendRedirect(contextPath + "/admin/dashboard");
                             }
                         })
                         .permitAll()

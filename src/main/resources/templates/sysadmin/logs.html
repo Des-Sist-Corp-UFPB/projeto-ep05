@@ -2,34 +2,45 @@
 <html lang="pt-BR"
       xmlns:th="http://www.thymeleaf.org"
       th:replace="~{layout :: layout(~{::main})}">
-<head><title>Logs e Auditoria</title></head>
+<head><title>Logs &amp; Auditoria</title></head>
 <body>
 <main>
+
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h1 class="h3 mb-1">Logs &amp; Auditoria</h1>
-            <p class="text-muted mb-0">Registro de ações críticas e eventos de segurança</p>
+            <h1 class="h3 mb-1 fw-bold">Logs &amp; Auditoria</h1>
+            <p class="text-muted mb-0">Histórico de ações críticas do sistema</p>
+        </div>
+        <span class="badge bg-secondary px-3 py-2">Somente leitura</span>
+    </div>
+
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="list-group list-group-flush">
+                <div th:if="${logs == null or logs.empty}"
+                     class="list-group-item text-center text-muted py-5">
+                    Nenhum log registrado.
+                </div>
+                <div th:each="log, stat : ${logs}"
+                     class="list-group-item py-3 px-4"
+                     th:classappend="${stat.even} ? 'bg-light'">
+                    <div class="d-flex align-items-start gap-3">
+                        <!-- Ícone por tipo de log -->
+                        <span th:if="${#strings.contains(log, 'SECURITY')}"
+                              class="badge bg-danger mt-1">🔐</span>
+                        <span th:if="${#strings.contains(log, 'SYSADMIN')}"
+                              class="badge bg-warning text-dark mt-1">⚙️</span>
+                        <span th:if="${#strings.contains(log, 'ADMIN')  and !#strings.contains(log, 'SYSADMIN')}"
+                              class="badge bg-primary mt-1">👤</span>
+                        <span th:if="${#strings.contains(log, 'SYSTEM')}"
+                              class="badge bg-success mt-1">🖥️</span>
+                        <code class="small flex-grow-1 text-break" th:text="${log}"></code>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="card shadow-sm">
-        <div class="card-body p-0">
-            <ul class="list-group list-group-flush">
-                <li th:if="${logs.empty}" class="list-group-item text-center text-muted py-4">
-                    Nenhum log disponível.
-                </li>
-                <li th:each="log : ${logs}" class="list-group-item py-3 px-4">
-                    <div class="d-flex align-items-start gap-3">
-                        <span th:if="${log.contains('SECURITY')}" class="badge bg-danger mt-1">SEGURANÇA</span>
-                        <span th:if="${log.contains('SYSADMIN')}" class="badge bg-primary mt-1">SYSADMIN</span>
-                        <span th:if="${log.contains('ADMIN')  and !log.contains('SYSADMIN')}" class="badge bg-info mt-1">ADMIN</span>
-                        <span th:if="${log.contains('SYSTEM')}" class="badge bg-secondary mt-1">SISTEMA</span>
-                        <code class="small text-muted" th:text="${log}">log entry</code>
-                    </div>
-                </li>
-            </ul>
-        </div>
-    </div>
 </main>
 </body>
 </html>

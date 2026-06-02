@@ -37,6 +37,8 @@ public class SysAdminController {
         this.pedidoRepository = pedidoRepository;
     }
 
+    // ── Dashboard ─────────────────────────────────────────────────────────────
+
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
         model.addAttribute("totalProdutos", produtoRepository.count());
@@ -51,6 +53,8 @@ public class SysAdminController {
 
         return "sysadmin/dashboard";
     }
+
+    // ── Gerenciar Admins ──────────────────────────────────────────────────────
 
     @GetMapping("/admins")
     public String listarAdmins(
@@ -67,17 +71,45 @@ public class SysAdminController {
         model.addAttribute("paginaAtual", pagina);
 
         if (htmx != null) {
+            // Retorna só o fragmento da tabela para buscas via HTMX
             return "sysadmin/fragments/tabela_admins :: tabela";
         }
         return "sysadmin/admins";
     }
 
+    /**
+     * Retorna o fragmento do formulário de criação de admin (modal vazio via HTMX).
+     */
     @GetMapping("/admins/novo")
     public String novoAdminForm(Model model) {
-        model.addAttribute("form", new CadastroRequest(null, null, null, Papel.ADMIN));
+        // CadastroRequest com campos vazios — papel ADMIN fixo
+        model.addAttribute("form", new CadastroRequest("", "", "", Papel.ADMIN));
+        model.addAttribute("adminId", null);
         return "sysadmin/fragments/form_admin :: modal";
     }
 
+    /**
+     * Retorna o formulário pré-preenchido para edição (modal via HTMX).
+     */
+    @GetMapping("/admins/{id}/editar")
+    public String editarAdminForm(@PathVariable Long id, Model model) {
+        Usuario admin = usuarioService.buscarPorId(id);
+        // Senha em branco — não exibimos a senha existente
+        model.addAttribute("form", new CadastroRequest(admin.getNome(), admin.getEmail(), "", Papel.ADMIN));
+        model.addAttribute("adminId", id);
+        return "sysadmin/fragments/form_admin :: modal";
+    }
+
+    /**
+     * Cria um novo administrador.
+     *
+     * <p>CORREÇÃO DO BUG: o campo "papel" chegava como null porque o formulário
+     * não enviava o campo hidden corretamente. Agora forçamos papel=ADMIN
+     * independente do que vem no form, garantindo que CadastroRequest seja válido.
+     *
+     * <p>Em caso de sucesso, retorna a tabela completa atualizada (não só a linha).
+     * O HTMX substitui o #tabela-admins com a nova versão e o modal fecha via script do layout.
+     */
     @PostMapping("/admins")
     public String criarAdmin(
             @Valid @ModelAttribute("form") CadastroRequest form,
@@ -85,44 +117,102 @@ public class SysAdminController {
             Model model) {
 
         if (bindingResult.hasErrors()) {
+            model.addAttribute("adminId", null);
             return "sysadmin/fragments/form_admin :: modal";
         }
 
         try {
+            // Garante papel ADMIN independente do que veio no form
             CadastroRequest requestAdmin = new CadastroRequest(
                     form.nome(),
                     form.email(),
                     form.senha(),
                     Papel.ADMIN
             );
-            Usuario novoAdmin = usuarioService.cadastrar(requestAdmin);
-            model.addAttribute("admin", novoAdmin);
-            return "sysadmin/fragments/linha_admin :: linha";
+            usuarioService.cadastrar(requestAdmin);
+
+            // Sucesso: retorna tabela atualizada (pág. 0, sem filtro de busca)
+            Page<Usuario> admins = usuarioService.listarPorPapel(
+                    Papel.ADMIN, "", PageRequest.of(0, 10, Sort.by("nome").ascending()));
+            model.addAttribute("admins", admins);
+            model.addAttribute("busca", "");
+
+            return "sysadmin/fragments/tabela_admins :: tabela";
+
         } catch (IllegalArgumentException e) {
             bindingResult.rejectValue("email", "error.form", e.getMessage());
+            model.addAttribute("adminId", null);
             return "sysadmin/fragments/form_admin :: modal";
         }
     }
 
-    @PostMapping("/admins/{id}/bloquear")
-    @ResponseBody
-    public ResponseEntity<?> alternarStatus(@PathVariable Long id) {
+    /**
+     * Atualiza os dados de um administrador existente.
+     */
+    @PutMapping("/admins/{id}")
+    public String editarAdmin(
+            @PathVariable Long id,
+            @Valid @ModelAttribute("form") CadastroRequest form,
+            BindingResult bindingResult,
+            Model model) {
+
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("adminId", id);
+            return "sysadmin/fragments/form_admin :: modal";
+        }
+
         try {
-            usuarioService.alternarStatus(id);
-            return ResponseEntity.ok().build();
+            Usuario admin = usuarioService.buscarPorId(id);
+            // Atualiza campos — senha só muda se vier preenchida
+            String novaSenha = (form.senha() != null && !form.senha().isBlank())
+                    ? form.senha() : null;
+            usuarioService.atualizarPerfil(id, form.nome(), form.email(), null, novaSenha);
+
+            // Retorna tabela atualizada
+            Page<Usuario> admins = usuarioService.listarPorPapel(
+                    Papel.ADMIN, "", PageRequest.of(0, 10, Sort.by("nome").ascending()));
+            model.addAttribute("admins", admins);
+            model.addAttribute("busca", "");
+
+            return "sysadmin/fragments/tabela_admins :: tabela";
+
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            bindingResult.rejectValue("email", "error.form", e.getMessage());
+            model.addAttribute("adminId", id);
+            return "sysadmin/fragments/form_admin :: modal";
         }
     }
 
+    /**
+     * Alterna o status (ATIVO ↔ BLOQUEADO) de um admin ou cliente.
+     * Retorna a tabela de admins atualizada.
+     */
+    @PostMapping("/admins/{id}/bloquear")
+    public String alternarStatus(
+            @PathVariable Long id,
+            Model model) {
+
+        usuarioService.alternarStatus(id);
+
+        Page<Usuario> admins = usuarioService.listarPorPapel(
+                Papel.ADMIN, "", PageRequest.of(0, 10, Sort.by("nome").ascending()));
+        model.addAttribute("admins", admins);
+        model.addAttribute("busca", "");
+
+        return "sysadmin/fragments/tabela_admins :: tabela";
+    }
+
+    // ── Logs & Configurações ──────────────────────────────────────────────────
+
     @GetMapping("/logs")
-    public String visualisarLogs(Model model) {
+    public String visualizarLogs(Model model) {
         List<String> logs = new ArrayList<>();
-        logs.add("[2026-05-26 20:20:15] SYSADMIN: Criou novo Administrador (admin2@mercado.com)");
+        logs.add("[2026-05-26 20:20:15] SYSADMIN: Criou novo Administrador (admin2@sweetdelights.com)");
         logs.add("[2026-05-26 19:45:10] SYSTEM: Backup do banco de dados executado com sucesso");
-        logs.add("[2026-05-26 18:30:22] ADMIN (admin@mercado.com): Cadastrou novo produto 'Smartphone Galaxy S24'");
+        logs.add("[2026-05-26 18:30:22] ADMIN (admin@sweetdelights.com): Cadastrou novo produto 'Bolo de Chocolate'");
         logs.add("[2026-05-26 17:15:02] SECURITY: Tentativa de login suspeita bloqueada para o IP 192.168.10.45");
         logs.add("[2026-05-26 15:10:55] SYSADMIN: Alterou configurações de e-mail SMTP");
+        logs.add("[2026-05-25 11:00:00] SYSTEM: Migração V2 do banco executada com sucesso");
         model.addAttribute("logs", logs);
         return "sysadmin/logs";
     }

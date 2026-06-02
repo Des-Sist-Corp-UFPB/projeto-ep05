@@ -5,10 +5,11 @@
 <head><title>Categorias</title></head>
 <body>
 <main>
+
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h1 class="h3 mb-1">Categorias</h1>
-            <p class="text-muted mb-0">Organize os produtos por categorias</p>
+            <h1 class="h3 mb-1 fw-bold">Categorias</h1>
+            <p class="text-muted mb-0">Gerencie as categorias de produtos</p>
         </div>
         <button class="btn btn-primary"
                 hx-get="/admin/categorias/nova"
@@ -22,13 +23,14 @@
         </button>
     </div>
 
-    <div class="card shadow-sm">
+    <div class="card">
         <div class="card-body">
-            <div id="tabela-container">
+            <div id="tabela-categorias">
                 <th:block th:insert="~{admin/fragments/tabela_categorias :: tabela}"></th:block>
             </div>
         </div>
     </div>
+
 </main>
 </body>
 </html>

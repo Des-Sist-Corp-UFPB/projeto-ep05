@@ -6,109 +6,313 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title th:text="${titulo != null ? titulo + ' — Mercado DSC' : 'Mercado DSC'}">Mercado DSC</title>
+    <title th:text="${titulo != null ? titulo + ' — Sweet Delights Manager' : 'Sweet Delights Manager'}">Sweet Delights Manager</title>
 
-    <!-- Bootstrap CSS via WebJars -->
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- Estilo customizado premium -->
     <style>
         :root {
-            --primary-color: #2563eb;
-            --primary-hover: #1d4ed8;
-            --bg-color: #f8fafc;
-            --card-bg: #ffffff;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
-            --border-color: #e2e8f0;
+            --cor-fundo:             #F9DDE5;
+            --cor-secundaria:        #833320;
+            --cor-detalhe:           #FFF8EB;
+            --cor-detalhe-2:         #EE90AF;
+            --cor-texto:             #000000;
+            --cor-texto-2:           #FFFFFF;
+            --cor-texto-3:           #803225;
+            --cor-backgroundDetails: #E15477;
+            --cor-botao:             #D96A88;
+            --cor-botao-secundario:  #028643;
+            --cor-botao-terciario:   #FFF8EB;
         }
 
+        /* ── BASE ── */
         body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
+            background-color: var(--cor-fundo);
+            color: var(--cor-texto);
             font-family: 'Outfit', sans-serif;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
         }
 
+        /* ── NAVBAR ── */
         .navbar {
-            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            background: linear-gradient(135deg, var(--cor-secundaria) 0%, var(--cor-backgroundDetails) 100%);
+            box-shadow: 0 4px 12px rgba(131, 51, 32, 0.25);
         }
 
         .navbar-brand {
             font-weight: 700;
             letter-spacing: -0.5px;
+            color: var(--cor-texto-2) !important;
         }
 
         .nav-link {
             font-weight: 500;
+            color: rgba(255,255,255,0.88) !important;
             transition: all 0.2s ease;
         }
 
         .nav-link:hover {
-            opacity: 0.9;
+            color: var(--cor-detalhe) !important;
             transform: translateY(-1px);
         }
 
+        .navbar-toggler {
+            border-color: rgba(255,255,255,0.4);
+        }
+
+        .navbar-toggler-icon {
+            filter: brightness(10);
+        }
+
+        /* dropdown do usuário */
+        .dropdown-menu {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(131,51,32,0.15);
+        }
+
+        .dropdown-item:hover {
+            background-color: var(--cor-fundo);
+        }
+
+        /* ── CARDS ── */
         .card {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background-color: var(--cor-detalhe);
+            border: 1px solid var(--cor-detalhe-2);
+            border-radius: 14px;
+            box-shadow: 0 1px 4px rgba(225, 84, 119, 0.08);
+            transition: box-shadow 0.3s ease;
         }
 
         .card:hover {
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 8px 24px rgba(225, 84, 119, 0.14);
         }
 
+        .card-header {
+            background-color: var(--cor-detalhe-2);
+            border-bottom: 1px solid var(--cor-detalhe-2);
+            border-radius: 13px 13px 0 0 !important;
+            color: var(--cor-texto-3);
+            font-weight: 600;
+        }
+
+        /* ── BOTÕES ── */
         .btn-primary {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
+            background-color: var(--cor-botao);
+            border-color: var(--cor-botao);
+            color: var(--cor-texto-2);
             font-weight: 600;
             border-radius: 8px;
-            padding: 0.5rem 1.25rem;
+            padding: 0.45rem 1.2rem;
             transition: all 0.2s;
         }
-
-        .btn-primary:hover {
-            background-color: var(--primary-hover);
-            border-color: var(--primary-hover);
+        .btn-primary:hover, .btn-primary:focus {
+            background-color: var(--cor-backgroundDetails);
+            border-color: var(--cor-backgroundDetails);
+            color: var(--cor-texto-2);
         }
 
-        /* Indicador de carregamento HTMX */
-        .htmx-indicator {
-            display: none;
+        .btn-success {
+            background-color: var(--cor-botao-secundario);
+            border-color: var(--cor-botao-secundario);
+            font-weight: 600;
+            border-radius: 8px;
         }
-        .htmx-request .htmx-indicator {
-            display: inline-block;
-        }
-        .htmx-request.htmx-indicator {
-            display: inline-block;
+        .btn-success:hover {
+            background-color: #026b35;
+            border-color: #026b35;
         }
 
+        .btn-outline-primary {
+            color: var(--cor-botao);
+            border-color: var(--cor-botao);
+        }
+        .btn-outline-primary:hover {
+            background-color: var(--cor-botao);
+            border-color: var(--cor-botao);
+            color: var(--cor-texto-2);
+        }
+
+        .btn-outline-secondary {
+            color: var(--cor-texto-3);
+            border-color: var(--cor-detalhe-2);
+        }
+        .btn-outline-secondary:hover {
+            background-color: var(--cor-detalhe-2);
+            border-color: var(--cor-detalhe-2);
+            color: var(--cor-texto-3);
+        }
+
+        .btn-outline-danger {
+            color: var(--cor-secundaria);
+            border-color: var(--cor-secundaria);
+        }
+        .btn-outline-danger:hover {
+            background-color: var(--cor-secundaria);
+            border-color: var(--cor-secundaria);
+            color: var(--cor-texto-2);
+        }
+
+        .btn-outline-warning {
+            color: #92600a;
+            border-color: #e6a817;
+        }
+        .btn-outline-warning:hover {
+            background-color: #e6a817;
+            border-color: #e6a817;
+            color: #fff;
+        }
+
+        .btn-outline-success {
+            color: var(--cor-botao-secundario);
+            border-color: var(--cor-botao-secundario);
+        }
+        .btn-outline-success:hover {
+            background-color: var(--cor-botao-secundario);
+            color: #fff;
+        }
+
+        .btn-outline-info {
+            color: #0c6e8a;
+            border-color: #0c9abf;
+        }
+        .btn-outline-info:hover {
+            background-color: #0c9abf;
+            color: #fff;
+        }
+
+        /* ── TABELAS ── */
+        .table {
+            color: var(--cor-texto);
+        }
+
+        .table thead th {
+            background-color: var(--cor-detalhe-2);
+            color: var(--cor-texto-3);
+            border-bottom: none;
+            font-weight: 600;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: rgba(238, 144, 175, 0.12);
+        }
+
+        .table-light th {
+            background-color: var(--cor-detalhe-2) !important;
+            color: var(--cor-texto-3);
+        }
+
+        /* ── FORMULÁRIOS ── */
+        .form-control, .form-select {
+            border-color: var(--cor-detalhe-2);
+            border-radius: 8px;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--cor-botao);
+            box-shadow: 0 0 0 3px rgba(217, 106, 136, 0.2);
+        }
+
+        .input-group-text {
+            background-color: var(--cor-detalhe-2);
+            border-color: var(--cor-detalhe-2);
+            color: var(--cor-texto-3);
+        }
+
+        /* ── BADGES ── */
+        .badge.bg-primary   { background-color: var(--cor-botao) !important; }
+        .badge.bg-warning   { background-color: #e6a817 !important; color: #fff !important; }
+        .badge.bg-success   { background-color: var(--cor-botao-secundario) !important; }
+        .badge.bg-danger    { background-color: var(--cor-secundaria) !important; }
+        .badge.bg-secondary { background-color: #8a7070 !important; }
+        .badge.bg-info      { background-color: #0c9abf !important; color: #fff !important; }
+
+        /* ── PAGINAÇÃO ── */
+        .page-link {
+            color: var(--cor-botao);
+            border-color: var(--cor-detalhe-2);
+        }
+        .page-item.active .page-link {
+            background-color: var(--cor-botao);
+            border-color: var(--cor-botao);
+            color: #fff;
+        }
+        .page-link:hover {
+            color: var(--cor-backgroundDetails);
+            background-color: var(--cor-fundo);
+        }
+
+        /* ── ALERTAS ── */
+        .alert-danger {
+            background-color: rgba(131,51,32,0.1);
+            border-color: var(--cor-secundaria);
+            color: var(--cor-secundaria);
+        }
+        .alert-success {
+            background-color: rgba(2,134,67,0.1);
+            border-color: var(--cor-botao-secundario);
+            color: var(--cor-botao-secundario);
+        }
+
+        /* ── MODAIS ── */
+        .modal-content {
+            border: none;
+            border-radius: 16px;
+            background-color: var(--cor-detalhe);
+        }
+
+        .modal-header {
+            border-bottom-color: var(--cor-detalhe-2);
+        }
+
+        /* ── HTMX indicator ── */
+        .htmx-indicator { display: none; }
+        .htmx-request .htmx-indicator { display: inline-block; }
+        .htmx-request.htmx-indicator { display: inline-block; }
+
+        /* ── FOOTER ── */
         footer {
             margin-top: auto;
-            background-color: #ffffff;
-            border-top: 1px solid var(--border-color);
+            background-color: var(--cor-detalhe);
+            border-top: 1px solid var(--cor-detalhe-2);
         }
+
+        footer .text-muted {
+            color: var(--cor-texto-3) !important;
+        }
+
+        /* ── HEADINGS ── */
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--cor-texto-3);
+        }
+
+        p.text-muted, .text-muted {
+            color: #a06060 !important;
+        }
+
+        /* card de métricas — borda colorida */
+        .metric-card-rosa   { border-left: 4px solid var(--cor-botao) !important; }
+        .metric-card-vinho  { border-left: 4px solid var(--cor-secundaria) !important; }
+        .metric-card-verde  { border-left: 4px solid var(--cor-botao-secundario) !important; }
+        .metric-card-detalhe{ border-left: 4px solid var(--cor-backgroundDetails) !important; }
     </style>
 </head>
 <body>
 
-<!-- NAVBAR -->
+<!-- ═══════════════ NAVBAR ═══════════════ -->
 <nav class="navbar navbar-expand-lg navbar-dark mb-4">
     <div class="container">
         <a class="navbar-brand d-flex align-items-center" th:href="@{/produtos}">
-            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor"
-                 class="bi bi-shop me-2" viewBox="0 0 16 16">
-                 <path d="M2.97 1.35A1 1 0 0 1 3.73 1h8.54a1 1 0 0 1 .76.35l2.609 3.044A1.5 1.5 0 0 1 16 5.37v.255a2.375 2.375 0 0 1-4.25 1.458A2.371 2.371 0 0 1 9.875 8 2.37 2.37 0 0 1 8 7.083 2.37 2.37 0 0 1 6.125 8a2.37 2.37 0 0 1-1.875-.917A2.375 2.375 0 0 1 0 5.625V5.37a1.5 1.5 0 0 1 .361-.976zm1.78 4.275a1.375 1.375 0 0 0 2.75 0 .5.5 0 0 1 1 0 1.375 1.375 0 0 0 2.75 0 .5.5 0 0 1 1 0 1.375 1.375 0 1 0 2.75 0V5.37a.5.5 0 0 0-.12-.325L12.27 2H3.73L1.12 5.045A.5.5 0 0 0 1 5.37v.255a1.375 1.375 0 0 0 2.75 0 .5.5 0 0 1 1 0M1.5 8.5A.5.5 0 0 1 2 9v6h1v-5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v5h6V9a.5.5 0 0 1 1 0v6h.5a.5.5 0 0 1 0 1H.5a.5.5 0 0 1 0-1H1V9a.5.5 0 0 1 .5-.5M4 15h3v-5H4zm6-5a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1z"/>
+            <!-- ícone de bolo / cupcake -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+                 class="me-2" viewBox="0 0 16 16">
+                <path d="M7.507 4.43a1 1 0 0 1 .986 0l4.5 2.6A1 1 0 0 1 13.5 8H13v4.5a.5.5 0 0 1-.5.5H10v-3H6v3H3.5a.5.5 0 0 1-.5-.5V8H2.5a1 1 0 0 1-.507-1.87l4.5-2.6z"/>
+                <path d="M1.5 0A1.5 1.5 0 0 0 0 1.5v1A1.5 1.5 0 0 0 1.5 4h13A1.5 1.5 0 0 0 16 2.5v-1A1.5 1.5 0 0 0 14.5 0h-13z"/>
             </svg>
-            Mercado DSC
+            Sweet Delights Manager
         </a>
 
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
@@ -117,42 +321,23 @@
 
         <div class="collapse navbar-collapse" id="navbarMain">
             <ul class="navbar-nav me-auto" sec:authorize="isAuthenticated()">
-                <!-- Links para SYSADMIN -->
+
+                <!-- SYSADMIN -->
                 <th:block sec:authorize="hasRole('SYSADMIN')">
-                    <li class="nav-item">
-                        <a class="nav-link" th:href="@{/sysadmin/dashboard}">Painel</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" th:href="@{/sysadmin/admins}">Administradores</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" th:href="@{/sysadmin/logs}">Logs & Auditoria</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" th:href="@{/sysadmin/configuracoes}">Configurações</a>
-                    </li>
+                    <li class="nav-item"><a class="nav-link" th:href="@{/sysadmin/dashboard}">Painel</a></li>
+                    <li class="nav-item"><a class="nav-link" th:href="@{/sysadmin/admins}">Administradores</a></li>
+                    <li class="nav-item"><a class="nav-link" th:href="@{/sysadmin/logs}">Logs &amp; Auditoria</a></li>
+                    <li class="nav-item"><a class="nav-link" th:href="@{/sysadmin/configuracoes}">Configurações</a></li>
                 </th:block>
 
-                <!-- Links para ADMIN -->
+                <!-- ADMIN -->
                 <th:block sec:authorize="hasRole('ADMIN')">
-                    <li class="nav-item">
-                        <a class="nav-link" th:href="@{/admin/dashboard}">Painel</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" th:href="@{/produtos}">Produtos</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" th:href="@{/admin/categorias}">Categorias</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" th:href="@{/admin/cupons}">Cupons</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" th:href="@{/admin/pedidos}">Pedidos</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" th:href="@{/admin/clientes}">Clientes</a>
-                    </li>
+                    <li class="nav-item"><a class="nav-link" th:href="@{/admin/dashboard}">Painel</a></li>
+                    <li class="nav-item"><a class="nav-link" th:href="@{/produtos}">Produtos</a></li>
+                    <li class="nav-item"><a class="nav-link" th:href="@{/admin/categorias}">Categorias</a></li>
+                    <li class="nav-item"><a class="nav-link" th:href="@{/admin/cupons}">Cupons</a></li>
+                    <li class="nav-item"><a class="nav-link" th:href="@{/admin/pedidos}">Pedidos</a></li>
+                    <li class="nav-item"><a class="nav-link" th:href="@{/admin/clientes}">Clientes</a></li>
                 </th:block>
             </ul>
 
@@ -187,16 +372,16 @@
     </div>
 </nav>
 
-<!-- CONTEÚDO PRINCIPAL -->
-<main class="container">
+<!-- ═══════════════ CONTEÚDO ═══════════════ -->
+<main class="container pb-4">
     <th:block th:replace="${content}"></th:block>
 </main>
 
-<!-- RODAPÉ -->
-<footer class="bg-white border-top py-4 mt-5">
-    <div class="container text-center text-muted small">
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<footer class="py-4 mt-4">
+    <div class="container text-center small">
         <p class="mb-0">
-            Mercado DSC &copy; 2026 | Desenvolvimento de Sistemas Corporativos | UFPB Campus IV
+            🍰 Sweet Delights Manager &copy; 2026 &nbsp;|&nbsp; Desenvolvimento de Sistemas Corporativos &nbsp;|&nbsp; UFPB Campus IV
         </p>
     </div>
 </footer>
@@ -208,25 +393,20 @@
 <div id="modal-container"></div>
 
 <script>
-    // Abre qualquer modal Bootstrap genérico (produto, categoria, etc.) injetado pelo HTMX
     document.body.addEventListener('htmx:afterSwap', function(evt) {
         if (evt.detail.target.id === 'modal-container') {
             const modalEl = document.querySelector('.modal');
-            if (modalEl) {
-                const modal = new bootstrap.Modal(modalEl);
-                modal.show();
-            }
+            if (modalEl) new bootstrap.Modal(modalEl).show();
         }
     });
 
-    // Fecha o modal atual quando a requisição é bem sucedida
     document.body.addEventListener('htmx:beforeSwap', function(evt) {
-        // Se a resposta retornou uma linha da tabela ou foi ok, fechamos o modal
-        if (evt.detail.target.id !== 'modal-container' && (evt.detail.xhr.status === 200 || evt.detail.xhr.status === 201)) {
+        if (evt.detail.target.id !== 'modal-container' &&
+            (evt.detail.xhr.status === 200 || evt.detail.xhr.status === 201)) {
             const modalEl = document.querySelector('.modal.show');
             if (modalEl) {
-                const modal = bootstrap.Modal.getInstance(modalEl);
-                if (modal) modal.hide();
+                const m = bootstrap.Modal.getInstance(modalEl);
+                if (m) m.hide();
             }
         }
     });

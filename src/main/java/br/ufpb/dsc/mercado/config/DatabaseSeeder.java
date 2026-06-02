@@ -40,10 +40,10 @@ public class DatabaseSeeder implements CommandLineRunner {
         if (usuarioRepository.count() == 0) {
             String senhaPadrao = passwordEncoder.encode("admin123");
 
-            Usuario sysadmin = new Usuario("SysAdmin Mercado", "sysadmin@mercado.com", senhaPadrao, Papel.SYSADMIN);
+            Usuario sysadmin = new Usuario("SysAdmin Sweet Delights", "sysadmin@mercado.com", senhaPadrao, Papel.SYSADMIN);
             usuarioRepository.save(sysadmin);
 
-            Usuario admin = new Usuario("Admin Mercado", "admin@mercado.com", senhaPadrao, Papel.ADMIN);
+            Usuario admin = new Usuario("Admin Sweet Delights", "admin@mercado.com", senhaPadrao, Papel.ADMIN);
             usuarioRepository.save(admin);
 
             Usuario cliente = new Usuario("Cliente Teste", "cliente@mercado.com", senhaPadrao, Papel.CLIENTE);

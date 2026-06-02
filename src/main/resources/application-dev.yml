@@ -6,18 +6,20 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      # validate: o Hibernate verifica se o schema do banco bate com as entidades,
-      # mas NÃO modifica nada. O Flyway é responsável por criar/alterar as tabelas.
-      # NUNCA use create-drop em produção — apaga todos os dados!
-      ddl-auto: validate
+      # update: o Hibernate ajusta o schema automaticamente em dev.
+      # Nunca use create-drop em dev com dados importantes — apaga tudo!
+      # Em prod e test usamos validate (o Flyway é o dono do schema).
+      ddl-auto: update
     show-sql: true
     properties:
       hibernate:
         format_sql: true
   flyway:
     enabled: true
-    # Localização dos scripts de migração SQL
     locations: classpath:db/migration
+    # baseline-on-migrate: permite rodar o Flyway em banco que já tem tabelas
+    # (criadas pelo ddl-auto antes do Flyway existir no projeto)
+    baseline-on-migrate: true
 
 logging:
   level:

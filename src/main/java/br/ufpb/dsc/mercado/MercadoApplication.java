@@ -4,7 +4,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
- * Classe principal da aplicação Mercado.
+ * Classe principal da aplicação Sweet Delights Manager.
  *
  * <p>A anotação {@code @SpringBootApplication} é um atalho que combina três anotações:
  * <ul>

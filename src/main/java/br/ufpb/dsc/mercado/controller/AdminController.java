@@ -40,6 +40,11 @@ public class AdminController {
         this.pedidoRepository = pedidoRepository;
     }
 
+    @GetMapping({"", "/"})
+    public String raiz() {
+        return "redirect:/admin/dashboard";
+    }
+
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
         BigDecimal faturamentoTotal = pedidoRepository.findAll().stream()

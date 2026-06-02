@@ -5,18 +5,22 @@
 <head><title>Pedidos</title></head>
 <body>
 <main>
-    <div class="mb-4">
-        <h1 class="h3 mb-1">Pedidos</h1>
-        <p class="text-muted mb-0">Acompanhe e atualize o status dos pedidos</p>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1 fw-bold">Pedidos</h1>
+            <p class="text-muted mb-0">Acompanhe e atualize os pedidos da loja</p>
+        </div>
     </div>
 
-    <div class="card shadow-sm">
+    <div class="card">
         <div class="card-body">
-            <div id="tabela-container">
+            <div id="tabela-pedidos">
                 <th:block th:insert="~{admin/fragments/tabela_pedidos :: tabela}"></th:block>
             </div>
         </div>
     </div>
+
 </main>
 </body>
 </html>

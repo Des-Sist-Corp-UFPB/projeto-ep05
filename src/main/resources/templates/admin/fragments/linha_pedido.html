@@ -2,25 +2,25 @@
 <html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
 <body>
 <tr th:fragment="linha" th:id="'pedido-' + ${pedido.id}">
-    <td class="text-muted small">#<span th:text="${pedido.id}">1</span></td>
-    <td class="fw-semibold" th:text="${pedido.cliente.nome}">Cliente</td>
-    <td th:text="${'R$ ' + #numbers.formatDecimal(pedido.totalGeral, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</td>
+    <td th:text="${pedido.id}"></td>
+    <td th:text="${pedido.cliente.nome}"></td>
+    <td th:text="${'R$ ' + #numbers.formatDecimal(pedido.totalGeral, 1, 'POINT', 2, 'COMMA')}"></td>
     <td>
-        <span th:switch="${pedido.status.name()}">
-            <span th:case="'AGUARDANDO_PAGAMENTO'" class="badge bg-warning-subtle text-warning border border-warning-subtle">Aguardando Pagamento</span>
-            <span th:case="'PAGO'" class="badge bg-info-subtle text-info border border-info-subtle">Pago</span>
-            <span th:case="'ENVIADO'" class="badge bg-primary-subtle text-primary border border-primary-subtle">Enviado</span>
-            <span th:case="'ENTREGUE'" class="badge bg-success-subtle text-success border border-success-subtle">Entregue</span>
-            <span th:case="'CANCELADO'" class="badge bg-danger-subtle text-danger border border-danger-subtle">Cancelado</span>
+        <span class="badge"
+              th:classappend="${pedido.status.name() == 'ENTREGUE'} ? 'bg-success' :
+                              (${pedido.status.name() == 'CANCELADO'} ? 'bg-danger' :
+                              (${pedido.status.name() == 'ENVIADO'} ? 'bg-primary' :
+                              (${pedido.status.name() == 'PAGO'} ? 'bg-info text-dark' : 'bg-warning text-dark')))"
+              th:text="${pedido.status.name().replace('_', ' ')}">
         </span>
     </td>
-    <td class="text-muted small" th:text="${#temporals.format(pedido.criadoEm, 'dd/MM/yyyy HH:mm')}">01/01/2026</td>
+    <td th:text="${#temporals.format(pedido.criadoEm, 'dd/MM/yyyy HH:mm', #locale)}"></td>
     <td class="text-end">
         <button class="btn btn-sm btn-outline-primary"
                 th:hx-get="@{/admin/pedidos/{id}(id=${pedido.id})}"
                 hx-target="#modal-container"
                 hx-swap="innerHTML">
-            Gerenciar
+            Detalhes
         </button>
     </td>
 </tr>

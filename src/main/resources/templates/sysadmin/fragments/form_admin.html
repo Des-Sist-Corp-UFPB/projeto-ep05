@@ -1,52 +1,142 @@
 <!DOCTYPE html>
 <html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
 <body>
-<th:block th:fragment="modal">
-    <div class="modal fade" id="adminModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title fw-semibold">Novo Administrador</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <form th:action="@{/sysadmin/admins}" method="post"
+
+<!--
+  Fragmento do modal de criação/edição de Administrador.
+
+  BUG CORRIGIDO: #fields.hasGlobalErrors() estava fora do escopo de th:object,
+  causando TemplateProcessingException ao renderizar o fragmento via GET.
+  O bloco de erros globais foi movido para dentro de cada <form th:object="...">.
+-->
+<div th:fragment="modal" class="modal fade" id="adminModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold"
+                    th:text="${adminId != null} ? 'Editar Administrador' : 'Novo Administrador'">
+                    Administrador
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+
+                <!-- Modo criação -->
+                <form th:if="${adminId == null}"
                       hx-post="/sysadmin/admins"
-                      hx-target="#admins-body"
-                      hx-swap="afterbegin">
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label fw-medium">Nome</label>
-                            <input type="text" name="nome" class="form-control"
-                                   th:classappend="${#fields.hasErrors('nome')} ? 'is-invalid'"
-                                   th:value="${form.nome}" placeholder="Nome completo" required/>
-                            <div class="invalid-feedback" th:if="${#fields.hasErrors('nome')}"
-                                 th:errors="*{nome}">Erro</div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-medium">E-mail</label>
-                            <input type="email" name="email" class="form-control"
-                                   th:classappend="${#fields.hasErrors('email')} ? 'is-invalid'"
-                                   th:value="${form.email}" placeholder="admin@mercado.com" required/>
-                            <div class="invalid-feedback" th:if="${#fields.hasErrors('email')}"
-                                 th:errors="*{email}">Erro</div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-medium">Senha</label>
-                            <input type="password" name="senha" class="form-control"
-                                   th:classappend="${#fields.hasErrors('senha')} ? 'is-invalid'"
-                                   placeholder="Mínimo 6 caracteres" required/>
-                            <div class="invalid-feedback" th:if="${#fields.hasErrors('senha')}"
-                                 th:errors="*{senha}">Erro</div>
-                        </div>
+                      hx-target="#tabela-admins"
+                      hx-swap="outerHTML"
+                      th:object="${form}">
+
+                    <!-- Alerta de erros globais — dentro do th:object -->
+                    <div th:if="${#fields.hasGlobalErrors()}"
+                         class="alert alert-danger small py-2 mb-3">
+                        <span th:each="err : ${#fields.globalErrors()}" th:text="${err}"></span>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Criar Administrador</button>
+
+                    <input type="hidden" name="papel" value="ADMIN"/>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nome completo</label>
+                        <input type="text"
+                               th:field="*{nome}"
+                               class="form-control"
+                               th:classappend="${#fields.hasErrors('nome')} ? 'is-invalid'"
+                               placeholder="Ex.: João Silva"/>
+                        <div class="invalid-feedback" th:errors="*{nome}"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">E-mail</label>
+                        <input type="email"
+                               th:field="*{email}"
+                               class="form-control"
+                               th:classappend="${#fields.hasErrors('email')} ? 'is-invalid'"
+                               placeholder="admin@sweetdelights.com"/>
+                        <div class="invalid-feedback" th:errors="*{email}"></div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Senha</label>
+                        <input type="password"
+                               th:field="*{senha}"
+                               class="form-control"
+                               th:classappend="${#fields.hasErrors('senha')} ? 'is-invalid'"
+                               placeholder="Mínimo 6 caracteres"/>
+                        <div class="invalid-feedback" th:errors="*{senha}"></div>
+                    </div>
+
+                    <div class="d-flex gap-2 justify-content-end">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <span class="htmx-indicator spinner-border spinner-border-sm me-1"></span>
+                            Criar Administrador
+                        </button>
                     </div>
                 </form>
+
+                <!-- Modo edição -->
+                <form th:if="${adminId != null}"
+                      th:hx-put="@{/sysadmin/admins/{id}(id=${adminId})}"
+                      hx-target="#tabela-admins"
+                      hx-swap="outerHTML"
+                      th:object="${form}">
+
+                    <!-- Alerta de erros globais — dentro do th:object -->
+                    <div th:if="${#fields.hasGlobalErrors()}"
+                         class="alert alert-danger small py-2 mb-3">
+                        <span th:each="err : ${#fields.globalErrors()}" th:text="${err}"></span>
+                    </div>
+
+                    <input type="hidden" name="papel" value="ADMIN"/>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nome completo</label>
+                        <input type="text"
+                               th:field="*{nome}"
+                               class="form-control"
+                               th:classappend="${#fields.hasErrors('nome')} ? 'is-invalid'"/>
+                        <div class="invalid-feedback" th:errors="*{nome}"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">E-mail</label>
+                        <input type="email"
+                               th:field="*{email}"
+                               class="form-control"
+                               th:classappend="${#fields.hasErrors('email')} ? 'is-invalid'"/>
+                        <div class="invalid-feedback" th:errors="*{email}"></div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Nova senha <span class="text-muted small">(deixe em branco para manter)</span></label>
+                        <input type="password"
+                               th:field="*{senha}"
+                               class="form-control"
+                               th:classappend="${#fields.hasErrors('senha')} ? 'is-invalid'"
+                               placeholder="Deixe em branco para não alterar"/>
+                        <div class="invalid-feedback" th:errors="*{senha}"></div>
+                    </div>
+
+                    <div class="d-flex gap-2 justify-content-end">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <span class="htmx-indicator spinner-border spinner-border-sm me-1"></span>
+                            Salvar alterações
+                        </button>
+                    </div>
+                </form>
+
             </div>
         </div>
     </div>
-</th:block>
+</div>
+
 </body>
 </html>
