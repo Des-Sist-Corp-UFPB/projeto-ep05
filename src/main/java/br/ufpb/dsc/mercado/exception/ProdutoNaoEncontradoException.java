@@ -35,7 +35,7 @@ public class ProdutoNaoEncontradoException extends RuntimeException {
     /**
      * Cria uma exceção com mensagem customizada.
      *
-     * @param mensagem descrição do erro
+     * @param mensagem descrição do erro.
      */
     public ProdutoNaoEncontradoException(String mensagem) {
         super(mensagem);
