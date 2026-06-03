@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Prepara nome da imagem (lowercase)
+      - name: Define nome da imagem
         run: echo "IMAGE=ghcr.io/des-sist-corp-ufpb/eq05:latest" >> $GITHUB_ENV
 
       - name: Login no GitHub Container Registry
