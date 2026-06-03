@@ -79,6 +79,19 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
+      # ── Pré-baixar imagens do Testcontainers (evita rate limit do Docker Hub) ──
+      # O Testcontainers precisa das imagens postgres:16-alpine e ryuk do Docker Hub.
+      # Runners compartilhados do GitHub Actions podem atingir o limite anônimo
+      # de 100 pulls/6h por IP. Pré-baixar aqui com retry contorna falhas transitórias.
+      - name: Pré-baixar imagens do Testcontainers
+        run: |
+          for i in 1 2 3; do
+            docker pull postgres:16-alpine && \
+            docker pull testcontainers/ryuk:0.11.0 && break
+            echo "Tentativa $i falhou, aguardando 15s..."
+            sleep 15
+          done
+
       # ── Compilação e testes ────────────────────────────────────────────────
       # mvn verify: compila, roda testes unitários e de integração (Testcontainers),
       # e gera o relatório de cobertura JaCoCo.
