@@ -30,7 +30,6 @@ public class SysAdminController {
     private final PedidoRepository pedidoRepository;
 
     @SuppressWarnings("EI_EXPOSE_REP2") // Beans Spring são singletons gerenciados pelo container
-    @SuppressWarnings("EI_EXPOSE_REP2")
     public SysAdminController(UsuarioService usuarioService,
                               ProdutoRepository produtoRepository,
                               PedidoRepository pedidoRepository) {
