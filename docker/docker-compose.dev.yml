@@ -5,7 +5,7 @@
 #   - postgres:  Banco PostgreSQL 16 com dados PERSISTIDOS em volume nomeado
 #   - app:       Aplicação Spring Boot com hot-reload
 #   - adminer:   Interface web para inspecionar o banco (http://localhost:8888)
-#   - trivy:     Scanner de vulnerabilidades (perfil opcional: --profile scan)
+#   - trivy:     Scanner de vulnerabilidades (perfil opcional: --profile scan
 #
 # Como usar:
 #   docker compose -f docker/docker-compose.dev.yml up
