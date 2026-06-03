@@ -31,4 +31,53 @@
         <Class name="br.ufpb.dsc.mercado.MercadoApplication"/>
     </Match>
 
+    <!--
+      EI_EXPOSE_REP / EI_EXPOSE_REP2 — Entidades JPA (domain)
+
+      As entidades do domínio (Produto, Pedido, Avaliacao, etc.) são gerenciadas
+      pelo JPA/Hibernate, que requer acesso direto às referências de objetos para
+      gerenciar o ciclo de vida, lazy loading e relacionamentos (ManyToOne, OneToMany).
+      Copiar defensivamente entidades JPA quebraria o mecanismo de proxy do Hibernate
+      e impediria o funcionamento correto do ORM. A mutabilidade controlada é intencional.
+    -->
+    <Match>
+        <Package name="~br\.ufpb\.dsc\.mercado\.domain.*"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+
+    <!--
+      EI_EXPOSE_REP2 — Controllers e Services (injeção de dependência Spring)
+
+      Os serviços e repositórios injetados via construtor são beans Spring gerenciados
+      como singletons pelo ApplicationContext. O Spring controla todo o ciclo de vida
+      desses objetos — eles nunca são substituídos ou modificados externamente após
+      a injeção. Copiar defensivamente quebraria a injeção de dependência.
+    -->
+    <Match>
+        <Package name="~br\.ufpb\.dsc\.mercado\.controller.*"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Package name="~br\.ufpb\.dsc\.mercado\.service.*"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="br.ufpb.dsc.mercado.config.SecurityConfig"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+
+    <!--
+      SPRING_CSRF_PROTECTION_DISABLED — API REST stateless com JWT
+
+      A proteção CSRF é desabilitada intencionalmente apenas para os endpoints
+      da API REST (/api/**), que usam autenticação stateless via JWT (Bearer token).
+      Ataques CSRF exploram cookies de sessão — como essa API não usa sessões,
+      a proteção CSRF é desnecessária e sua desabilitação é uma prática padrão
+      para APIs REST com JWT. O front-end MVC mantém CSRF habilitado.
+    -->
+    <Match>
+        <Class name="br.ufpb.dsc.mercado.config.SecurityConfig"/>
+        <Bug pattern="SPRING_CSRF_PROTECTION_DISABLED"/>
+    </Match>
+
 </FindBugsFilter>
