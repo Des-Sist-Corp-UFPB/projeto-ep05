@@ -50,7 +50,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         // Cadastro, Login e catálogo de produtos são públicos
-                        .requestMatchers("/api/auth/login", "/api/auth/cadastro","/ping").permitAll()
+                        .requestMatchers("/api/auth/login", "/api/auth/cadastro").permitAll()
                         .requestMatchers("/api/produtos/**").permitAll()
                         // Quaisquer outros endpoints da API exigem login (papel de CLIENTE ou outros)
                         .anyRequest().authenticated()
@@ -70,7 +70,7 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         // Recursos estáticos e login público
-                        .requestMatchers("/webjars/**", "/css/**", "/js/**", "/actuator/health", "/login", "/").permitAll()
+                        .requestMatchers("/webjars/**", "/css/**", "/js/**", "/actuator/health", "/login", "/","/ping").permitAll()
                         // SysAdmin
                         .requestMatchers("/sysadmin/**").hasRole("SYSADMIN")
                         // Admin
