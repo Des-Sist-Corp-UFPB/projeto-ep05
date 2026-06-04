@@ -50,7 +50,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         // Cadastro, Login e catálogo de produtos são públicos
-                        .requestMatchers("/api/auth/login", "/api/auth/cadastro").permitAll()
+                        .requestMatchers("/api/auth/login", "/api/auth/cadastro","/ping").permitAll()
                         .requestMatchers("/api/produtos/**").permitAll()
                         // Quaisquer outros endpoints da API exigem login (papel de CLIENTE ou outros)
                         .anyRequest().authenticated()
