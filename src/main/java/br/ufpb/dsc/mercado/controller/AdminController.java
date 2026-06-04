@@ -1,10 +1,5 @@
 package br.ufpb.dsc.mercado.controller;
 
-import br.ufpb.dsc.mercado.domain.*;
-import br.ufpb.dsc.mercado.dto.CategoriaDTO;
-import br.ufpb.dsc.mercado.repository.PedidoRepository;
-import br.ufpb.dsc.mercado.service.*;
-import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -12,9 +7,31 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.math.BigDecimal;
+import br.ufpb.dsc.mercado.domain.Categoria;
+import br.ufpb.dsc.mercado.domain.Cupom;
+import br.ufpb.dsc.mercado.domain.Papel;
+import br.ufpb.dsc.mercado.domain.Pedido;
+import br.ufpb.dsc.mercado.domain.StatusPedido;
+import br.ufpb.dsc.mercado.domain.TipoCupom;
+import br.ufpb.dsc.mercado.domain.Usuario;
+import br.ufpb.dsc.mercado.dto.CategoriaDTO;
+import br.ufpb.dsc.mercado.repository.PedidoRepository;
+import br.ufpb.dsc.mercado.service.CategoriaService;
+import br.ufpb.dsc.mercado.service.CupomService;
+import br.ufpb.dsc.mercado.service.PedidoService;
+import br.ufpb.dsc.mercado.service.UsuarioService;
+import jakarta.validation.Valid;
 
 @Controller
 @RequestMapping("/admin")
@@ -30,10 +47,10 @@ public class AdminController {
 
     @SuppressWarnings("EI_EXPOSE_REP2") // Beans Spring são singletons gerenciados pelo container
     public AdminController(CategoriaService categoriaService,
-                           CupomService cupomService,
-                           UsuarioService usuarioService,
-                           PedidoService pedidoService,
-                           PedidoRepository pedidoRepository) {
+            CupomService cupomService,
+            UsuarioService usuarioService,
+            PedidoService pedidoService,
+            PedidoRepository pedidoRepository) {
         this.categoriaService = categoriaService;
         this.cupomService = cupomService;
         this.usuarioService = usuarioService;
@@ -48,10 +65,7 @@ public class AdminController {
 
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
-        BigDecimal faturamentoTotal = pedidoRepository.findAll().stream()
-                .map(p -> p.getTotalGeral())
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        model.addAttribute("faturamentoTotal", faturamentoTotal);
+        model.addAttribute("faturamentoTotal", pedidoService.calcularFaturamentoTotal());
         model.addAttribute("totalPedidos", pedidoRepository.count());
         model.addAttribute("totalClientes", usuarioService.listarTodosPorPapel(Papel.CLIENTE).size());
         return "admin/dashboard";
@@ -63,10 +77,10 @@ public class AdminController {
             @RequestParam(name = "pagina", defaultValue = "0") int pagina,
             @RequestHeader(value = HEADER_HTMX, required = false) String htmx,
             Model model) {
-        
+
         PageRequest pageRequest = PageRequest.of(pagina, 10, Sort.by("nome").ascending());
         Page<Categoria> categorias = categoriaService.listar(pageRequest);
-        
+
         model.addAttribute("categorias", categorias);
         model.addAttribute("paginaAtual", pagina);
 
@@ -96,7 +110,7 @@ public class AdminController {
             @Valid @ModelAttribute("form") CategoriaDTO form,
             BindingResult bindingResult,
             Model model) {
-        
+
         if (bindingResult.hasErrors()) {
             model.addAttribute("categoria", null);
             return "admin/fragments/form_categoria :: modal";
@@ -118,7 +132,7 @@ public class AdminController {
             @Valid @ModelAttribute("form") CategoriaDTO form,
             BindingResult bindingResult,
             Model model) {
-        
+
         if (bindingResult.hasErrors()) {
             Categoria c = categoriaService.buscarPorId(id);
             model.addAttribute("categoria", c);
@@ -280,7 +294,7 @@ public class AdminController {
             @PathVariable Long id,
             @RequestParam StatusPedido status,
             Model model) {
-        
+
         Pedido pedido = pedidoService.atualizarStatus(id, status);
         model.addAttribute("pedido", pedido);
         // Retorna a linha da tabela de pedidos atualizada
@@ -292,7 +306,7 @@ public class AdminController {
             @PathVariable Long id,
             @RequestParam String codigoRastreamento,
             Model model) {
-        
+
         Pedido pedido = pedidoService.atualizarCodigoRastreamento(id, codigoRastreamento);
         model.addAttribute("pedido", pedido);
         return "admin/fragments/linha_pedido :: linha";

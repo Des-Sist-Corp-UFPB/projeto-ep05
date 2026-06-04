@@ -1,6 +1,5 @@
 package br.ufpb.dsc.mercado.controller;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,6 +23,7 @@ import br.ufpb.dsc.mercado.domain.Usuario;
 import br.ufpb.dsc.mercado.dto.CadastroRequest;
 import br.ufpb.dsc.mercado.repository.PedidoRepository;
 import br.ufpb.dsc.mercado.repository.ProdutoRepository;
+import br.ufpb.dsc.mercado.service.PedidoService;
 import br.ufpb.dsc.mercado.service.UsuarioService;
 import jakarta.validation.Valid;
 
@@ -35,32 +35,30 @@ public class SysAdminController {
     private final UsuarioService usuarioService;
     private final ProdutoRepository produtoRepository;
     private final PedidoRepository pedidoRepository;
+    private final PedidoService pedidoService;
 
     @SuppressWarnings("EI_EXPOSE_REP2") // Beans Spring são singletons gerenciados pelo container
     public SysAdminController(UsuarioService usuarioService,
                               ProdutoRepository produtoRepository,
-                              PedidoRepository pedidoRepository) {
+                              PedidoRepository pedidoRepository,
+                              PedidoService pedidoService) {
         this.usuarioService = usuarioService;
         this.produtoRepository = produtoRepository;
         this.pedidoRepository = pedidoRepository;
+        this.pedidoService = pedidoService;
     }
 
     // ── Dashboard ─────────────────────────────────────────────────────────────
 
     @GetMapping("/dashboard")
-    public String dashboard(Model model) {
-        model.addAttribute("totalProdutos", produtoRepository.count());
-        model.addAttribute("totalPedidos", pedidoRepository.count());
-        model.addAttribute("totalClientes", usuarioService.listarTodosPorPapel(Papel.CLIENTE).size());
-        model.addAttribute("totalAdmins", usuarioService.listarTodosPorPapel(Papel.ADMIN).size());
-
-        BigDecimal faturamentoTotal = pedidoRepository.findAll().stream()
-                .map(p -> p.getTotalGeral())
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        model.addAttribute("faturamentoTotal", faturamentoTotal);
-
-        return "sysadmin/dashboard";
-    }
+public String dashboard(Model model) {
+    model.addAttribute("totalProdutos", produtoRepository.count());
+    model.addAttribute("totalPedidos", pedidoRepository.count());
+    model.addAttribute("totalClientes", usuarioService.listarTodosPorPapel(Papel.CLIENTE).size());
+    model.addAttribute("totalAdmins", usuarioService.listarTodosPorPapel(Papel.ADMIN).size());
+    model.addAttribute("faturamentoTotal", pedidoService.calcularFaturamentoTotal());
+    return "sysadmin/dashboard";
+}
 
     // ── Gerenciar Admins ──────────────────────────────────────────────────────
 

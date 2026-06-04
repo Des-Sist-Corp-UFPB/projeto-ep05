@@ -1,19 +1,33 @@
 package br.ufpb.dsc.mercado.service;
 
-import br.ufpb.dsc.mercado.domain.*;
-import br.ufpb.dsc.mercado.dto.*;
-import br.ufpb.dsc.mercado.repository.PedidoRepository;
-import br.ufpb.dsc.mercado.repository.ProdutoRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import br.ufpb.dsc.mercado.domain.Cartao;
+import br.ufpb.dsc.mercado.domain.Cupom;
+import br.ufpb.dsc.mercado.domain.Endereco;
+import br.ufpb.dsc.mercado.domain.Pedido;
+import br.ufpb.dsc.mercado.domain.PedidoItem;
+import br.ufpb.dsc.mercado.domain.Produto;
+import br.ufpb.dsc.mercado.domain.StatusPedido;
+import br.ufpb.dsc.mercado.domain.TipoCupom;
+import br.ufpb.dsc.mercado.domain.Usuario;
+import br.ufpb.dsc.mercado.dto.CartItemRequest;
+import br.ufpb.dsc.mercado.dto.CartaoDTO;
+import br.ufpb.dsc.mercado.dto.CheckoutRequest;
+import br.ufpb.dsc.mercado.dto.EnderecoDTO;
+import br.ufpb.dsc.mercado.dto.PedidoDTO;
+import br.ufpb.dsc.mercado.dto.PedidoItemDTO;
+import br.ufpb.dsc.mercado.repository.PedidoRepository;
+import br.ufpb.dsc.mercado.repository.ProdutoRepository;
 
 @Service
 @Transactional(readOnly = true)
@@ -33,6 +47,10 @@ public class PedidoService {
         this.produtoRepository = produtoRepository;
         this.usuarioService = usuarioService;
         this.cupomService = cupomService;
+    }
+
+    public BigDecimal calcularFaturamentoTotal() {
+        return pedidoRepository.somarFaturamentoTotal();
     }
 
     public Page<Pedido> listarTodos(Pageable pageable) {
