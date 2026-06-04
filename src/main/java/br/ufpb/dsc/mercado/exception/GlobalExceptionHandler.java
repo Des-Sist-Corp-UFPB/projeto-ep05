@@ -22,13 +22,13 @@ public class GlobalExceptionHandler {
         HttpServletRequest request){
 
 
-    String mensage = ex.getBindingResult().getFieldErrors().stream()
+    String mensagem = ex.getBindingResult().getFieldErrors().stream()
         .map(FieldError::getDefaultMessage)
         .collect(Collectors.joining(", "));
 
     return ResponseEntity
         .status(HttpStatus.BAD_REQUEST)
-        .body(new ErroResponse(400, mensage, request.getRequestURI()));
+        .body(new ErroResponse(400, mensagem, request.getRequestURI()));
         }
 
 
@@ -55,7 +55,7 @@ public class GlobalExceptionHandler {
             .body(new ErroResponse(404, ex.getMessage(), request.getRequestURI()));
     }
 
-
+    // Qualquer outro erro inesperado
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErroResponse> handleGeneric(
             Exception ex,
