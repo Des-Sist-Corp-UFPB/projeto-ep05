@@ -11,7 +11,7 @@ public class PingController {
   public Map<String,Object> ping() {
     return Map.of(
       "status", "ok",
-      "service", "ep05",
+      "service", "eq05",
       "timestamp", java.time.Instant.now().toString());
   }
 }
