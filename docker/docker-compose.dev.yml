@@ -66,6 +66,14 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mercado_dev
       SPRING_DATASOURCE_USERNAME: mercado
       SPRING_DATASOURCE_PASSWORD: mercado123
+      # Credenciais de seed (opcional em dev — se não definidas no .env,
+      # caem nos defaults do application.yml: admin123)
+      SEED_SYSADMIN_EMAIL: ${SEED_SYSADMIN_EMAIL:-sysadmin@mercado.com}
+      SEED_SYSADMIN_PASSWORD: ${SEED_SYSADMIN_PASSWORD:-admin123}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@mercado.com}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-admin123}
+      SEED_CLIENTE_EMAIL: ${SEED_CLIENTE_EMAIL:-cliente@mercado.com}
+      SEED_CLIENTE_PASSWORD: ${SEED_CLIENTE_PASSWORD:-admin123}
     ports:
       - "8080:8080"
     volumes:

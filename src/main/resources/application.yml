@@ -4,6 +4,21 @@ spring:
   profiles:
     active: dev
 
+# Credenciais de seed dos usuários iniciais (sysadmin/admin/cliente).
+# Em dev, valores padrão são usados se as variáveis de ambiente não forem definidas.
+# Em produção (application-prod.yml) NÃO há default — as env vars são OBRIGATÓRIAS.
+app:
+  seed:
+    sysadmin:
+      email: ${SEED_SYSADMIN_EMAIL:sysadmin@mercado.com}
+      password: ${SEED_SYSADMIN_PASSWORD:admin123}
+    admin:
+      email: ${SEED_ADMIN_EMAIL:admin@mercado.com}
+      password: ${SEED_ADMIN_PASSWORD:admin123}
+    cliente:
+      email: ${SEED_CLIENTE_EMAIL:cliente@mercado.com}
+      password: ${SEED_CLIENTE_PASSWORD:admin123}
+
 # Actuator - monitoramento da aplicação
 # Acesse: http://localhost:8080/actuator/health
 management:
