@@ -12,6 +12,20 @@ spring:
   flyway:
     enabled: true
 
+# Credenciais dos usuários de seed — OBRIGATÓRIAS em produção (sem valor default).
+# Se não definidas, a aplicação falha ao subir (fail-fast), evitando senhas previsíveis.
+app:
+  seed:
+    sysadmin:
+      email: ${SEED_SYSADMIN_EMAIL}
+      password: ${SEED_SYSADMIN_PASSWORD}
+    admin:
+      email: ${SEED_ADMIN_EMAIL}
+      password: ${SEED_ADMIN_PASSWORD}
+    cliente:
+      email: ${SEED_CLIENTE_EMAIL}
+      password: ${SEED_CLIENTE_PASSWORD}
+
 logging:
   level:
     root: WARN
