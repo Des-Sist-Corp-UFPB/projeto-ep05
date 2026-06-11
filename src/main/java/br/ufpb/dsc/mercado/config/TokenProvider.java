@@ -17,7 +17,9 @@ import java.util.Base64;
 @Component
 public class TokenProvider {
 
-    @Value("${app.jwt.secret:segredo_super_secreto_e_longo_para_geracao_do_token_jwt_mercado}")
+    // Sem fallback — se APP_JWT_SECRET não estiver definido, a aplicação NÃO sobe.
+    // Isso evita usar um segredo fraco/público em produção por esquecimento.
+    @Value("${app.jwt.secret}")
     private String jwtSecret;
 
     @Value("${app.jwt.expiration-seconds:86400}") // 24 horas padrão
@@ -100,7 +102,6 @@ public class TokenProvider {
     }
 
     private long extrairExpClaim(String jsonPayload) {
-        // Encontra o padrão "exp": <numero>
         int index = jsonPayload.indexOf("\"exp\":");
         if (index == -1) {
             throw new RuntimeException("Claim 'exp' não encontrado no token");
@@ -115,7 +116,6 @@ public class TokenProvider {
     }
 
     private String extrairSubClaim(String jsonPayload) {
-        // Encontra o padrão "sub": "email"
         int index = jsonPayload.indexOf("\"sub\":\"");
         if (index == -1) {
             throw new RuntimeException("Claim 'sub' não encontrado no token");

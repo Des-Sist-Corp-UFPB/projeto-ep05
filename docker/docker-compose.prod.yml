@@ -6,7 +6,7 @@
 # no GHCR (GitHub Container Registry). Este arquivo usa a imagem pré-construída
 # em vez de buildar no servidor — mais seguro, rápido e rastreável.
 #
-# CONFIGURAÇÃO — arquivo .env na raiz do projeto no servidor:
+# CONFIGURAÇÃO — arquivo .env.dev na raiz do projeto no servidor:
 #
 #   APP_IMAGE=ghcr.io/usuario/mercado:latest   ← atualizado automaticamente pelo CI/CD
 #   DATABASE_URL=jdbc:postgresql://postgres:5432/mercado_prod
@@ -58,10 +58,10 @@ services:
   # Aplicação Spring Boot
   #
   # Usa a imagem pré-construída pelo CI/CD (GitHub Actions).
-  # A variável APP_IMAGE é atualizada automaticamente no .env a cada deploy.
+  # A variável APP_IMAGE é atualizada automaticamente no .env.dev a cada deploy.
   # ---------------------------------------------------------------------------
   app:
-    # ${APP_IMAGE} é definida no .env e atualizada pelo script de deploy.
+    # ${APP_IMAGE} é definida no .env.dev e atualizada pelo script de deploy.
     # Exemplo: ghcr.io/usuario/mercado:latest
     # O CI/CD também usa tags com commit hash (ghcr.io/usuario/mercado:sha-a1b2c3d)
     # para rastreabilidade — aqui usamos :latest que aponta para o build mais recente.
@@ -71,6 +71,8 @@ services:
       DATABASE_URL: ${DATABASE_URL:-jdbc:postgresql://postgres:5432/mercado_prod}
       DATABASE_USERNAME: ${DATABASE_USERNAME}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      APP_JWT_SECRET: ${APP_JWT_SECRET}
+      APP_SEED_ADMIN_PASSWORD: ${APP_SEED_ADMIN_PASSWORD}
     ports:
       - "8080:8080"
     depends_on:

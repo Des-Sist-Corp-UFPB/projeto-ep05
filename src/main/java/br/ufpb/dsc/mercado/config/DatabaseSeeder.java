@@ -5,6 +5,7 @@ import br.ufpb.dsc.mercado.repository.CategoriaRepository;
 import br.ufpb.dsc.mercado.repository.CupomRepository;
 import br.ufpb.dsc.mercado.repository.ProdutoRepository;
 import br.ufpb.dsc.mercado.repository.UsuarioRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -22,6 +23,10 @@ public class DatabaseSeeder implements CommandLineRunner {
     private final CupomRepository cupomRepository;
     private final PasswordEncoder passwordEncoder;
 
+    // ✅ Lido do .env — fallback "admin123" só é usado se a variável não estiver definida (dev local sem .env)
+    @Value("${app.seed.admin-password:admin123}")
+    private String senhaDefault;
+
     public DatabaseSeeder(UsuarioRepository usuarioRepository,
                           CategoriaRepository categoriaRepository,
                           ProdutoRepository produtoRepository,
@@ -38,7 +43,8 @@ public class DatabaseSeeder implements CommandLineRunner {
     public void run(String... args) throws Exception {
         // 1. Semear Usuários se a tabela estiver vazia
         if (usuarioRepository.count() == 0) {
-            String senhaPadrao = passwordEncoder.encode("admin123");
+            // ✅ Senha vem da variável de ambiente APP_SEED_ADMIN_PASSWORD
+            String senhaPadrao = passwordEncoder.encode(senhaDefault);
 
             Usuario sysadmin = new Usuario("SysAdmin Sweet Delights", "sysadmin@mercado.com", senhaPadrao, Papel.SYSADMIN);
             usuarioRepository.save(sysadmin);
@@ -49,7 +55,7 @@ public class DatabaseSeeder implements CommandLineRunner {
             Usuario cliente = new Usuario("Cliente Teste", "cliente@mercado.com", senhaPadrao, Papel.CLIENTE);
             usuarioRepository.save(cliente);
 
-            System.out.println("=== BANCO DE DADOS SEMEADO COM USUÁRIOS PADRÃO (senha: admin123) ===");
+            System.out.println("=== BANCO DE DADOS SEMEADO COM USUÁRIOS PADRÃO ===");
         }
 
         // 2. Semear Categorias e Produtos
@@ -63,7 +69,6 @@ public class DatabaseSeeder implements CommandLineRunner {
             Categoria vestuario = new Categoria("Vestuário", "Roupas, calçados e acessórios");
             vestuario = categoriaRepository.save(vestuario);
 
-            // Semear Produtos
             if (produtoRepository.count() == 0) {
                 Produto p1 = new Produto("Smartphone Galaxy S24", "Smartphone Samsung Galaxy S24 Ultra 512GB", BigDecimal.valueOf(5499.00), eletronicos, 15);
                 p1.addImagem(new ProdutoImagem(p1, "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=500"));
@@ -84,7 +89,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                 Produto p5 = new Produto("Tênis Esportivo Run", "Tênis esportivo para corrida de alto impacto", BigDecimal.valueOf(299.90), vestuario, 20);
                 p5.addImagem(new ProdutoImagem(p5, "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500"));
                 produtoRepository.save(p5);
-                
+
                 System.out.println("=== BANCO DE DADOS SEMEADO COM PRODUTOS E CATEGORIAS ===");
             }
         }

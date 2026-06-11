@@ -76,7 +76,7 @@ docker run --rm aquasec/trivy image mercado:latest
 # Build imagem de produção
 docker build -f docker/Dockerfile -t mercado:latest .
 
-# Subir produção (requer .env configurado)
+# Subir produção (requer .env.dev configurado)
 docker compose -f docker/docker-compose.prod.yml up -d
 ```
 
