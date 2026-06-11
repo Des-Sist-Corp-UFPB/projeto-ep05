@@ -5,7 +5,6 @@ import br.ufpb.dsc.mercado.repository.CategoriaRepository;
 import br.ufpb.dsc.mercado.repository.CupomRepository;
 import br.ufpb.dsc.mercado.repository.ProdutoRepository;
 import br.ufpb.dsc.mercado.repository.UsuarioRepository;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -23,24 +22,6 @@ public class DatabaseSeeder implements CommandLineRunner {
     private final CupomRepository cupomRepository;
     private final PasswordEncoder passwordEncoder;
 
-    @Value("${app.seed.sysadmin.email}")
-    private String sysadminEmail;
-
-    @Value("${app.seed.sysadmin.password}")
-    private String sysadminPassword;
-
-    @Value("${app.seed.admin.email}")
-    private String adminEmail;
-
-    @Value("${app.seed.admin.password}")
-    private String adminPassword;
-
-    @Value("${app.seed.cliente.email}")
-    private String clienteEmail;
-
-    @Value("${app.seed.cliente.password}")
-    private String clientePassword;
-
     public DatabaseSeeder(UsuarioRepository usuarioRepository,
                           CategoriaRepository categoriaRepository,
                           ProdutoRepository produtoRepository,
@@ -57,19 +38,18 @@ public class DatabaseSeeder implements CommandLineRunner {
     public void run(String... args) throws Exception {
         // 1. Semear Usuários se a tabela estiver vazia
         if (usuarioRepository.count() == 0) {
-            Usuario sysadmin = new Usuario("SysAdmin Sweet Delights", sysadminEmail,
-                    passwordEncoder.encode(sysadminPassword), Papel.SYSADMIN);
+            String senhaPadrao = passwordEncoder.encode("admin123");
+
+            Usuario sysadmin = new Usuario("SysAdmin Sweet Delights", "sysadmin@mercado.com", senhaPadrao, Papel.SYSADMIN);
             usuarioRepository.save(sysadmin);
 
-            Usuario admin = new Usuario("Admin Sweet Delights", adminEmail,
-                    passwordEncoder.encode(adminPassword), Papel.ADMIN);
+            Usuario admin = new Usuario("Admin Sweet Delights", "admin@mercado.com", senhaPadrao, Papel.ADMIN);
             usuarioRepository.save(admin);
 
-            Usuario cliente = new Usuario("Cliente Teste", clienteEmail,
-                    passwordEncoder.encode(clientePassword), Papel.CLIENTE);
+            Usuario cliente = new Usuario("Cliente Teste", "cliente@mercado.com", senhaPadrao, Papel.CLIENTE);
             usuarioRepository.save(cliente);
 
-            System.out.println("=== BANCO DE DADOS SEMEADO COM USUÁRIOS PADRÃO (credenciais via variáveis de ambiente) ===");
+            System.out.println("=== BANCO DE DADOS SEMEADO COM USUÁRIOS PADRÃO (senha: admin123) ===");
         }
 
         // 2. Semear Categorias e Produtos
