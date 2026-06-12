@@ -67,8 +67,8 @@
                     </button>
                     <button class="btn btn-outline-danger btn-sm"
                             th:attr="hx-delete='/produtos/' + ${produto.id},
-                                     hx-confirm='Confirma a exclusão de &quot;' + ${produto.nome} + '&quot;?'"
-                            th:attr2="hx-target='#produto-' + ${produto.id}"
+                            hx-confirm='Confirma a exclusão de &quot;' + ${produto.nome} + '&quot;?',
+                            hx-target='#produto-' + ${produto.id}"
                             hx-swap="outerHTML swap:0.3s">
                         🗑️
                     </button>
