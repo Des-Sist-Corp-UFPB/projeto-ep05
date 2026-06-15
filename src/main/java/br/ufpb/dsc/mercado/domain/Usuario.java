@@ -1,11 +1,21 @@
 package br.ufpb.dsc.mercado.domain;
 
-import jakarta.persistence.*;
+import java.time.Instant;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import java.time.Instant;
 
 @Entity
 @Table(name = "usuario")
@@ -19,6 +29,18 @@ public class Usuario {
     @Size(min = 2, max = 150, message = "O nome deve ter entre 2 e 150 caracteres")
     @Column(nullable = false, length = 150)
     private String nome;
+
+    @Column(length = 100)
+    private String sobrenome;
+
+    @Column(length = 14, unique = true)
+    private String cpf;
+
+    @Column(length = 15)
+    private String telefone;
+
+    @Column(name = "data_nascimento")
+    private java.time.LocalDate dataNascimento;
 
     @NotBlank(message = "O e-mail é obrigatório")
     @Email(message = "E-mail inválido")
@@ -133,6 +155,20 @@ public class Usuario {
     public void setAtualizadoEm(Instant atualizadoEm) {
         this.atualizadoEm = atualizadoEm;
     }
+
+
+    public String getSobrenome() { return sobrenome; }
+    public void setSobrenome(String sobrenome) { this.sobrenome = sobrenome; }
+
+    public String getCpf() { return cpf; }
+    public void setCpf(String cpf) { this.cpf = cpf; }
+
+    public String getTelefone() { return telefone; }
+    public void setTelefone(String telefone) { this.telefone = telefone; }
+
+    public java.time.LocalDate getDataNascimento() { return dataNascimento; }
+    public void setDataNascimento(java.time.LocalDate dataNascimento) { this.dataNascimento = dataNascimento; }
+
 
     @Override
     public String toString() {
