@@ -100,7 +100,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf
                         // Desabilita apenas para requisições de produtos HTMX para simplificação educacional
                         // Em produção, deve-se passar o header X-CSRF-Token no HTMX
-                        .ignoringRequestMatchers("/produtos/**", "/admin/**", "/sysadmin/**")
+                        .ignoringRequestMatchers("/produtos/**", "/admin/**", "/sysadmin/**", "/cadastro")
                 );
 
         return http.build();
