@@ -1,5 +1,8 @@
 package br.ufpb.dsc.mercado.config;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -15,9 +18,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
-import java.util.Arrays;
-import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -70,7 +70,7 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         // Recursos estáticos e login público
-                        .requestMatchers("/webjars/**", "/css/**", "/js/**","/assets/**", "/actuator/health", "/login", "/","/ping").permitAll()
+                        .requestMatchers("/webjars/**", "/css/**", "/js/**","/assets/**", "/actuator/health", "/login", "/cadastro", "/","/ping").permitAll()
                         // SysAdmin
                         .requestMatchers("/sysadmin/**").hasRole("SYSADMIN")
                         // Admin
