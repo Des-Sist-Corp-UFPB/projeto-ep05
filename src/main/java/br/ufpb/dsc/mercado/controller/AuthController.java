@@ -33,6 +33,11 @@ public class AuthController {
         return "auth/login";
     }
 
+    @GetMapping("/cadastro")
+    public String cadastro() {
+        return "auth/cadastro";
+    }
+
     /**
      * Rota raiz "/" — redireciona para o painel correto conforme o papel do usuário.
      * Evita o erro "No static resource ." quando o Spring Security tenta redirecionar

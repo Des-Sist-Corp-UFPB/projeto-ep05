@@ -1,17 +1,20 @@
 package br.ufpb.dsc.mercado.controller;
 
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import br.ufpb.dsc.mercado.config.TokenProvider;
-import br.ufpb.dsc.mercado.domain.Papel;
 import br.ufpb.dsc.mercado.domain.StatusUsuario;
 import br.ufpb.dsc.mercado.domain.Usuario;
-import br.ufpb.dsc.mercado.dto.CadastroRequest;
+import br.ufpb.dsc.mercado.dto.CadastroClienteRequest;
 import br.ufpb.dsc.mercado.dto.LoginRequest;
 import br.ufpb.dsc.mercado.dto.LoginResponse;
 import br.ufpb.dsc.mercado.service.UsuarioService;
 import jakarta.validation.Valid;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -31,26 +34,19 @@ public class AuthRestController {
     }
 
     @PostMapping("/cadastro")
-    public ResponseEntity<?> cadastrar(@Valid @RequestBody CadastroRequest request) {
+    public ResponseEntity<?> cadastrar(@Valid @RequestBody CadastroClienteRequest request) {
         try {
-            // Força o papel como CLIENTE para cadastro público via API
-            CadastroRequest requestCliente = new CadastroRequest(
-                    request.nome(),
-                    request.email(),
-                    request.senha(),
-                    Papel.CLIENTE
-            );
-            Usuario usuario = usuarioService.cadastrar(requestCliente);
+            Usuario usuario = usuarioService.cadastrarCliente(request);
             return ResponseEntity.ok(new LoginResponse(
-                    tokenProvider.gerarToken(usuario.getEmail(), usuario.getPapel().name()),
-                    usuario.getEmail(),
-                    usuario.getNome(),
-                    usuario.getPapel()
-            ));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+                tokenProvider.gerarToken(usuario.getEmail(), usuario.getPapel().name()),
+                usuario.getEmail(),
+                usuario.getNome(),
+                usuario.getPapel()
+        ));
+    } catch (IllegalArgumentException e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
     }
+}
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
