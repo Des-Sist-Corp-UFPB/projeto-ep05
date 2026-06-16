@@ -33,9 +33,9 @@
                       th:attr="
                         hx-post=${produto == null ? '/produtos' : null},
                         hx-put=${produto != null ? '/produtos/' + produto.id : null},
-                        hx-target=${produto == null ? '#cards-produtos' : '#produto-' + produto.id},
+                        hx-target=${produto == null ? '#lista-produtos' : '#produto-' + produto.id},
                         hx-swap=${produto == null ? 'beforeend' : 'outerHTML'}"
-                    hx-on--after-request="if(event.detail.successful) { bootstrap.Modal.getInstance(document.getElementById('produtoModal')).hide(); }">
+                      hx-on--after-request="if(event.detail.successful) { bootstrap.Modal.getInstance(document.getElementById('produtoModal')).hide(); }">
 
                     <div class="modal-body">
 

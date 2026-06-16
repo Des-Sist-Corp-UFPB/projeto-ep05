@@ -52,9 +52,6 @@ public class PedidoService {
     public BigDecimal calcularFaturamentoTotal() {
         return pedidoRepository.somarFaturamentoTotal();
     }
-    public long contarTodos(){
-        return pedidoRepository.count();
-    }
 
     public Page<Pedido> listarTodos(Pageable pageable) {
         return pedidoRepository.findAllByOrderByCriadoEmDesc(pageable);

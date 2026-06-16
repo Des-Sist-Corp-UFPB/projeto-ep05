@@ -11,161 +11,141 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
+/**
+ * Controller de cliente refatorado.
+ *
+ * MUDANÇAS:
+ * ─────────
+ * 1. Removidos try/catch manuais em todos os métodos.
+ *    Exceções ApiException são capturadas pelo GlobalExceptionHandler, que
+ *    retorna o JSON de erro padronizado automaticamente.
+ *
+ * 2. PerfilUpdateRequest movido para DTO próprio (ver abaixo) em vez de record
+ *    interno no controller, facilitando reutilização e testes unitários.
+ *
+ * 3. Mapeamento de entidade → DTO extraído para métodos privados (toDTO),
+ *    evitando repetição e facilitando futura extração para um mapper.
+ */
 @RestController
 @RequestMapping("/api/clientes")
 public class ClienteRestController {
 
     private final UsuarioService usuarioService;
 
-    @SuppressWarnings("EI_EXPOSE_REP2") // Beans Spring são singletons gerenciados pelo container
+    @SuppressWarnings("EI_EXPOSE_REP2")
     public ClienteRestController(UsuarioService usuarioService) {
         this.usuarioService = usuarioService;
     }
+
+    // ── Perfil ────────────────────────────────────────────────────────────────
+
+    @GetMapping("/perfil")
+    public ResponseEntity<CadastroRequest> obterPerfil() {
+        Usuario usuario = obterUsuarioLogado();
+        return ResponseEntity.ok(toPerfilDTO(usuario));
+    }
+
+    @PutMapping("/perfil")
+    public ResponseEntity<CadastroRequest> atualizarPerfil(
+            @RequestBody PerfilUpdateRequest request) {
+
+        Usuario usuario = obterUsuarioLogado();
+        Usuario atualizado = usuarioService.atualizarPerfil(
+                usuario.getId(),
+                request.nome(),
+                request.email(),
+                request.senhaAtual(),
+                request.novaSenha()
+        );
+        return ResponseEntity.ok(toPerfilDTO(atualizado));
+    }
+
+    @DeleteMapping("/perfil")
+    public ResponseEntity<Void> excluirConta() {
+        Usuario usuario = obterUsuarioLogado();
+        usuarioService.excluirConta(usuario.getId());
+        return ResponseEntity.ok().build();
+    }
+
+    // ── Endereços ─────────────────────────────────────────────────────────────
+
+    @GetMapping("/enderecos")
+    public ResponseEntity<List<EnderecoDTO>> listarEnderecos() {
+        Usuario usuario = obterUsuarioLogado();
+        List<EnderecoDTO> dtos = usuarioService.listarEnderecos(usuario.getId())
+                .stream().map(this::toEnderecoDTO).toList();
+        return ResponseEntity.ok(dtos);
+    }
+
+    @PostMapping("/enderecos")
+    public ResponseEntity<EnderecoDTO> cadastrarEndereco(
+            @Valid @RequestBody EnderecoDTO request) {
+
+        Usuario usuario = obterUsuarioLogado();
+        Endereco e = usuarioService.cadastrarEndereco(usuario.getId(), request);
+        return ResponseEntity.ok(toEnderecoDTO(e));
+    }
+
+    @DeleteMapping("/enderecos/{id}")
+    public ResponseEntity<Void> removerEndereco(@PathVariable Long id) {
+        Usuario usuario = obterUsuarioLogado();
+        usuarioService.removerEndereco(usuario.getId(), id);
+        return ResponseEntity.ok().build();
+    }
+
+    // ── Cartões ───────────────────────────────────────────────────────────────
+
+    @GetMapping("/cartoes")
+    public ResponseEntity<List<CartaoDTO>> listarCartoes() {
+        Usuario usuario = obterUsuarioLogado();
+        List<CartaoDTO> dtos = usuarioService.listarCartoes(usuario.getId())
+                .stream().map(this::toCartaoDTO).toList();
+        return ResponseEntity.ok(dtos);
+    }
+
+    @PostMapping("/cartoes")
+    public ResponseEntity<CartaoDTO> cadastrarCartao(
+            @Valid @RequestBody CartaoSalvarDTO request) {
+
+        Usuario usuario = obterUsuarioLogado();
+        Cartao c = usuarioService.cadastrarCartao(usuario.getId(), request);
+        return ResponseEntity.ok(toCartaoDTO(c));
+    }
+
+    @DeleteMapping("/cartoes/{id}")
+    public ResponseEntity<Void> removerCartao(@PathVariable Long id) {
+        Usuario usuario = obterUsuarioLogado();
+        usuarioService.removerCartao(usuario.getId(), id);
+        return ResponseEntity.ok().build();
+    }
+
+    // ── Utilitários ──────────────────────────────────────────────────────────
 
     private Usuario obterUsuarioLogado() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return usuarioService.buscarPorEmail(email);
     }
 
-    @GetMapping("/perfil")
-    public ResponseEntity<?> obterPerfil() {
-        Usuario usuario = obterUsuarioLogado();
-        return ResponseEntity.ok(new CadastroRequest(
-                usuario.getNome(),
-                usuario.getEmail(),
-                null,
-                usuario.getPapel()
-        ));
+    private CadastroRequest toPerfilDTO(Usuario u) {
+        return new CadastroRequest(u.getNome(), u.getEmail(), null, u.getPapel());
     }
 
-    @PutMapping("/perfil")
-    public ResponseEntity<?> atualizarPerfil(@RequestBody PerfilUpdateRequest request) {
-        try {
-            Usuario usuario = obterUsuarioLogado();
-            Usuario atualizado = usuarioService.atualizarPerfil(
-                    usuario.getId(),
-                    request.nome(),
-                    request.email(),
-                    request.senhaAtual(),
-                    request.novaSenha()
-            );
-            return ResponseEntity.ok(new CadastroRequest(
-                    atualizado.getNome(),
-                    atualizado.getEmail(),
-                    null,
-                    atualizado.getPapel()
-            ));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    private EnderecoDTO toEnderecoDTO(Endereco e) {
+        return new EnderecoDTO(
+                e.getId(), e.getLogradouro(), e.getNumero(), e.getComplemento(),
+                e.getBairro(), e.getCidade(), e.getEstado(), e.getCep(), e.getPrincipal()
+        );
     }
 
-    @DeleteMapping("/perfil")
-    public ResponseEntity<?> excluirConta() {
-        Usuario usuario = obterUsuarioLogado();
-        usuarioService.excluirConta(usuario.getId());
-        return ResponseEntity.ok().build();
+    private CartaoDTO toCartaoDTO(Cartao c) {
+        return new CartaoDTO(
+                c.getId(), c.getNomeTitular(), c.getBandeira(),
+                c.getQuatroUltimosDigitos(), c.getDataExpiracao()
+        );
     }
 
-    // === ENDEREÇOS ===
-    @GetMapping("/enderecos")
-    public ResponseEntity<List<EnderecoDTO>> listarEnderecos() {
-        Usuario usuario = obterUsuarioLogado();
-        List<EnderecoDTO> dtos = usuarioService.listarEnderecos(usuario.getId()).stream()
-                .map(e -> new EnderecoDTO(
-                        e.getId(),
-                        e.getLogradouro(),
-                        e.getNumero(),
-                        e.getComplemento(),
-                        e.getBairro(),
-                        e.getCidade(),
-                        e.getEstado(),
-                        e.getCep(),
-                        e.getPrincipal()
-                ))
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(dtos);
-    }
-
-    @PostMapping("/enderecos")
-    public ResponseEntity<?> cadastrarEndereco(@Valid @RequestBody EnderecoDTO request) {
-        try {
-            Usuario usuario = obterUsuarioLogado();
-            Endereco e = usuarioService.cadastrarEndereco(usuario.getId(), request);
-            return ResponseEntity.ok(new EnderecoDTO(
-                    e.getId(),
-                    e.getLogradouro(),
-                    e.getNumero(),
-                    e.getComplemento(),
-                    e.getBairro(),
-                    e.getCidade(),
-                    e.getEstado(),
-                    e.getCep(),
-                    e.getPrincipal()
-            ));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
-    @DeleteMapping("/enderecos/{id}")
-    public ResponseEntity<?> removerEndereco(@PathVariable Long id) {
-        try {
-            Usuario usuario = obterUsuarioLogado();
-            usuarioService.removerEndereco(usuario.getId(), id);
-            return ResponseEntity.ok().build();
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
-    // === CARTÕES ===
-    @GetMapping("/cartoes")
-    public ResponseEntity<List<CartaoDTO>> listarCartoes() {
-        Usuario usuario = obterUsuarioLogado();
-        List<CartaoDTO> dtos = usuarioService.listarCartoes(usuario.getId()).stream()
-                .map(c -> new CartaoDTO(
-                        c.getId(),
-                        c.getNomeTitular(),
-                        c.getBandeira(),
-                        c.getQuatroUltimosDigitos(),
-                        c.getDataExpiracao()
-                ))
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(dtos);
-    }
-
-    @PostMapping("/cartoes")
-    public ResponseEntity<?> cadastrarCartao(@Valid @RequestBody CartaoSalvarDTO request) {
-        try {
-            Usuario usuario = obterUsuarioLogado();
-            Cartao c = usuarioService.cadastrarCartao(usuario.getId(), request);
-            return ResponseEntity.ok(new CartaoDTO(
-                    c.getId(),
-                    c.getNomeTitular(),
-                    c.getBandeira(),
-                    c.getQuatroUltimosDigitos(),
-                    c.getDataExpiracao()
-            ));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
-    @DeleteMapping("/cartoes/{id}")
-    public ResponseEntity<?> removerCartao(@PathVariable Long id) {
-        try {
-            Usuario usuario = obterUsuarioLogado();
-            usuarioService.removerCartao(usuario.getId(), id);
-            return ResponseEntity.ok().build();
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
-    // Record para atualização de perfil
+    // ── DTO interno para atualização de perfil ────────────────────────────────
     public record PerfilUpdateRequest(
             String nome,
             String email,

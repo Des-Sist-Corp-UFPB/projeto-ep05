@@ -21,8 +21,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import br.ufpb.dsc.mercado.domain.Papel;
 import br.ufpb.dsc.mercado.domain.Usuario;
 import br.ufpb.dsc.mercado.dto.CadastroRequest;
+import br.ufpb.dsc.mercado.repository.PedidoRepository;
+import br.ufpb.dsc.mercado.repository.ProdutoRepository;
 import br.ufpb.dsc.mercado.service.PedidoService;
-import br.ufpb.dsc.mercado.service.ProdutoService;
 import br.ufpb.dsc.mercado.service.UsuarioService;
 import jakarta.validation.Valid;
 
@@ -32,15 +33,18 @@ public class SysAdminController {
 
     private static final String HEADER_HTMX = "HX-Request";
     private final UsuarioService usuarioService;
-    private final ProdutoService produtoService;
+    private final ProdutoRepository produtoRepository;
+    private final PedidoRepository pedidoRepository;
     private final PedidoService pedidoService;
 
     @SuppressWarnings("EI_EXPOSE_REP2") // Beans Spring são singletons gerenciados pelo container
     public SysAdminController(UsuarioService usuarioService,
-                              ProdutoService produtoService,
+                              ProdutoRepository produtoRepository,
+                              PedidoRepository pedidoRepository,
                               PedidoService pedidoService) {
         this.usuarioService = usuarioService;
-        this.produtoService = produtoService;
+        this.produtoRepository = produtoRepository;
+        this.pedidoRepository = pedidoRepository;
         this.pedidoService = pedidoService;
     }
 
@@ -48,8 +52,8 @@ public class SysAdminController {
 
     @GetMapping("/dashboard")
 public String dashboard(Model model) {
-    model.addAttribute("totalProdutos", produtoService.contarTodos());
-    model.addAttribute("totalPedidos", pedidoService.contarTodos());
+    model.addAttribute("totalProdutos", produtoRepository.count());
+    model.addAttribute("totalPedidos", pedidoRepository.count());
     model.addAttribute("totalClientes", usuarioService.listarTodosPorPapel(Papel.CLIENTE).size());
     model.addAttribute("totalAdmins", usuarioService.listarTodosPorPapel(Papel.ADMIN).size());
     model.addAttribute("faturamentoTotal", pedidoService.calcularFaturamentoTotal());

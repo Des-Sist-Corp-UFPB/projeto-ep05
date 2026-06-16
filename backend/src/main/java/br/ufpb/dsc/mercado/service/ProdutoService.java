@@ -1,15 +1,5 @@
 package br.ufpb.dsc.mercado.service;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
-
 import br.ufpb.dsc.mercado.domain.Categoria;
 import br.ufpb.dsc.mercado.domain.Produto;
 import br.ufpb.dsc.mercado.domain.ProdutoImagem;
@@ -18,6 +8,16 @@ import br.ufpb.dsc.mercado.dto.ProdutoForm;
 import br.ufpb.dsc.mercado.exception.ProdutoNaoEncontradoException;
 import br.ufpb.dsc.mercado.repository.CategoriaRepository;
 import br.ufpb.dsc.mercado.repository.ProdutoRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -60,9 +60,6 @@ public class ProdutoService {
     public Produto buscarPorId(Long id) {
         return produtoRepository.findById(id)
                 .orElseThrow(() -> new ProdutoNaoEncontradoException(id));
-    }
-    public long contarTodos(){
-        return produtoRepository.count();
     }
 
     @Transactional
