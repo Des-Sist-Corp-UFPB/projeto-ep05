@@ -75,22 +75,26 @@ export const AuthProvider = ({ children }) => {
   }, [persistirUsuario]);
 
   const register = useCallback(async (newUser) => {
-    try {
-      const data = await apiFetch("/auth/cadastro", {
-        method: "POST",
-        body: JSON.stringify({
-          nome: newUser.nome,
-          email: newUser.email,
-          senha: newUser.senha,
-          papel: "CLIENTE",
-        }),
-      });
-      persistirUsuario(data);
-      return { success: true };
-    } catch (err) {
-      return { success: false, message: err.mensagem ?? "Erro ao cadastrar" };
-    }
-  }, [persistirUsuario]);
+  try {
+    const data = await apiFetch("/auth/cadastro", {
+      method: "POST",
+      body: JSON.stringify({
+        nome: newUser.nome,
+        sobrenome: newUser.sobrenome,
+        email: newUser.email,
+        cpf: newUser.cpf,
+        telefone: newUser.telefone,
+        dataNascimento: newUser.dataNascimento,
+        senha: newUser.senha,
+        confirmacaoSenha: newUser.confirmarSenha,
+      }),
+    });
+    persistirUsuario(data);
+    return { success: true };
+  } catch (err) {
+    return { success: false, message: err.mensagem ?? "Erro ao cadastrar" };
+  }
+}, [persistirUsuario]);
 
   const logout = useCallback(() => {
     setUser(null);

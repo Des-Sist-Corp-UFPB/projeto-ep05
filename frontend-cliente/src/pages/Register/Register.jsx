@@ -24,20 +24,47 @@ const Register = () => {
   const navigate = useNavigate();
   const { register } = useAuth();
 
-  const [form, setForm] = useState({ nome: "", email: "", senha: "", confirmarSenha: "" });
+  const [form, setForm] = useState({ 
+    nome: "",
+    sobrenome: "",
+    email: "",
+    cpf: "",
+    telefone: "", 
+    senha: "",
+    confirmarSenha: ""
+  });
   const [erros, setErros] = useState({});
   const [erroGeral, setErroGeral] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    const novosDados = { ...form, [name]: value };
-    setForm(novosDados);
-    // Valida o campo em tempo real
-    const errosCampo = validarCampo(name, novosDados);
-    setErros((prev) => ({ ...prev, [name]: errosCampo }));
-    if (erroGeral) setErroGeral("");
-  };
+    const handleChange = (e) => {
+      const { name } = e.target;
+      let { value } = e.target;
+
+      if (name === "cpf") {
+        value = value.replace(/\D/g, "").substring(0, 11);
+        value = value.replace(/(\d{3})(\d)/, "$1.$2");
+        value = value.replace(/(\d{3})(\d)/, "$1.$2");
+        value = value.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+      }
+
+      if (name === "telefone") {
+        value = value.replace(/\D/g, "").substring(0, 11);
+        if (value.length <= 10) {
+          value = value.replace(/(\d{2})(\d)/, "($1) $2");
+          value = value.replace(/(\d{4})(\d)/, "$1-$2");
+        } else {
+          value = value.replace(/(\d{2})(\d)/, "($1) $2");
+          value = value.replace(/(\d{5})(\d)/, "$1-$2");
+        }
+      }
+
+      const novosDados = { ...form, [name]: value };
+      setForm(novosDados);
+      const errosCampo = validarCampo(name, novosDados);
+      setErros((prev) => ({ ...prev, [name]: errosCampo }));
+      if (erroGeral) setErroGeral("");
+    };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -67,10 +94,16 @@ const Register = () => {
         <LayoutStripes image={Logo} title="Cadastro">
           <form className="register-form-grid" onSubmit={handleSubmit}>
             <Input
-              id="nome" label="Nome completo" name="nome" type="text"
+              id="nome" label="Nome" name="nome" type="text"
               value={form.nome} onChange={handleChange}
-              placeholder="Seu nome completo" erro={erros.nome}
-              autoComplete="name"
+              placeholder="Seu primeiro nome" erro={erros.nome}
+              autoComplete="given-name"
+            />
+            <Input
+              id="sobrenome" label="Sobrenome" name="sobrenome" type="text"
+              value={form.sobrenome} onChange={handleChange}
+              placeholder="Seu sobrenome" erro={erros.sobrenome}
+              autoComplete="family-name"
             />
             <Input
               id="email" name="email" label="E-mail" type="email"
@@ -79,9 +112,26 @@ const Register = () => {
               autoComplete="email"
             />
             <Input
+              id="cpf" name="cpf" label="CPF" type="text"
+              value={form.cpf} onChange={handleChange}
+              placeholder="000.000.000-00" erro={erros.cpf}
+              autoComplete="off"
+            />
+            <Input
+              id="telefone" name="telefone" label="Telefone" type="tel"
+              value={form.telefone} onChange={handleChange}
+              placeholder="(00) 00000-0000" erro={erros.telefone}
+              autoComplete="tel"
+            />
+            <Input
+              id="dataNascimento" name="dataNascimento" label="Data de nascimento" type="date"
+              value={form.dataNascimento} onChange={handleChange}
+              erro={erros.dataNascimento}
+            />
+            <Input
               id="senha" name="senha" label="Senha" type="password"
               value={form.senha} onChange={handleChange}
-              placeholder="Mínimo 6 caracteres" erro={erros.senha}
+              placeholder="Mínimo 8 caracteres" erro={erros.senha}
               autoComplete="new-password"
             />
             <Input
