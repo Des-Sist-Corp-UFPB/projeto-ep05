@@ -1,0 +1,55 @@
+/* ================= FORM ================= */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 480px;
+}
+
+/* ================= ERRO ================= */
+.login-erro {
+  color: #c0392b;
+  font-size: var(--font-sm);
+  background: #fdecea;
+  border: 1px solid #f5c6cb;
+  border-radius: var(--radius-sm);
+  padding: var(--esp-xs) var(--esp-sm);
+  width: 100%;
+  text-align: center;
+  margin-top: var(--esp-xs);
+}
+
+/* ================= BOTÃO ================= */
+.login-button {
+  margin-top: 1rem;
+}
+
+/* ================= TEXTO ================= */
+.login-text {
+  font-size: var(--font-sm);
+  color: var(--cor-texto);
+  margin-top: 0.75rem;
+  text-align: center;
+}
+
+/* ================= LINK ================= */
+.login-link {
+  color: var(--cor-botao);
+  font-weight: var(--peso-medio);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.login-link:hover {
+  filter: brightness(0.85);
+  text-decoration: underline;
+}
+
+/* ================= RESPONSIVO ================= */
+@media (max-width: 768px) {
+  .login-logo {
+    width: 220px;
+    height: 220px;
+  }
+}

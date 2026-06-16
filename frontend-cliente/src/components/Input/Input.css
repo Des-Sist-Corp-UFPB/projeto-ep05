@@ -1,0 +1,57 @@
+/* Input.css */
+.input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-xxs);
+  margin: 6px ;
+  width: 100%;
+  max-width: 300px;
+  justify-content: center;
+  
+  
+  
+  
+}
+
+.input-label {
+  font-size: var(--font-md);
+  font-weight: var(--peso-medio);
+  color: var(--cor-texto);
+  padding: 0 5px;
+
+ 
+  
+}
+
+.input-field {
+  height: var(--altura-input);
+  padding: 0 var(--esp-xs);
+  font-size: var(--font-md);
+  font-family: var(--fonte-primaria);
+  color: var(--cor-texto);
+  border: 1px solid #575454;
+  border-radius: var(--radius-sm);
+  background-color: var(--cor-detalhe);
+  transition: border 0.2s;
+  
+ 
+
+
+   
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--cor-botao);
+  box-shadow: var(--shadow-sm);
+}
+
+.input-error {
+  border: 2px solid red;
+}
+
+.error-message {
+  color: red;
+  font-size: 12px;
+  margin-top: 4px;
+}
