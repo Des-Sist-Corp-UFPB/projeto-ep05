@@ -1,0 +1,73 @@
+/* Checkout.css */
+
+.checkout-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: var(--esp-xl);
+    height: 100vh;
+    background-color: var(--cor-fundo);
+}
+
+.checkout-card {
+    background-color: var(--cor-detalhe);
+    width: 100%;
+    max-width: 450px;
+    max-height: 90vh;
+    padding: var(--esp-xl);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--cor-detalhe-2);
+}
+
+.checkout-card h1 {
+    color: var(--cor-secundaria);
+    font-size: var(--font-xl);
+    text-align: center;
+    margin-bottom: var(--esp-sm);
+}
+
+.checkout-total {
+    text-align: center;
+    color: var(--cor-texto-3);
+    background-color: var(--cor-detalhe-2);
+    padding: var(--esp-sm);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--esp-lg);
+    font-weight: var(--peso-bold);
+}
+
+.checkout-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--esp-md);
+    align-items: center;
+    
+}
+
+/* Grid para Validade e CVV ficarem na mesma linha */
+.input-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--esp-md);
+     
+
+}
+
+/* Estilo para o botão desabilitado */
+button:disabled {
+    filter: grayscale(1);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* Reaproveitando os estilos de sucesso que fizemos */
+.payment-success {
+    text-align: center;
+    padding: var(--esp-xxl) 0;
+}
+
+.payment-success h1 {
+    color: var(--cor-botao-secundario);
+    margin-bottom: var(--esp-md);
+}
