@@ -103,17 +103,17 @@ public class UsuarioService {
         return usuarioRepository.save(usuario);
     }
 
-    @Transactional
-    public Usuario cadastrarCliente(CadastroClienteRequest request) {
-        if (usuarioRepository.existsByEmail(request.email())) {
-            throw new IllegalArgumentException("Já existe uma conta com este e-mail");
-        }
-        if (usuarioRepository.existsByCpf(request.cpf())) {
-            throw new IllegalArgumentException("Já existe uma conta com este CPF");
-        }
-        if (!request.senhasConferem()) {
-            throw new IllegalArgumentException("As senhas não conferem");
-        }
+        @Transactional
+        public Usuario cadastrarCliente(CadastroClienteRequest request) {
+            if (usuarioRepository.existsByEmail(request.email())) {
+                throw ApiException.conflito("Já existe uma conta com este e-mail");
+            }
+            if (usuarioRepository.existsByCpf(request.cpf())) {
+                throw ApiException.conflito("Já existe uma conta com este CPF");
+            }
+            if (!request.senhasConferem()) {
+                throw ApiException.requisicaoInvalida("As senhas não conferem");
+            }
         Usuario usuario = new Usuario(
                 request.nome() + " " + request.sobrenome(),
                 request.email(),
