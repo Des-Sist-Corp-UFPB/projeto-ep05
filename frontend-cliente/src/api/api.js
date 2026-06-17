@@ -13,7 +13,10 @@
  * 3. BASE_URL exportada por nome para facilitar mocks em testes.
  */
 
-export const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8080/api";
+// Em dev, o Vite usa o proxy configurado em vite.config.js (porta 5173 → 8080).
+// Em produção (Docker + Nginx), a URL é relativa — o Nginx roteia /api/* para o backend.
+// VITE_API_URL pode sobrescrever nos dois casos via variável de ambiente de build.
+export const BASE_URL = import.meta.env.VITE_API_URL ?? "/api";
 
 // ── Token ─────────────────────────────────────────────────────────────────────
 
