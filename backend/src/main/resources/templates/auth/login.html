@@ -203,7 +203,7 @@
 
             <p class="text-center mb-4" style="color: var(--cor-texto-3); font-weight: 500;">Acesse sua conta</p>
 
-            <form th:action="@{/login}" method="post">
+            <form th:action="@{/admin/login}" method="post">
 
                 <div class="mb-3">
                     <label for="username" class="form-label">Usuário</label>
@@ -256,7 +256,7 @@
         <!-- Footer do card -->
         <div class="login-footer">
             Não tem uma conta?
-            <a th:href="@{/cadastro}" style="color: var(--cor-botao); font-weight: 600; text-decoration: none;">
+            <a th:href="@{/admin/cadastro}" style="color: var(--cor-botao); font-weight: 600; text-decoration: none;">
                 Cadastre-se
             </a>
             &nbsp;|&nbsp; 🍬 Sweet Delights &copy; 2026 &nbsp;|&nbsp; UFPB Campus IV

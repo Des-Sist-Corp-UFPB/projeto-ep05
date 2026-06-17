@@ -70,7 +70,7 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         // Recursos estáticos e login público
-                        .requestMatchers("/webjars/**", "/css/**", "/js/**","/assets/**", "/actuator/health", "/login", "/cadastro", "/","/ping").permitAll()
+                        .requestMatchers("/webjars/**", "/css/**", "/js/**","/assets/**", "/actuator/health", "/admin/login", "/admin/cadastro", "/","/ping").permitAll()
                         // SysAdmin
                         .requestMatchers("/sysadmin/**").hasRole("SYSADMIN")
                         // Admin
@@ -79,7 +79,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
-                        .loginPage("/login")
+                        .loginPage("/admin/login")
                         // Redireciona dinamicamente pós-login baseado na role do usuário
                         .successHandler((request, response, authentication) -> {
                             var authorities = authentication.getAuthorities();
@@ -94,13 +94,13 @@ public class SecurityConfig {
                         .permitAll()
                 )
                 .logout(logout -> logout
-                        .logoutSuccessUrl("/login?logout")
+                        .logoutSuccessUrl("/admin/login?logout")
                         .permitAll()
                 )
                 .csrf(csrf -> csrf
                         // Desabilita apenas para requisições de produtos HTMX para simplificação educacional
                         // Em produção, deve-se passar o header X-CSRF-Token no HTMX
-                        .ignoringRequestMatchers("/produtos/**", "/admin/**", "/sysadmin/**", "/cadastro")
+                        .ignoringRequestMatchers("/produtos/**", "/admin/**", "/sysadmin/**", "/admin/cadastro")
                 );
 
         return http.build();

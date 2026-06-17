@@ -199,7 +199,7 @@
                 Preencha os dados abaixo para criar sua conta
             </p>
 
-            <form th:action="@{/cadastro}" method="post">
+            <form th:action="@{/admin/cadastro}" method="post">
 
                 <!-- SEÇÃO: DADOS PESSOAIS -->
                 <div class="secao-titulo">👤 Dados Pessoais</div>
@@ -362,7 +362,7 @@
 
                 <p class="text-center mb-0" style="font-size: 0.9rem; color: var(--cor-texto-3);">
                     Já tem uma conta?
-                    <a th:href="@{/login}" class="link-login">Fazer login</a>
+                    <a th:href="@{/admin/login}" class="link-login">Fazer login</a>
                 </p>
 
             </form>
