@@ -1,30 +1,21 @@
 # =============================================================================
 # Docker Compose — PRODUÇÃO
-# Serviços: PostgreSQL · Backend Spring Boot · Frontend React (Nginx)
-# =============================================================================
+# Serviços: PostgreSQL · Backend Spring Boot · Frontend React · Nginx (proxy)
 #
-# VARIÁVEIS DE AMBIENTE — arquivo .env na raiz do projeto no servidor:
+# ARQUITETURA:
+#   Nginx (porta 80) → roteia por caminho:
+#     /api/*, /admin/*, /sysadmin/*, /produtos/*, /login, /cadastro → app:8080
+#     /* → frontend:3000
 #
-#   APP_IMAGE=ghcr.io/usuario/mercado:latest
-#   FRONTEND_IMAGE=ghcr.io/usuario/mercado-frontend:latest
+# VARIÁVEIS DE AMBIENTE — arquivo .env no servidor:
+#   APP_IMAGE=ghcr.io/usuario/repo:latest
+#   FRONTEND_IMAGE=ghcr.io/usuario/repo-frontend:latest
+#   NGINX_IMAGE=ghcr.io/usuario/repo-nginx:latest
 #   DATABASE_URL=jdbc:postgresql://postgres:5432/mercado_prod
 #   DATABASE_USERNAME=mercado
 #   DATABASE_PASSWORD=<senha-forte>
 #   APP_JWT_SECRET=<segredo-jwt>
 #   APP_SEED_ADMIN_PASSWORD=<senha-admin>
-#
-# PORTAS EXPOSTAS:
-#   - 80   → Frontend React (Nginx) — acesso público
-#   - 8080 → Backend Spring Boot    — acesso interno (ou público se não usar Nginx proxy)
-#
-# PRIMEIRA EXECUÇÃO:
-#   docker compose -f backend/docker/docker-compose.prod.yml up -d postgres
-#   # Aguardar ~10s e depois:
-#   docker compose -f backend/docker/docker-compose.prod.yml up -d
-#
-# ATUALIZAÇÕES (feitas automaticamente pelo GitHub Actions):
-#   docker compose -f backend/docker/docker-compose.prod.yml up -d --no-deps --force-recreate app frontend
-#
 # =============================================================================
 
 services:
@@ -54,7 +45,7 @@ services:
       - mercado-net
 
   # ---------------------------------------------------------------------------
-  # Backend Spring Boot
+  # Backend Spring Boot — interno, sem porta exposta ao host
   # ---------------------------------------------------------------------------
   app:
     image: ${APP_IMAGE}
@@ -65,8 +56,8 @@ services:
       DATABASE_PASSWORD: ${DATABASE_PASSWORD}
       APP_JWT_SECRET: ${APP_JWT_SECRET}
       APP_SEED_ADMIN_PASSWORD: ${APP_SEED_ADMIN_PASSWORD}
-    ports:
-      - "8080:8080"
+    expose:
+      - "8080"
     depends_on:
       postgres:
         condition: service_healthy
@@ -81,22 +72,39 @@ services:
       - mercado-net
 
   # ---------------------------------------------------------------------------
-  # Frontend React — Nginx servindo os estáticos + proxy para a API
+  # Frontend React — interno, sem porta exposta ao host
   # ---------------------------------------------------------------------------
   frontend:
     image: ${FRONTEND_IMAGE}
     container_name: mercado-frontend-prod
+    expose:
+      - "3000"
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:80/index.html || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+    networks:
+      - mercado-net
+
+  # ---------------------------------------------------------------------------
+  # Nginx — proxy reverso central, única porta exposta (80)
+  # ---------------------------------------------------------------------------
+  nginx:
+    image: ${NGINX_IMAGE}
+    container_name: mercado-nginx-prod
     ports:
       - "80:80"
     depends_on:
       app:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost/index.html || exit 1"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 15s
+      frontend:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - mercado-net
