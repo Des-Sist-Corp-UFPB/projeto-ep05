@@ -1,26 +1,29 @@
 # =============================================================================
 # Docker Compose — PRODUÇÃO
+# Serviços: PostgreSQL · Backend Spring Boot · Frontend React (Nginx)
 # =============================================================================
 #
-# Em produção, a imagem Docker é construída pelo GitHub Actions e publicada
-# no GHCR (GitHub Container Registry). Este arquivo usa a imagem pré-construída
-# em vez de buildar no servidor — mais seguro, rápido e rastreável.
+# VARIÁVEIS DE AMBIENTE — arquivo .env na raiz do projeto no servidor:
 #
-# CONFIGURAÇÃO — arquivo .env.dev na raiz do projeto no servidor:
-#
-#   APP_IMAGE=ghcr.io/usuario/mercado:latest   ← atualizado automaticamente pelo CI/CD
+#   APP_IMAGE=ghcr.io/usuario/mercado:latest
+#   FRONTEND_IMAGE=ghcr.io/usuario/mercado-frontend:latest
 #   DATABASE_URL=jdbc:postgresql://postgres:5432/mercado_prod
 #   DATABASE_USERNAME=mercado
-#   DATABASE_PASSWORD=<senha-forte-aqui>
+#   DATABASE_PASSWORD=<senha-forte>
+#   APP_JWT_SECRET=<segredo-jwt>
+#   APP_SEED_ADMIN_PASSWORD=<senha-admin>
 #
-# PRIMEIRA EXECUÇÃO (banco de dados):
-#   docker compose -f docker/docker-compose.prod.yml up -d postgres
-#   # Aguardar o banco inicializar (~10s) e depois subir a aplicação:
-#   docker compose -f docker/docker-compose.prod.yml up -d app
+# PORTAS EXPOSTAS:
+#   - 80   → Frontend React (Nginx) — acesso público
+#   - 8080 → Backend Spring Boot    — acesso interno (ou público se não usar Nginx proxy)
 #
-# ATUALIZAÇÕES subsequentes (feitas automaticamente pelo GitHub Actions):
-#   APP_IMAGE=ghcr.io/usuario/mercado:latest \
-#   docker compose -f docker/docker-compose.prod.yml up -d --no-deps --force-recreate app
+# PRIMEIRA EXECUÇÃO:
+#   docker compose -f backend/docker/docker-compose.prod.yml up -d postgres
+#   # Aguardar ~10s e depois:
+#   docker compose -f backend/docker/docker-compose.prod.yml up -d
+#
+# ATUALIZAÇÕES (feitas automaticamente pelo GitHub Actions):
+#   docker compose -f backend/docker/docker-compose.prod.yml up -d --no-deps --force-recreate app frontend
 #
 # =============================================================================
 
@@ -37,11 +40,7 @@ services:
       POSTGRES_USER: ${DATABASE_USERNAME}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
     volumes:
-      # Volume nomeado — persiste os dados mesmo se o container for recriado.
-      # NUNCA use bind mount (./data:...) em produção — dificulta backups e permissões.
       - postgres-prod-data:/var/lib/postgresql/data
-    # Em produção, NÃO exponha o banco diretamente para o host.
-    # O container da aplicação acessa via rede interna (mercado-net).
     expose:
       - "5432"
     healthcheck:
@@ -55,16 +54,9 @@ services:
       - mercado-net
 
   # ---------------------------------------------------------------------------
-  # Aplicação Spring Boot
-  #
-  # Usa a imagem pré-construída pelo CI/CD (GitHub Actions).
-  # A variável APP_IMAGE é atualizada automaticamente no .env.dev a cada deploy.
+  # Backend Spring Boot
   # ---------------------------------------------------------------------------
   app:
-    # ${APP_IMAGE} é definida no .env.dev e atualizada pelo script de deploy.
-    # Exemplo: ghcr.io/usuario/mercado:latest
-    # O CI/CD também usa tags com commit hash (ghcr.io/usuario/mercado:sha-a1b2c3d)
-    # para rastreabilidade — aqui usamos :latest que aponta para o build mais recente.
     image: ${APP_IMAGE}
     container_name: mercado-app-prod
     environment:
@@ -78,20 +70,38 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    # Healthcheck via Spring Actuator — o Docker considera o container saudável
-    # somente quando a aplicação estiver pronta para receber requisições.
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s    # Spring Boot precisa de até 60s para inicializar
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - mercado-net
+
+  # ---------------------------------------------------------------------------
+  # Frontend React — Nginx servindo os estáticos + proxy para a API
+  # ---------------------------------------------------------------------------
+  frontend:
+    image: ${FRONTEND_IMAGE}
+    container_name: mercado-frontend-prod
+    ports:
+      - "80:80"
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost/index.html || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     restart: unless-stopped
     networks:
       - mercado-net
 
 volumes:
-  # Volume nomeado — gerenciado pelo Docker, persistente entre deploys
   postgres-prod-data:
 
 networks:
