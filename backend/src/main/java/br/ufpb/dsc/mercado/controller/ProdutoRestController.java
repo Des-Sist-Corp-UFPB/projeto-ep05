@@ -1,24 +1,33 @@
 package br.ufpb.dsc.mercado.controller;
 
-import br.ufpb.dsc.mercado.domain.Avaliacao;
-import br.ufpb.dsc.mercado.domain.Categoria;
-import br.ufpb.dsc.mercado.domain.Produto;
-import br.ufpb.dsc.mercado.domain.Usuario;
-import br.ufpb.dsc.mercado.dto.*;
-import br.ufpb.dsc.mercado.service.AvaliacaoService;
-import br.ufpb.dsc.mercado.service.CategoriaService;
-import br.ufpb.dsc.mercado.service.ProdutoService;
-import br.ufpb.dsc.mercado.service.UsuarioService;
-import jakarta.validation.Valid;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import br.ufpb.dsc.mercado.domain.Avaliacao;
+import br.ufpb.dsc.mercado.domain.Produto;
+import br.ufpb.dsc.mercado.domain.Usuario;
+import br.ufpb.dsc.mercado.dto.AvaliacaoDTO;
+import br.ufpb.dsc.mercado.dto.AvaliacaoSalvarDTO;
+import br.ufpb.dsc.mercado.dto.CategoriaDTO;
+import br.ufpb.dsc.mercado.dto.ProdutoDTO;
+import br.ufpb.dsc.mercado.service.AvaliacaoService;
+import br.ufpb.dsc.mercado.service.CategoriaService;
+import br.ufpb.dsc.mercado.service.ProdutoService;
+import br.ufpb.dsc.mercado.service.UsuarioService;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/produtos")
@@ -82,7 +91,21 @@ public class ProdutoRestController {
                 .map(c -> new CategoriaDTO(c.getId(), c.getNome(), c.getDescricao()))
                 .collect(Collectors.toList());
         return ResponseEntity.ok(dtos);
+
     }
+    @GetMapping("/mais-vendidos")
+    public ResponseEntity<List<ProdutoDTO>> maisVendidos(
+            @RequestParam(defaultValue = "8") int quantidade) {
+        Page<Produto> produtos = produtoService.buscarMaisVendidos(
+                Pageable.ofSize(quantidade));
+        List<ProdutoDTO> dtos = produtos.getContent().stream()
+                .map(produtoService::converterParaDTO)
+                .toList();
+        return ResponseEntity.ok(dtos);
+    }
+
+
+
 
     // === AVALIAÇÕES ===
     @GetMapping("/{id}/avaliacoes")
