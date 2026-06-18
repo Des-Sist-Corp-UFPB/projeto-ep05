@@ -32,13 +32,7 @@ import br.ufpb.dsc.mercado.repository.UsuarioRepository;
  *    O GlobalExceptionHandler já captura ApiException e retorna o HTTP correto.
  *    Controllers deixam de ter try/catch manual.
  *
- * 2. Adicionado fluxo de recuperação de senha:
- *    - gerarTokenRecuperacao(email)  → retorna o token (dev) ou envia e-mail
- *    - redefinirSenha(token, nova)   → valida e salva nova senha
- *    Tokens são armazenados em memória com TTL de 30 min (adequado para MVP;
- *    em produção, persistir na tabela ou usar Redis).
- *
- * 3. Métodos de endereço e cartão continuam iguais, apenas exceções tipadas.
+ * 2. Métodos de endereço e cartão continuam iguais, apenas exceções tipadas.
  */
 @Service
 @Transactional(readOnly = true)
@@ -152,24 +146,6 @@ public class UsuarioService {
 
         return usuarioRepository.save(usuario);
     }
-
-    // ── Recuperação de senha ──────────────────────────────────────────────────
-
-    /**
-     * Gera um token de redefinição de senha para o e-mail informado.
-     *
-     * Retorna o token para facilitar testes em dev/educacional.
-     * Em produção, substituir pelo envio de e-mail (Spring Mail / SendGrid).
-     *
-     * Propositalmente não revela se o e-mail existe (resposta genérica)
-     * para não vazar dados de cadastro.
-     */
-
-    /**
-     * Valida o token e redefine a senha do usuário.
-     *
-     * @throws ApiException 400 se o token for inválido ou expirado
-     */
 
     // ── Administração ─────────────────────────────────────────────────────────
 
