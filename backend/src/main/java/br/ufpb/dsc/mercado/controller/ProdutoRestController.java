@@ -93,12 +93,14 @@ public class ProdutoRestController {
         return ResponseEntity.ok(dtos);
 
     }
+    
     @GetMapping("/mais-vendidos")
     public ResponseEntity<List<ProdutoDTO>> maisVendidos(
             @RequestParam(defaultValue = "8") int quantidade) {
-        Page<Produto> produtos = produtoService.buscarMaisVendidos(
-                Pageable.ofSize(quantidade));
-        List<ProdutoDTO> dtos = produtos.getContent().stream()
+        List<ProdutoDTO> dtos = produtoService
+                .buscarMaisVendidos(Pageable.ofSize(quantidade))
+                .getContent()
+                .stream()
                 .map(produtoService::converterParaDTO)
                 .toList();
         return ResponseEntity.ok(dtos);
