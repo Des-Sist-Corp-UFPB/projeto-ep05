@@ -70,7 +70,7 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         // Recursos estáticos e login público
-                        .requestMatchers("/webjars/**", "/css/**", "/js/**","/assets/**", "/actuator/health", "/login", "/cadastro", "/","/ping").permitAll()
+                        .requestMatchers("/webjars/**", "/css/**", "/js/**","/assets/**", "/actuator/health", "/admin/login", "/admin/cadastro", "/","/ping").permitAll()
                         // SysAdmin
                         .requestMatchers("/sysadmin/**").hasRole("SYSADMIN")
                         // Admin
@@ -79,7 +79,8 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
-                        .loginPage("/login")
+                        .loginPage("/admin/login")
+                        .loginProcessingUrl("/admin/login")
                         // Redireciona dinamicamente pós-login baseado na role do usuário
                         .successHandler((request, response, authentication) -> {
                             var authorities = authentication.getAuthorities();
@@ -93,14 +94,19 @@ public class SecurityConfig {
                         })
                         .permitAll()
                 )
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.sendRedirect(request.getContextPath() + "/admin/login");
+                        })
+                )
                 .logout(logout -> logout
-                        .logoutSuccessUrl("/login?logout")
+                        .logoutSuccessUrl("/admin/login?logout")
                         .permitAll()
                 )
                 .csrf(csrf -> csrf
                         // Desabilita apenas para requisições de produtos HTMX para simplificação educacional
                         // Em produção, deve-se passar o header X-CSRF-Token no HTMX
-                        .ignoringRequestMatchers("/produtos/**", "/admin/**", "/sysadmin/**", "/cadastro")
+                        .ignoringRequestMatchers("/produtos/**", "/admin/**", "/sysadmin/**", "/admin/cadastro")
                 );
 
         return http.build();
@@ -116,10 +122,11 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         // Permitir o frontend React local (Vite padrão é 5173 ou 3000)
         configuration.setAllowedOrigins(Arrays.asList(
-                "http://localhost",        // nginx porta 80 (sem porta explícita)
-                "http://localhost:80",     // nginx porta 80 (explícita)
-                "http://localhost:5173",   // Vite dev server padrão
-                "http://localhost:3000"    // alternativo dev
+                "http://localhost",           // nginx porta 80 (sem porta explícita)
+                "http://localhost:80",        // nginx porta 80 (explícita)
+                "http://localhost:5173",      // Vite dev server padrão
+                "http://localhost:3000",      // alternativo dev
+                "https://eq05.dsc.rodrigor.com" // produção
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Cache-Control"));

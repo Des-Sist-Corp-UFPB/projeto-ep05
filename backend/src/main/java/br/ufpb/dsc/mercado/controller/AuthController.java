@@ -46,17 +46,17 @@ public class AuthController {
         this.usuarioService = usuarioService;
     }
 
-    @GetMapping("/login")
+    @GetMapping("/admin/login")
     public String login() {
         return "auth/login";
     }
 
-    @GetMapping("/cadastro")
+    @GetMapping("/admin/cadastro")
     public String cadastro() {
         return "auth/cadastro";
     }
 
-    @PostMapping("/cadastro")
+    @PostMapping("/admin/cadastro")
     public String processarCadastro(
             @Valid @ModelAttribute CadastroClienteRequest form,
             BindingResult bindingResult,
@@ -81,7 +81,7 @@ public class AuthController {
             usuarioService.cadastrarCliente(form);
             redirectAttributes.addFlashAttribute("sucesso",
                     "Conta criada com sucesso! Faça login para continuar.");
-            return "redirect:/login";
+            return "redirect:/admin/login";
         } catch (IllegalArgumentException e) {
             model.addAttribute("erro", e.getMessage());
             model.addAttribute("dadosAnteriores", form);
@@ -89,18 +89,5 @@ public class AuthController {
         }
     }
 
-    /**
-     * Rota raiz "/" — redireciona para o painel correto conforme o papel do usuário.
-     * Evita o erro "No static resource ." quando o Spring Security tenta redirecionar
-     * para "/" após o login ou quando o usuário acessa a raiz diretamente.
-     */
-    @GetMapping("/")
-    public String raiz(Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return "redirect:/login";
-        }
-        boolean isSysAdmin = authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_SYSADMIN"));
-        return isSysAdmin ? "redirect:/sysadmin/dashboard" : "redirect:/admin/dashboard";
-    }
 }
+
