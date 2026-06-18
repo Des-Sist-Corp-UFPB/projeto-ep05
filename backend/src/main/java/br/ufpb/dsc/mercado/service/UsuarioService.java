@@ -1,27 +1,24 @@
 package br.ufpb.dsc.mercado.service;
 
-import java.util.List;
-import java.util.UUID;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import br.ufpb.dsc.mercado.domain.Cartao;
-import br.ufpb.dsc.mercado.domain.Endereco;
-import br.ufpb.dsc.mercado.domain.Papel;
-import br.ufpb.dsc.mercado.domain.StatusUsuario;
-import br.ufpb.dsc.mercado.domain.Usuario;
+import br.ufpb.dsc.mercado.domain.*;
+import br.ufpb.dsc.mercado.dto.*;
 import br.ufpb.dsc.mercado.dto.CadastroClienteRequest;
-import br.ufpb.dsc.mercado.dto.CadastroRequest;
-import br.ufpb.dsc.mercado.dto.CartaoSalvarDTO;
-import br.ufpb.dsc.mercado.dto.EnderecoDTO;
 import br.ufpb.dsc.mercado.exception.ApiException;
 import br.ufpb.dsc.mercado.repository.CartaoRepository;
 import br.ufpb.dsc.mercado.repository.EnderecoRepository;
 import br.ufpb.dsc.mercado.repository.UsuarioRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Serviço de usuários refatorado.
@@ -44,7 +41,11 @@ import br.ufpb.dsc.mercado.repository.UsuarioRepository;
 @Transactional(readOnly = true)
 public class UsuarioService {
 
-    
+    // ── Token store em memória ────────────────────────────────────────────────
+    // Chave: token UUID  |  Valor: email + expiry
+    private record TokenEntry(String email, Instant expiry) {}
+    private final Map<String, TokenEntry> tokenStore = new ConcurrentHashMap<>();
+    private static final long TOKEN_TTL_SECONDS = 30 * 60; // 30 minutos
 
     // ── Dependências ─────────────────────────────────────────────────────────
     private final UsuarioRepository usuarioRepository;
@@ -103,17 +104,17 @@ public class UsuarioService {
         return usuarioRepository.save(usuario);
     }
 
-        @Transactional
-        public Usuario cadastrarCliente(CadastroClienteRequest request) {
-            if (usuarioRepository.existsByEmail(request.email())) {
-                throw ApiException.conflito("Já existe uma conta com este e-mail");
-            }
-            if (usuarioRepository.existsByCpf(request.cpf())) {
-                throw ApiException.conflito("Já existe uma conta com este CPF");
-            }
-            if (!request.senhasConferem()) {
-                throw ApiException.requisicaoInvalida("As senhas não conferem");
-            }
+    @Transactional
+    public Usuario cadastrarCliente(CadastroClienteRequest request) {
+        if (usuarioRepository.existsByEmail(request.email())) {
+            throw new IllegalArgumentException("Já existe uma conta com este e-mail");
+        }
+        if (usuarioRepository.existsByCpf(request.cpf())) {
+            throw new IllegalArgumentException("Já existe uma conta com este CPF");
+        }
+        if (!request.senhasConferem()) {
+            throw new IllegalArgumentException("As senhas não conferem");
+        }
         Usuario usuario = new Usuario(
                 request.nome() + " " + request.sobrenome(),
                 request.email(),
@@ -164,12 +165,42 @@ public class UsuarioService {
      * Propositalmente não revela se o e-mail existe (resposta genérica)
      * para não vazar dados de cadastro.
      */
+    @Transactional
+    public String gerarTokenRecuperacao(String email) {
+        // Verifica silenciosamente — não expõe ao cliente se o e-mail existe
+        usuarioRepository.findByEmail(email).orElse(null);
+
+        String token = UUID.randomUUID().toString();
+        Instant expiry = Instant.now().plusSeconds(TOKEN_TTL_SECONDS);
+        tokenStore.put(token, new TokenEntry(email, expiry));
+
+        // TODO em produção: enviar e-mail com link contendo o token
+        // emailService.enviarRecuperacao(email, token);
+
+        return token; // retornado apenas para facilitar dev/testes
+    }
 
     /**
      * Valida o token e redefine a senha do usuário.
      *
      * @throws ApiException 400 se o token for inválido ou expirado
      */
+    @Transactional
+    public void redefinirSenha(String token, String novaSenha) {
+        TokenEntry entry = tokenStore.get(token);
+
+        if (entry == null || Instant.now().isAfter(entry.expiry())) {
+            tokenStore.remove(token); // limpa tokens expirados
+            throw ApiException.requisicaoInvalida("Token inválido ou expirado");
+        }
+
+        Usuario usuario = usuarioRepository.findByEmail(entry.email())
+                .orElseThrow(() -> ApiException.naoEncontrado("Usuário não encontrado"));
+
+        usuario.setSenha(passwordEncoder.encode(novaSenha));
+        usuarioRepository.save(usuario);
+        tokenStore.remove(token); // token de uso único
+    }
 
     // ── Administração ─────────────────────────────────────────────────────────
 
