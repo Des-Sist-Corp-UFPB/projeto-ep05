@@ -80,6 +80,7 @@ public class SecurityConfig {
                 )
                 .formLogin(form -> form
                         .loginPage("/admin/login")
+                        .loginProcessingUrl("/admin/login")
                         // Redireciona dinamicamente pós-login baseado na role do usuário
                         .successHandler((request, response, authentication) -> {
                             var authorities = authentication.getAuthorities();
@@ -92,6 +93,11 @@ public class SecurityConfig {
                             }
                         })
                         .permitAll()
+                )
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.sendRedirect(request.getContextPath() + "/admin/login");
+                        })
                 )
                 .logout(logout -> logout
                         .logoutSuccessUrl("/admin/login?logout")
@@ -116,10 +122,11 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         // Permitir o frontend React local (Vite padrão é 5173 ou 3000)
         configuration.setAllowedOrigins(Arrays.asList(
-                "http://localhost",        // nginx porta 80 (sem porta explícita)
-                "http://localhost:80",     // nginx porta 80 (explícita)
-                "http://localhost:5173",   // Vite dev server padrão
-                "http://localhost:3000"    // alternativo dev
+                "http://localhost",           // nginx porta 80 (sem porta explícita)
+                "http://localhost:80",        // nginx porta 80 (explícita)
+                "http://localhost:5173",      // Vite dev server padrão
+                "http://localhost:3000",      // alternativo dev
+                "https://eq05.dsc.rodrigor.com" // produção
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Cache-Control"));
