@@ -4,7 +4,7 @@ import logo from "../../assets/logo.png";
 import ProductCard from "../../components/ProductCard/ProductCard";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
-import { getProdutos, getMaisVendidos } from "../../api/productApi";
+import { getProdutos, getMaisVendidos, getCategorias } from "../../api/productApi";
 import ScrollContainer from "../../components/ScrollContainer/ScrollContainer";
 import MainScrollContainer from "../../components/MainScrollContainer/MainScrollContainer";
 import Loading from "../../components/Loading/Loading";
@@ -17,6 +17,7 @@ const Home = () => {
 
   const [produtos, setProdutos] = useState([]);
   const [maisVendidos, setMaisVendidos] = useState([]);
+  const [categorias, setCategorias] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -24,12 +25,14 @@ const Home = () => {
     const loadAllData = async () => {
       try {
         setError(false);
-        const [resProdutos, resMaisVendidos] = await Promise.all([
+        const [resProdutos, resMaisVendidos, resCategorias] = await Promise.all([
           getProdutos(),
           getMaisVendidos(),
+          getCategorias()
         ]);
         setProdutos(resProdutos);
         setMaisVendidos(resMaisVendidos);
+        setCategorias(resCategorias);
       } catch (err) {
         console.error("Erro ao buscar dados:", err);
         setError(true);
@@ -85,11 +88,17 @@ const Home = () => {
 
         <h2 className="home-texto-h2">Categorias</h2>
         <div className="home-categories">
-          <p>Bolo no Pote</p>
-          <span className="divider"></span>
-          <p>Mousse</p>
-          <span className="divider"></span>
-          <p>Trufas</p>
+          {categorias.slice(0, 3).map((cat, index) => (
+            <React.Fragment key={cat.id}>
+              <p
+                onClick={() => navigate(`/loja/${cat.nome}`)}
+                style={{ cursor: "pointer" }}
+              >
+                {cat.nome}
+              </p>
+              {index < 2 && <span className="divider"></span>}
+            </React.Fragment>
+          ))}
           <span className="divider"></span>
           <Link to="/categorias" className="link-mais">Mais...</Link>
         </div>
