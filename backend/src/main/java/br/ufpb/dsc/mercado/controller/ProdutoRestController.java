@@ -83,6 +83,21 @@ public class ProdutoRestController {
                 .collect(Collectors.toList());
         return ResponseEntity.ok(dtos);
     }
+    
+    @GetMapping("/mais-vendidos")
+    public ResponseEntity<List<ProdutoDTO>> maisVendidos(
+            @RequestParam(defaultValue = "8") int quantidade) {
+        List<ProdutoDTO> dtos = produtoService
+                .buscarMaisVendidos(Pageable.ofSize(quantidade))
+                .getContent()
+                .stream()
+                .map(produtoService::converterParaDTO)
+                .toList();
+        return ResponseEntity.ok(dtos);
+    }
+
+
+
 
     // === AVALIAÇÕES ===
     @GetMapping("/{id}/avaliacoes")

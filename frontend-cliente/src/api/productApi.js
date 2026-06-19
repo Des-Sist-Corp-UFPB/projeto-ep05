@@ -42,7 +42,7 @@ export const getProdutoById = async (id) => {
 
 // A API não tem endpoint /promocoes — retorna todos os produtos (filtragem visual)
 export const getPromocoes = async () => {
-  const data = await apiFetch("/produtos?size=20");
+  const data = await apiFetch("/produtos?size=20&sort=preco,asc");
   const lista = data?.content ?? data;
   return Array.isArray(lista) ? lista.map(mapProduto) : [];
 };

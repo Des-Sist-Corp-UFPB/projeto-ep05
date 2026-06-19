@@ -29,13 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *    O GlobalExceptionHandler já captura ApiException e retorna o HTTP correto.
  *    Controllers deixam de ter try/catch manual.
  *
- * 2. Adicionado fluxo de recuperação de senha:
- *    - gerarTokenRecuperacao(email)  → retorna o token (dev) ou envia e-mail
- *    - redefinirSenha(token, nova)   → valida e salva nova senha
- *    Tokens são armazenados em memória com TTL de 30 min (adequado para MVP;
- *    em produção, persistir na tabela ou usar Redis).
- *
- * 3. Métodos de endereço e cartão continuam iguais, apenas exceções tipadas.
+ * 2. Métodos de endereço e cartão continuam iguais, apenas exceções tipadas.
  */
 @Service
 @Transactional(readOnly = true)
@@ -152,54 +146,6 @@ public class UsuarioService {
         }
 
         return usuarioRepository.save(usuario);
-    }
-
-    // ── Recuperação de senha ──────────────────────────────────────────────────
-
-    /**
-     * Gera um token de redefinição de senha para o e-mail informado.
-     *
-     * Retorna o token para facilitar testes em dev/educacional.
-     * Em produção, substituir pelo envio de e-mail (Spring Mail / SendGrid).
-     *
-     * Propositalmente não revela se o e-mail existe (resposta genérica)
-     * para não vazar dados de cadastro.
-     */
-    @Transactional
-    public String gerarTokenRecuperacao(String email) {
-        // Verifica silenciosamente — não expõe ao cliente se o e-mail existe
-        usuarioRepository.findByEmail(email).orElse(null);
-
-        String token = UUID.randomUUID().toString();
-        Instant expiry = Instant.now().plusSeconds(TOKEN_TTL_SECONDS);
-        tokenStore.put(token, new TokenEntry(email, expiry));
-
-        // TODO em produção: enviar e-mail com link contendo o token
-        // emailService.enviarRecuperacao(email, token);
-
-        return token; // retornado apenas para facilitar dev/testes
-    }
-
-    /**
-     * Valida o token e redefine a senha do usuário.
-     *
-     * @throws ApiException 400 se o token for inválido ou expirado
-     */
-    @Transactional
-    public void redefinirSenha(String token, String novaSenha) {
-        TokenEntry entry = tokenStore.get(token);
-
-        if (entry == null || Instant.now().isAfter(entry.expiry())) {
-            tokenStore.remove(token); // limpa tokens expirados
-            throw ApiException.requisicaoInvalida("Token inválido ou expirado");
-        }
-
-        Usuario usuario = usuarioRepository.findByEmail(entry.email())
-                .orElseThrow(() -> ApiException.naoEncontrado("Usuário não encontrado"));
-
-        usuario.setSenha(passwordEncoder.encode(novaSenha));
-        usuarioRepository.save(usuario);
-        tokenStore.remove(token); // token de uso único
     }
 
     // ── Administração ─────────────────────────────────────────────────────────

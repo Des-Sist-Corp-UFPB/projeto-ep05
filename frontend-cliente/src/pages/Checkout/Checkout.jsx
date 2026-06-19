@@ -172,7 +172,6 @@ const Checkout = () => {
                 Subtotal: R$ {total.toFixed(2)}
               </p>
               <p style={{ color: "green" }}>
-                {/* FIX #2: tipos corrigidos */}
                 Desconto ({cupomInfo.tipo === "PORCENTAGEM" ? `${cupomInfo.desconto}%` : `R$ ${cupomInfo.desconto}`}): -R$ {calcDesconto().toFixed(2)}
               </p>
               <strong>Total: R$ {totalComDesconto.toFixed(2)}</strong>
