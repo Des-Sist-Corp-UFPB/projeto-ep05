@@ -57,7 +57,7 @@ public class AuthRestController {
         Usuario usuario;
         try {
             usuario = usuarioService.buscarPorEmail(request.email());
-        } catch (Exception e) {
+        } catch (ApiException e) {
             throw ApiException.naoAutorizado("E-mail ou senha inválidos");
         }
 
@@ -77,7 +77,6 @@ public class AuthRestController {
             @Valid @RequestBody RecuperacaoSenhaDTO.SolicitarRequest request) {
 
         String token = recuperacaoSenhaService.solicitarRecuperacao(request.email());
-
         String tokenDev = isDev() ? token : null;
 
         return ResponseEntity.ok(new MensagemResponse(
