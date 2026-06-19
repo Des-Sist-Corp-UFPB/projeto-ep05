@@ -28,8 +28,8 @@ const Checkout = () => {
 
   const calcDesconto = () => {
     if (!cupomInfo) return 0;
-    if (cupomInfo.tipo === "PERCENTUAL") return total * (parseFloat(cupomInfo.desconto) / 100);
-    if (cupomInfo.tipo === "FIXO") return parseFloat(cupomInfo.desconto);
+    if (cupomInfo.tipo === "PORCENTAGEM") return total * (parseFloat(cupomInfo.desconto) / 100);
+    if (cupomInfo.tipo === "VALOR_FIXO") return parseFloat(cupomInfo.desconto);
     return 0;
   };
 
@@ -141,7 +141,7 @@ const Checkout = () => {
                 Subtotal: R$ {total.toFixed(2)}
               </p>
               <p style={{ color: "green" }}>
-                Desconto ({cupomInfo.tipo === "PERCENTUAL" ? `${cupomInfo.desconto}%` : `R$ ${cupomInfo.desconto}`}): -R$ {calcDesconto().toFixed(2)}
+                Desconto ({cupomInfo.tipo === "PORCENTAGEM" ? `${cupomInfo.desconto}%` : `R$ ${cupomInfo.desconto}`}): -R$ {calcDesconto().toFixed(2)}
               </p>
               <strong>Total: R$ {totalComDesconto.toFixed(2)}</strong>
             </>
