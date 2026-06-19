@@ -1,27 +1,24 @@
 package br.ufpb.dsc.mercado.service;
 
-import java.util.List;
-import java.util.UUID;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import br.ufpb.dsc.mercado.domain.Cartao;
-import br.ufpb.dsc.mercado.domain.Endereco;
-import br.ufpb.dsc.mercado.domain.Papel;
-import br.ufpb.dsc.mercado.domain.StatusUsuario;
-import br.ufpb.dsc.mercado.domain.Usuario;
+import br.ufpb.dsc.mercado.domain.*;
+import br.ufpb.dsc.mercado.dto.*;
 import br.ufpb.dsc.mercado.dto.CadastroClienteRequest;
-import br.ufpb.dsc.mercado.dto.CadastroRequest;
-import br.ufpb.dsc.mercado.dto.CartaoSalvarDTO;
-import br.ufpb.dsc.mercado.dto.EnderecoDTO;
 import br.ufpb.dsc.mercado.exception.ApiException;
 import br.ufpb.dsc.mercado.repository.CartaoRepository;
 import br.ufpb.dsc.mercado.repository.EnderecoRepository;
 import br.ufpb.dsc.mercado.repository.UsuarioRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Serviço de usuários refatorado.
@@ -38,7 +35,11 @@ import br.ufpb.dsc.mercado.repository.UsuarioRepository;
 @Transactional(readOnly = true)
 public class UsuarioService {
 
-    
+    // ── Token store em memória ────────────────────────────────────────────────
+    // Chave: token UUID  |  Valor: email + expiry
+    private record TokenEntry(String email, Instant expiry) {}
+    private final Map<String, TokenEntry> tokenStore = new ConcurrentHashMap<>();
+    private static final long TOKEN_TTL_SECONDS = 30 * 60; // 30 minutos
 
     // ── Dependências ─────────────────────────────────────────────────────────
     private final UsuarioRepository usuarioRepository;
@@ -97,17 +98,17 @@ public class UsuarioService {
         return usuarioRepository.save(usuario);
     }
 
-        @Transactional
-        public Usuario cadastrarCliente(CadastroClienteRequest request) {
-            if (usuarioRepository.existsByEmail(request.email())) {
-                throw ApiException.conflito("Já existe uma conta com este e-mail");
-            }
-            if (usuarioRepository.existsByCpf(request.cpf())) {
-                throw ApiException.conflito("Já existe uma conta com este CPF");
-            }
-            if (!request.senhasConferem()) {
-                throw ApiException.requisicaoInvalida("As senhas não conferem");
-            }
+    @Transactional
+    public Usuario cadastrarCliente(CadastroClienteRequest request) {
+        if (usuarioRepository.existsByEmail(request.email())) {
+            throw new IllegalArgumentException("Já existe uma conta com este e-mail");
+        }
+        if (usuarioRepository.existsByCpf(request.cpf())) {
+            throw new IllegalArgumentException("Já existe uma conta com este CPF");
+        }
+        if (!request.senhasConferem()) {
+            throw new IllegalArgumentException("As senhas não conferem");
+        }
         Usuario usuario = new Usuario(
                 request.nome() + " " + request.sobrenome(),
                 request.email(),

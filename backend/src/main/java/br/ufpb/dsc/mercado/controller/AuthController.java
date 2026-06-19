@@ -3,7 +3,6 @@ package br.ufpb.dsc.mercado.controller;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -87,20 +86,5 @@ public class AuthController {
             model.addAttribute("dadosAnteriores", form);
             return "auth/cadastro";
         }
-    }
-
-    /**
-     * Rota raiz "/" — redireciona para o painel correto conforme o papel do usuário.
-     * Evita o erro "No static resource ." quando o Spring Security tenta redirecionar
-     * para "/" após o login ou quando o usuário acessa a raiz diretamente.
-     */
-    @GetMapping("/")
-    public String raiz(Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return "redirect:/admin/login";
-        }
-        boolean isSysAdmin = authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_SYSADMIN"));
-        return isSysAdmin ? "redirect:/sysadmin/dashboard" : "redirect:/admin/dashboard";
     }
 }

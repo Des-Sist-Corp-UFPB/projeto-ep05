@@ -48,7 +48,8 @@ export const getPromocoes = async () => {
 };
 
 // A API não tem endpoint separado para mais vendidos — retorna os primeiros 8 produtos
-export const getMaisVendidos = async (quantidade = 8) => {
-    const data = await apiFetch(`/produtos/mais-vendidos?quantidade=${quantidade}`);
-    return Array.isArray(data) ? data.map(mapProduto) : [];
+export const getMaisVendidos = async () => {
+  const data = await apiFetch("/produtos?size=8");
+  const lista = data?.content ?? data;
+  return Array.isArray(lista) ? lista.map(mapProduto) : [];
 };

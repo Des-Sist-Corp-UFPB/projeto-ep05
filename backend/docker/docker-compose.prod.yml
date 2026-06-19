@@ -78,7 +78,7 @@ services:
     image: ${FRONTEND_IMAGE}
     container_name: mercado-frontend-prod
     expose:
-      - "3000"
+      - "80"
     depends_on:
       app:
         condition: service_healthy
