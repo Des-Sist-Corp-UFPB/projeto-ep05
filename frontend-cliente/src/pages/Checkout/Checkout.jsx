@@ -26,6 +26,7 @@ const Checkout = () => {
   const [success, setSuccess] = useState(false);
   const [apiError, setApiError] = useState("");
 
+  // FIX #2: tipos corrigidos para bater com o backend (PORCENTAGEM / VALOR_FIXO)
   const calcDesconto = () => {
     if (!cupomInfo) return 0;
     if (cupomInfo.tipo === "PORCENTAGEM") return total * (parseFloat(cupomInfo.desconto) / 100);
@@ -89,7 +90,10 @@ const Checkout = () => {
     setApiError("");
 
     try {
-      // Busca o endereço principal salvo
+      // FIX #1: salvar o cartão primeiro e obter o cartaoId, depois fazer o pedido
+      // O backend espera cartaoId (não os dados brutos do cartão) e codigoCupom (não cupomCodigo)
+
+      // Passo 1: buscar endereço principal
       let enderecoId = null;
       try {
         const enderecos = await apiFetch("/clientes/enderecos");
@@ -99,13 +103,40 @@ const Checkout = () => {
         // prossegue sem endereço
       }
 
+      if (!enderecoId) {
+        setApiError("Cadastre um endereço de entrega antes de finalizar o pedido.");
+        setLoading(false);
+        return;
+      }
+
+      // Passo 2: salvar cartão e obter o ID
+      const numeroLimpo = dados.cardNumber.replace(/\s/g, "");
+      const bandeira = numeroLimpo.startsWith("4") ? "VISA" : "MASTERCARD";
+
+      // Converter validade de MM/AA para MM/AAAA
+      const [mes, anoAbrev] = dados.expiry.split("/");
+      const anoCompleto = anoAbrev.length === 2 ? `20${anoAbrev}` : anoAbrev;
+      const dataExpiracao = `${mes}/${anoCompleto}`;
+
+      const cartaoSalvo = await apiFetch("/clientes/cartoes", {
+        method: "POST",
+        body: JSON.stringify({
+          nomeTitular: dados.name,
+          numeroCartao: numeroLimpo,
+          bandeira,
+          dataExpiracao,
+          cvv: dados.cvv,
+        }),
+      });
+
+      // Passo 3: finalizar pedido com cartaoId e codigoCupom (nome correto do backend)
       await apiFetch("/pedidos", {
         method: "POST",
         body: JSON.stringify({
           itens: cart.map((item) => ({ produtoId: item.id, quantidade: item.quantity })),
           enderecoId,
-          cupomCodigo: cupomInfo ? cupomCodigo.trim() : null,
-          formaPagamento: "CARTAO",
+          cartaoId: cartaoSalvo.id,
+          codigoCupom: cupomInfo ? cupomCodigo.trim() : null,
         }),
       });
 

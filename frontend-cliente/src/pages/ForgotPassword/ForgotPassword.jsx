@@ -14,7 +14,7 @@ import { useAuth } from "../../context/AuthContext";
  *  Passo 1 — Solicitar (email):
  *    POST /api/auth/recuperar-senha { email }
  *    → exibe mensagem genérica de sucesso
- *    → em DEV, exibe o token recebido da API para facilitar testes
+ *    → token de dev REMOVIDO da UI por segurança (FIX #5)
  *
  *  Passo 2 — Redefinir (token + nova senha):
  *    POST /api/auth/redefinir-senha { token, novaSenha }
@@ -23,12 +23,10 @@ import { useAuth } from "../../context/AuthContext";
 const ForgotPassword = () => {
   const { solicitarRecuperacao, redefinirSenha } = useAuth();
 
-  // Controla qual passo está ativo
   const [passo, setPasso] = useState(1);
 
   // Passo 1
   const [email, setEmail] = useState("");
-  const [tokenDev, setTokenDev] = useState(""); // só visível em dev
 
   // Passo 2
   const [token, setToken] = useState("");
@@ -53,8 +51,7 @@ const ForgotPassword = () => {
     setLoading(false);
 
     if (result.success) {
-      // Em DEV o token vem na resposta; em prod ficaria undefined
-      if (result.token) setTokenDev(result.token);
+      // FIX #5: token de dev não é exibido na UI em nenhum ambiente
       setPasso(2);
     } else {
       setErro(result.message);
@@ -130,21 +127,6 @@ const ForgotPassword = () => {
               Verifique seu e-mail e cole o token abaixo junto com sua nova senha.
             </p>
 
-            {/* Em DEV: exibe o token gerado para facilitar testes */}
-            {tokenDev && (
-              <div className="forgot-token-dev">
-                <span>🛠 Token de dev:</span>
-                <code
-                  className="forgot-token-code"
-                  onClick={() => setToken(tokenDev)}
-                  title="Clique para preencher"
-                >
-                  {tokenDev}
-                </code>
-                <span className="forgot-token-hint">(clique para preencher)</span>
-              </div>
-            )}
-
             <Input
               name="token"
               label="Token de recuperação"
@@ -191,7 +173,6 @@ const ForgotPassword = () => {
           </div>
         )}
 
-        {/* Voltar para login (passos 1 e 2) */}
         {passo < 3 && (
           <p className="forgot-text">
             Lembrou a senha?{" "}

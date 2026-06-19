@@ -105,3 +105,12 @@
         font-size: var(--font-sm);
     }
 }
+/* FIX #3: fallback visual quando categoria não tem imagem */
+.categoria-emoji {
+  font-size: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 80px;
+}
