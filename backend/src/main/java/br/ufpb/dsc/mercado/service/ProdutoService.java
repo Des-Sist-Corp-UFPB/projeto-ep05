@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -51,6 +50,10 @@ public class ProdutoService {
 
     public Page<Produto> buscarPorCategoriaEAtivos(Long categoriaId, Pageable pageable) {
         return produtoRepository.findByCategoriaIdAndAtivoTrue(categoriaId, pageable);
+    }
+
+    public Page<Produto> buscarMaisVendidos(Pageable pageable) {
+        return produtoRepository.findMaisVendidos(pageable);
     }
 
     public Page<Produto> buscarPorCategoria(Long categoriaId, Pageable pageable) {
@@ -102,7 +105,7 @@ public class ProdutoService {
         produto.setPreco(form.preco());
         produto.setCategoria(categoria);
         produto.setEstoque(form.estoque());
-        
+
         if (form.ativo() != null) {
             produto.setAtivo(form.ativo());
         }
@@ -128,11 +131,9 @@ public class ProdutoService {
     }
 
     private void atualizarImagens(Produto produto, String imagensUrlsStr) {
-        // Remove as antigas
         produto.clearImagens();
 
         if (StringUtils.hasText(imagensUrlsStr)) {
-            // Separa URLs por vírgula ou por linha
             List<String> urls = Arrays.stream(imagensUrlsStr.split("[,\\n]"))
                     .map(String::trim)
                     .filter(StringUtils::hasText)
@@ -154,7 +155,6 @@ public class ProdutoService {
                 .average()
                 .orElse(0.0);
 
-        // Arredonda nota média para 1 casa decimal
         notaMedia = Math.round(notaMedia * 10.0) / 10.0;
 
         return new ProdutoDTO(
