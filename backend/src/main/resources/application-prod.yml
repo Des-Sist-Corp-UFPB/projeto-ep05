@@ -18,8 +18,5 @@ logging:
     br.ufpb.dsc.mercado: INFO
 
 
-management:
-  endpoint:
-    health:
-      show-details: never
+
 
