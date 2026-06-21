@@ -70,7 +70,7 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         // Recursos estáticos e login público
-                        .requestMatchers("/webjars/**", "/css/**", "/js/**", "/assets/**", "/images/**", "/actuator/health", "/admin/login", "/admin/cadastro","/", "/ping").permitAll()
+                        .requestMatchers("/webjars/**", "/css/**", "/js/**", "/assets/**", "/images/**", "/actuator/health", "/admin/login", "/admin/cadastro", "/ping").permitAll()
                         // SysAdmin
                         .requestMatchers("/sysadmin/**").hasRole("SYSADMIN")
                         // Admin
