@@ -7,6 +7,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import br.ufpb.dsc.mercado.domain.PedidoItem;
 
 @Entity
 @Table(name = "produto")
@@ -49,6 +50,9 @@ public class Produto {
 
     @OneToMany(mappedBy = "produto", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Avaliacao> avaliacoes = new ArrayList<>();
+
+    @OneToMany(mappedBy = "produto")
+    private List<PedidoItem> itensPedido = new ArrayList<>();
 
     @Column(name = "criado_em", nullable = false, updatable = false)
     private Instant criadoEm;
@@ -180,6 +184,11 @@ public class Produto {
     public void setAtualizadoEm(Instant updatedEm) {
         this.atualizadoEm = updatedEm;
     }
+
+    public List<PedidoItem> getItensPedido() {
+        return Collections.unmodifiableList(itensPedido);
+    }
+
 
     @Override
     public String toString() {
