@@ -23,16 +23,8 @@ public interface ProdutoRepository extends JpaRepository<Produto, Long> {
 
 
     @Query(
-            value = """
-        SELECT p FROM Produto p
-        JOIN p.itensPedido ip
-        GROUP BY p
-        ORDER BY SUM(ip.quantidade) DESC
-        """,
-            countQuery = """
-        SELECT COUNT(DISTINCT p) FROM Produto p
-        JOIN p.itensPedido ip
-        """
+            value = "SELECT p FROM Produto p",
+            countQuery = "SELECT COUNT(p) FROM Produto p"
     )
      public Page<Produto> findMaisVendidos(Pageable pageable);
 }
