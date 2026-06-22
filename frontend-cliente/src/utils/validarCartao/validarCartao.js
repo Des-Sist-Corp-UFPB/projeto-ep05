@@ -57,6 +57,7 @@ function validarExpiry(dados, erros) {
 
     if (!value) {
         erros.expiry = "Validade é obrigatória";
+        return;
     }
     else if (!/^\d{2}\/\d{2}$/.test(value)) {
        

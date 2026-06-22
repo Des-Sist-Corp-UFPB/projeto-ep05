@@ -1,5 +1,6 @@
 package br.ufpb.dsc.mercado.controller;
 
+import br.ufpb.dsc.mercado.audit.AuditoriaService;
 import br.ufpb.dsc.mercado.domain.Produto;
 import br.ufpb.dsc.mercado.domain.ProdutoImagem;
 import br.ufpb.dsc.mercado.dto.ProdutoForm;
@@ -11,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -27,10 +29,14 @@ public class ProdutoController {
 
     private final ProdutoService produtoService;
     private final CategoriaService categoriaService;
+    private final AuditoriaService auditoriaService;
 
-    public ProdutoController(ProdutoService produtoService, CategoriaService categoriaService) {
+    public ProdutoController(ProdutoService produtoService,
+                             CategoriaService categoriaService,
+                             AuditoriaService auditoriaService) {
         this.produtoService = produtoService;
         this.categoriaService = categoriaService;
+        this.auditoriaService = auditoriaService;
     }
 
     @GetMapping
@@ -81,7 +87,7 @@ public class ProdutoController {
     @GetMapping("/{id}/editar")
     public String editarForm(@PathVariable Long id, Model model) {
         Produto produto = produtoService.buscarPorId(id);
-        
+
         String urls = produto.getImagens().stream()
                 .map(ProdutoImagem::getUrl)
                 .collect(Collectors.joining(", "));
@@ -106,6 +112,7 @@ public class ProdutoController {
     public String criar(
             @Valid @ModelAttribute("form") ProdutoForm form,
             BindingResult bindingResult,
+            Authentication auth,
             Model model) {
 
         if (bindingResult.hasErrors()) {
@@ -115,6 +122,8 @@ public class ProdutoController {
         }
 
         Produto novoProduto = produtoService.criar(form);
+        auditoriaService.registrarAdmin(atorEmail(auth), "PRODUTO",
+                "Criou produto: " + novoProduto.getNome(), novoProduto.getId());
         model.addAttribute("produto", novoProduto);
 
         return "produtos/fragments/linha :: linha";
@@ -125,6 +134,7 @@ public class ProdutoController {
             @PathVariable Long id,
             @Valid @ModelAttribute("form") ProdutoForm form,
             BindingResult bindingResult,
+            Authentication auth,
             Model model) {
 
         if (bindingResult.hasErrors()) {
@@ -135,6 +145,8 @@ public class ProdutoController {
         }
 
         Produto produtoAtualizado = produtoService.atualizar(id, form);
+        auditoriaService.registrarAdmin(atorEmail(auth), "PRODUTO",
+                "Atualizou produto ID " + id + ": " + produtoAtualizado.getNome(), id);
         model.addAttribute("produto", produtoAtualizado);
 
         return "produtos/fragments/linha :: linha";
@@ -142,12 +154,20 @@ public class ProdutoController {
 
     @DeleteMapping("/{id}")
     @ResponseBody
-    public ResponseEntity<Void> excluir(@PathVariable Long id) {
+    public ResponseEntity<Void> excluir(@PathVariable Long id, Authentication auth) {
         try {
+            Produto produto = produtoService.buscarPorId(id);
+            String nome = produto.getNome();
             produtoService.excluir(id);
+            auditoriaService.registrarAdmin(atorEmail(auth), "PRODUTO",
+                    "Excluiu produto: " + nome, id);
             return ResponseEntity.ok().build();
         } catch (ProdutoNaoEncontradoException e) {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    private String atorEmail(Authentication auth) {
+        return (auth != null) ? auth.getName() : "desconhecido";
     }
 }

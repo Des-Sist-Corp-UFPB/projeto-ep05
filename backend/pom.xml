@@ -50,6 +50,13 @@
             <artifactId>thymeleaf-extras-springsecurity6</artifactId>
         </dependency>
 
+        <!-- Suporte a #temporals com java.time.Instant no Thymeleaf -->
+        <dependency>
+            <groupId>org.thymeleaf.extras</groupId>
+            <artifactId>thymeleaf-extras-java8time</artifactId>
+            <version>3.0.4.RELEASE</version>
+        </dependency>
+
         <!-- === SEGURANÇA === -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

@@ -20,6 +20,7 @@ spring:
     # baseline-on-migrate: permite rodar o Flyway em banco que já tem tabelas
     # (criadas pelo ddl-auto antes do Flyway existir no projeto)
     baseline-on-migrate: true
+    out-of-order: true
 
 logging:
   level:

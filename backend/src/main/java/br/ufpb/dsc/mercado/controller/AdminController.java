@@ -1,37 +1,18 @@
 package br.ufpb.dsc.mercado.controller;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
+import br.ufpb.dsc.mercado.audit.AuditoriaService;
+import br.ufpb.dsc.mercado.domain.*;
+import br.ufpb.dsc.mercado.dto.CategoriaDTO;
+import br.ufpb.dsc.mercado.repository.PedidoRepository;
+import br.ufpb.dsc.mercado.service.*;
+import jakarta.validation.Valid;
+import org.springframework.data.domain.*;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
-
-import br.ufpb.dsc.mercado.domain.Categoria;
-import br.ufpb.dsc.mercado.domain.Cupom;
-import br.ufpb.dsc.mercado.domain.Papel;
-import br.ufpb.dsc.mercado.domain.Pedido;
-import br.ufpb.dsc.mercado.domain.StatusPedido;
-import br.ufpb.dsc.mercado.domain.TipoCupom;
-import br.ufpb.dsc.mercado.domain.Usuario;
-import br.ufpb.dsc.mercado.dto.CategoriaDTO;
-import br.ufpb.dsc.mercado.repository.PedidoRepository;
-import br.ufpb.dsc.mercado.service.CategoriaService;
-import br.ufpb.dsc.mercado.service.CupomService;
-import br.ufpb.dsc.mercado.service.PedidoService;
-import br.ufpb.dsc.mercado.service.UsuarioService;
-import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.*;
 
 @Controller
 @RequestMapping("/admin")
@@ -44,24 +25,25 @@ public class AdminController {
     private final UsuarioService usuarioService;
     private final PedidoService pedidoService;
     private final PedidoRepository pedidoRepository;
+    private final AuditoriaService auditoriaService;
 
-    @SuppressWarnings("EI_EXPOSE_REP2") // Beans Spring são singletons gerenciados pelo container
+    @SuppressWarnings("EI_EXPOSE_REP2")
     public AdminController(CategoriaService categoriaService,
-            CupomService cupomService,
-            UsuarioService usuarioService,
-            PedidoService pedidoService,
-            PedidoRepository pedidoRepository) {
+                           CupomService cupomService,
+                           UsuarioService usuarioService,
+                           PedidoService pedidoService,
+                           PedidoRepository pedidoRepository,
+                           AuditoriaService auditoriaService) {
         this.categoriaService = categoriaService;
         this.cupomService = cupomService;
         this.usuarioService = usuarioService;
         this.pedidoService = pedidoService;
         this.pedidoRepository = pedidoRepository;
+        this.auditoriaService = auditoriaService;
     }
 
     @GetMapping({"", "/"})
-    public String raiz() {
-        return "redirect:/admin/dashboard";
-    }
+    public String raiz() { return "redirect:/admin/dashboard"; }
 
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
@@ -72,22 +54,16 @@ public class AdminController {
     }
 
     // === CATEGORIAS ===
+
     @GetMapping("/categorias")
     public String listarCategorias(
-            @RequestParam(name = "pagina", defaultValue = "0") int pagina,
+            @RequestParam(defaultValue = "0") int pagina,
             @RequestHeader(value = HEADER_HTMX, required = false) String htmx,
             Model model) {
-
-        PageRequest pageRequest = PageRequest.of(pagina, 10, Sort.by("nome").ascending());
-        Page<Categoria> categorias = categoriaService.listar(pageRequest);
-
-        model.addAttribute("categorias", categorias);
+        PageRequest pr = PageRequest.of(pagina, 10, Sort.by("nome").ascending());
+        model.addAttribute("categorias", categoriaService.listar(pr));
         model.addAttribute("paginaAtual", pagina);
-
-        if (htmx != null) {
-            return "admin/fragments/tabela_categorias :: tabela";
-        }
-        return "admin/categorias";
+        return htmx != null ? "admin/fragments/tabela_categorias :: tabela" : "admin/categorias";
     }
 
     @GetMapping("/categorias/nova")
@@ -109,14 +85,16 @@ public class AdminController {
     public String criarCategoria(
             @Valid @ModelAttribute("form") CategoriaDTO form,
             BindingResult bindingResult,
+            Authentication auth,
             Model model) {
-
         if (bindingResult.hasErrors()) {
             model.addAttribute("categoria", null);
             return "admin/fragments/form_categoria :: modal";
         }
         try {
             Categoria c = categoriaService.criar(form);
+            auditoriaService.registrarAdmin(atorEmail(auth), "PRODUTO",
+                    "Criou categoria: " + c.getNome(), c.getId());
             model.addAttribute("categoria", c);
             return "admin/fragments/linha_categoria :: linha";
         } catch (IllegalArgumentException e) {
@@ -131,30 +109,32 @@ public class AdminController {
             @PathVariable Long id,
             @Valid @ModelAttribute("form") CategoriaDTO form,
             BindingResult bindingResult,
+            Authentication auth,
             Model model) {
-
         if (bindingResult.hasErrors()) {
-            Categoria c = categoriaService.buscarPorId(id);
-            model.addAttribute("categoria", c);
+            model.addAttribute("categoria", categoriaService.buscarPorId(id));
             return "admin/fragments/form_categoria :: modal";
         }
         try {
             Categoria c = categoriaService.atualizar(id, form);
+            auditoriaService.registrarAdmin(atorEmail(auth), "PRODUTO",
+                    "Atualizou categoria ID " + id + ": " + c.getNome(), id);
             model.addAttribute("categoria", c);
             return "admin/fragments/linha_categoria :: linha";
         } catch (IllegalArgumentException e) {
             bindingResult.rejectValue("nome", "error.form", e.getMessage());
-            Categoria c = categoriaService.buscarPorId(id);
-            model.addAttribute("categoria", c);
+            model.addAttribute("categoria", categoriaService.buscarPorId(id));
             return "admin/fragments/form_categoria :: modal";
         }
     }
 
     @DeleteMapping("/categorias/{id}")
     @ResponseBody
-    public ResponseEntity<Void> excluirCategoria(@PathVariable Long id) {
+    public ResponseEntity<Void> excluirCategoria(@PathVariable Long id, Authentication auth) {
         try {
             categoriaService.excluir(id);
+            auditoriaService.registrarAdmin(atorEmail(auth), "PRODUTO",
+                    "Excluiu categoria ID " + id, id);
             return ResponseEntity.ok().build();
         } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
@@ -162,22 +142,16 @@ public class AdminController {
     }
 
     // === CUPONS ===
+
     @GetMapping("/cupons")
     public String listarCupons(
-            @RequestParam(name = "pagina", defaultValue = "0") int pagina,
+            @RequestParam(defaultValue = "0") int pagina,
             @RequestHeader(value = HEADER_HTMX, required = false) String htmx,
             Model model) {
-
-        PageRequest pageRequest = PageRequest.of(pagina, 10, Sort.by("codigo").ascending());
-        Page<Cupom> cupons = cupomService.listar(pageRequest);
-
-        model.addAttribute("cupons", cupons);
+        PageRequest pr = PageRequest.of(pagina, 10, Sort.by("codigo").ascending());
+        model.addAttribute("cupons", cupomService.listar(pr));
         model.addAttribute("paginaAtual", pagina);
-
-        if (htmx != null) {
-            return "admin/fragments/tabela_cupons :: tabela";
-        }
-        return "admin/cupons";
+        return htmx != null ? "admin/fragments/tabela_cupons :: tabela" : "admin/cupons";
     }
 
     @GetMapping("/cupons/novo")
@@ -191,14 +165,16 @@ public class AdminController {
     public String criarCupom(
             @Valid @ModelAttribute("cupom") Cupom cupom,
             BindingResult bindingResult,
+            Authentication auth,
             Model model) {
-
         if (bindingResult.hasErrors()) {
             model.addAttribute("tipos", TipoCupom.values());
             return "admin/fragments/form_cupom :: modal";
         }
         try {
             Cupom c = cupomService.criar(cupom);
+            auditoriaService.registrarAdmin(atorEmail(auth), "PRODUTO",
+                    "Criou cupom: " + c.getCodigo(), c.getId());
             model.addAttribute("cupom", c);
             return "admin/fragments/linha_cupom :: linha";
         } catch (IllegalArgumentException e) {
@@ -210,9 +186,11 @@ public class AdminController {
 
     @PostMapping("/cupons/{id}/alternar")
     @ResponseBody
-    public ResponseEntity<?> alternarCupom(@PathVariable Long id) {
+    public ResponseEntity<?> alternarCupom(@PathVariable Long id, Authentication auth) {
         try {
             cupomService.alternarAtivo(id);
+            auditoriaService.registrarAdmin(atorEmail(auth), "PRODUTO",
+                    "Alternou status do cupom ID " + id, id);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -221,9 +199,11 @@ public class AdminController {
 
     @DeleteMapping("/cupons/{id}")
     @ResponseBody
-    public ResponseEntity<Void> excluirCupom(@PathVariable Long id) {
+    public ResponseEntity<Void> excluirCupom(@PathVariable Long id, Authentication auth) {
         try {
             cupomService.excluir(id);
+            auditoriaService.registrarAdmin(atorEmail(auth), "PRODUTO",
+                    "Excluiu cupom ID " + id, id);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.notFound().build();
@@ -231,31 +211,28 @@ public class AdminController {
     }
 
     // === CLIENTES ===
+
     @GetMapping("/clientes")
     public String listarClientes(
-            @RequestParam(name = "busca", required = false, defaultValue = "") String busca,
-            @RequestParam(name = "pagina", defaultValue = "0") int pagina,
+            @RequestParam(required = false, defaultValue = "") String busca,
+            @RequestParam(defaultValue = "0") int pagina,
             @RequestHeader(value = HEADER_HTMX, required = false) String htmx,
             Model model) {
-
-        PageRequest pageRequest = PageRequest.of(pagina, 10, Sort.by("nome").ascending());
-        Page<Usuario> clientes = usuarioService.listarPorPapel(Papel.CLIENTE, busca, pageRequest);
-
-        model.addAttribute("clientes", clientes);
+        PageRequest pr = PageRequest.of(pagina, 10, Sort.by("nome").ascending());
+        model.addAttribute("clientes", usuarioService.listarPorPapel(Papel.CLIENTE, busca, pr));
         model.addAttribute("busca", busca);
         model.addAttribute("paginaAtual", pagina);
-
-        if (htmx != null) {
-            return "admin/fragments/tabela_clientes :: tabela";
-        }
-        return "admin/clientes";
+        return htmx != null ? "admin/fragments/tabela_clientes :: tabela" : "admin/clientes";
     }
 
     @PostMapping("/clientes/{id}/bloquear")
     @ResponseBody
-    public ResponseEntity<?> bloquearCliente(@PathVariable Long id) {
+    public ResponseEntity<?> bloquearCliente(@PathVariable Long id, Authentication auth) {
         try {
+            Usuario alvo = usuarioService.buscarPorId(id);
             usuarioService.alternarStatus(id);
+            auditoriaService.registrarAdmin(atorEmail(auth), "USER_MGMT",
+                    "Alterou status do cliente " + alvo.getEmail(), id);
             return ResponseEntity.ok().build();
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -263,28 +240,21 @@ public class AdminController {
     }
 
     // === PEDIDOS ===
+
     @GetMapping("/pedidos")
     public String listarPedidos(
-            @RequestParam(name = "pagina", defaultValue = "0") int pagina,
+            @RequestParam(defaultValue = "0") int pagina,
             @RequestHeader(value = HEADER_HTMX, required = false) String htmx,
             Model model) {
-
-        PageRequest pageRequest = PageRequest.of(pagina, 10);
-        Page<Pedido> pedidos = pedidoService.listarTodos(pageRequest);
-
-        model.addAttribute("pedidos", pedidos);
+        PageRequest pr = PageRequest.of(pagina, 10);
+        model.addAttribute("pedidos", pedidoService.listarTodos(pr));
         model.addAttribute("paginaAtual", pagina);
-
-        if (htmx != null) {
-            return "admin/fragments/tabela_pedidos :: tabela";
-        }
-        return "admin/pedidos";
+        return htmx != null ? "admin/fragments/tabela_pedidos :: tabela" : "admin/pedidos";
     }
 
     @GetMapping("/pedidos/{id}")
     public String obterPedido(@PathVariable Long id, Model model) {
-        Pedido pedido = pedidoService.buscarPorId(id);
-        model.addAttribute("pedido", pedido);
+        model.addAttribute("pedido", pedidoService.buscarPorId(id));
         model.addAttribute("statusList", StatusPedido.values());
         return "admin/fragments/modal_pedido :: modal";
     }
@@ -293,11 +263,12 @@ public class AdminController {
     public String atualizarStatusPedido(
             @PathVariable Long id,
             @RequestParam StatusPedido status,
+            Authentication auth,
             Model model) {
-
         Pedido pedido = pedidoService.atualizarStatus(id, status);
+        auditoriaService.registrarAdmin(atorEmail(auth), "PEDIDO",
+                "Atualizou status do pedido #" + id + " → " + status, id);
         model.addAttribute("pedido", pedido);
-        // Retorna a linha da tabela de pedidos atualizada
         return "admin/fragments/linha_pedido :: linha";
     }
 
@@ -305,10 +276,18 @@ public class AdminController {
     public String atualizarRastreamento(
             @PathVariable Long id,
             @RequestParam String codigoRastreamento,
+            Authentication auth,
             Model model) {
-
         Pedido pedido = pedidoService.atualizarCodigoRastreamento(id, codigoRastreamento);
+        auditoriaService.registrarAdmin(atorEmail(auth), "PEDIDO",
+                "Adicionou rastreamento ao pedido #" + id + ": " + codigoRastreamento, id);
         model.addAttribute("pedido", pedido);
         return "admin/fragments/linha_pedido :: linha";
+    }
+
+    // ── Util ──────────────────────────────────────────────────────────────────
+
+    private String atorEmail(Authentication auth) {
+        return (auth != null) ? auth.getName() : "desconhecido";
     }
 }
