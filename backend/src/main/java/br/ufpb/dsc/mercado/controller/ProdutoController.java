@@ -122,8 +122,7 @@ public class ProdutoController {
         }
 
         Produto novoProduto = produtoService.criar(form);
-        auditoriaService.registrarAdmin(atorEmail(auth), "PRODUTO",
-                "Criou produto: " + novoProduto.getNome(), novoProduto.getId());
+        registrarProduto(auth, "PRODUTO", "Criou produto: " + novoProduto.getNome(), novoProduto.getId());
         model.addAttribute("produto", novoProduto);
 
         return "produtos/fragments/linha :: linha";
@@ -145,8 +144,7 @@ public class ProdutoController {
         }
 
         Produto produtoAtualizado = produtoService.atualizar(id, form);
-        auditoriaService.registrarAdmin(atorEmail(auth), "PRODUTO",
-                "Atualizou produto ID " + id + ": " + produtoAtualizado.getNome(), id);
+        registrarProduto(auth, "PRODUTO", "Atualizou produto ID " + id + ": " + produtoAtualizado.getNome(), id);
         model.addAttribute("produto", produtoAtualizado);
 
         return "produtos/fragments/linha :: linha";
@@ -159,8 +157,7 @@ public class ProdutoController {
             Produto produto = produtoService.buscarPorId(id);
             String nome = produto.getNome();
             produtoService.excluir(id);
-            auditoriaService.registrarAdmin(atorEmail(auth), "PRODUTO",
-                    "Excluiu produto: " + nome, id);
+            registrarProduto(auth, "PRODUTO", "Excluiu produto: " + nome, id);
             return ResponseEntity.ok().build();
         } catch (ProdutoNaoEncontradoException e) {
             return ResponseEntity.notFound().build();
@@ -169,5 +166,20 @@ public class ProdutoController {
 
     private String atorEmail(Authentication auth) {
         return (auth != null) ? auth.getName() : "desconhecido";
+    }
+
+    private boolean isSysAdmin(Authentication auth) {
+        if (auth == null) return false;
+        return auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_SYSADMIN"));
+    }
+
+    private void registrarProduto(Authentication auth, String categoria, String descricao, Long recursoId) {
+        String email = atorEmail(auth);
+        if (isSysAdmin(auth)) {
+            auditoriaService.registrarSysAdmin(email, categoria, descricao, recursoId);
+        } else {
+            auditoriaService.registrarAdmin(email, categoria, descricao, recursoId);
+        }
     }
 }

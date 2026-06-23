@@ -185,6 +185,23 @@ public class SysAdminController {
         return "sysadmin/fragments/tabela_admins :: tabela";
     }
 
+    @DeleteMapping("/admins/{id}")
+    public String excluirAdmin(@PathVariable Long id, Authentication auth, Model model) {
+        Usuario alvo = usuarioService.buscarPorId(id);
+        String email = alvo.getEmail();
+        usuarioService.excluirConta(id);
+        auditoriaService.registrarSysAdmin(
+                atorEmail(auth),
+                "USER_MGMT",
+                "Excluiu Administrador: " + email,
+                id);
+        Page<Usuario> admins = usuarioService.listarPorPapel(
+                Papel.ADMIN, "", PageRequest.of(0, 10, Sort.by("nome").ascending()));
+        model.addAttribute("admins", admins);
+        model.addAttribute("busca", "");
+        return "sysadmin/fragments/tabela_admins :: tabela";
+    }
+
     // ── Logs ──────────────────────────────────────────────────────────────────
 
     @GetMapping("/logs")

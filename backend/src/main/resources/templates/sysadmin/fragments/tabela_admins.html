@@ -57,7 +57,7 @@
                                 </button>
                                 <!-- Bloquear/Desbloquear via HTMX POST -->
                                 <button th:if="${admin.status.name() == 'ATIVO'}"
-                                        class="btn btn-sm btn-outline-danger"
+                                        class="btn btn-sm btn-outline-warning"
                                         th:hx-post="@{/sysadmin/admins/{id}/bloquear(id=${admin.id})}"
                                         hx-target="#tabela-admins"
                                         hx-swap="outerHTML"
@@ -71,6 +71,14 @@
                                         hx-swap="outerHTML"
                                         hx-confirm="Desbloquear este administrador?">
                                     🔓 Desbloquear
+                                </button>
+                                <!-- Excluir admin -->
+                                <button class="btn btn-sm btn-outline-danger"
+                                        th:hx-delete="@{/sysadmin/admins/{id}(id=${admin.id})}"
+                                        hx-target="#tabela-admins"
+                                        hx-swap="outerHTML"
+                                        hx-confirm="Tem certeza que deseja EXCLUIR este administrador? Esta ação não pode ser desfeita.">
+                                    🗑️ Excluir
                                 </button>
                             </div>
                         </td>
