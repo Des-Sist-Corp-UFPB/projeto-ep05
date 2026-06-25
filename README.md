@@ -4,8 +4,17 @@ Este repositório contém dois projetos que juntos formam a plataforma **Sweet D
 
 ```
 projeto-ep05/
-├── backend/           # API + painéis admin/sysadmin (Spring Boot + Thymeleaf)
-├── frontend-cliente/  # Loja do cliente (React + Vite)
+├── docker/                  # Orquestração da stack completa
+│   ├── docker-compose.dev.yml   ← ambiente de desenvolvimento
+│   └── docker-compose.prod.yml  ← ambiente de produção
+├── backend/                 # API + painéis admin/sysadmin (Spring Boot + Thymeleaf)
+│   └── docker/
+│       ├── Dockerfile
+│       ├── Dockerfile.dev
+│       ├── Dockerfile.test
+│       └── docker-compose.test.yml  ← testes isolados do backend
+├── frontend-cliente/        # Loja do cliente (React + Vite)
+├── TESTING.md               # Documentação centralizada de testes
 └── README.md
 ```
 
@@ -22,11 +31,10 @@ Aplicação Spring Boot com:
 ### Rodar localmente
 
 ```bash
-cd backend
-# configurar variáveis de ambiente
-cp .env.example .env
+# Configurar variáveis de ambiente
+cp backend/.env.example backend/.env
 
-# subir com Docker
+# Subir a stack completa de desenvolvimento (backend + banco + adminer)
 docker compose -f docker/docker-compose.dev.yml up
 ```
 
@@ -44,12 +52,20 @@ npm install
 npm run dev
 ```
 
+Veja `frontend-cliente/README.md` para configuração da URL da API e outros detalhes.
+
+---
+
+## Testes
+
+Veja [`TESTING.md`](./TESTING.md) para a documentação completa — como rodar, o que é testado e os thresholds de cobertura.
+
 ---
 
 ## Perfis de usuário
 
-| Perfil    | Interface         | Acesso              |
-|-----------|-------------------|---------------------|
-| Cliente   | React (frontend-cliente) | `/` |
-| Admin     | Thymeleaf (backend) | `/admin` |
-| SysAdmin  | Thymeleaf (backend) | `/sysadmin` |
+| Perfil    | Interface                | Acesso      |
+|-----------|--------------------------|-------------|
+| Cliente   | React (frontend-cliente) | `/`         |
+| Admin     | Thymeleaf (backend)      | `/admin`    |
+| SysAdmin  | Thymeleaf (backend)      | `/sysadmin` |
