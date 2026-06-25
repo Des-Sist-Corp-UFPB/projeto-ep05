@@ -5,6 +5,8 @@ import br.ufpb.dsc.mercado.audit.LogAuditoria;
 import br.ufpb.dsc.mercado.domain.Papel;
 import br.ufpb.dsc.mercado.domain.Usuario;
 import br.ufpb.dsc.mercado.dto.CadastroRequest;
+import br.ufpb.dsc.mercado.dto.EditarAdminRequest;
+import br.ufpb.dsc.mercado.exception.ApiException;
 import br.ufpb.dsc.mercado.repository.PedidoRepository;
 import br.ufpb.dsc.mercado.repository.ProdutoRepository;
 import br.ufpb.dsc.mercado.service.PedidoService;
@@ -88,7 +90,7 @@ public class SysAdminController {
     @GetMapping("/admins/{id}/editar")
     public String editarAdminForm(@PathVariable Long id, Model model) {
         Usuario admin = usuarioService.buscarPorId(id);
-        model.addAttribute("form", new CadastroRequest(admin.getNome(), admin.getEmail(), "", Papel.ADMIN));
+        model.addAttribute("form", new EditarAdminRequest(admin.getNome(), admin.getEmail(), "", Papel.ADMIN));
         model.addAttribute("adminId", id);
         return "sysadmin/fragments/form_admin :: modal";
     }
@@ -122,7 +124,7 @@ public class SysAdminController {
             model.addAttribute("busca", "");
             return "sysadmin/fragments/tabela_admins :: tabela";
 
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | ApiException e) {
             bindingResult.rejectValue("email", "error.form", e.getMessage());
             model.addAttribute("adminId", null);
             return "sysadmin/fragments/form_admin :: modal";
@@ -132,7 +134,7 @@ public class SysAdminController {
     @PutMapping("/admins/{id}")
     public String editarAdmin(
             @PathVariable Long id,
-            @Valid @ModelAttribute("form") CadastroRequest form,
+            @Valid @ModelAttribute("form") EditarAdminRequest form,
             BindingResult bindingResult,
             Authentication auth,
             Model model) {
@@ -142,10 +144,17 @@ public class SysAdminController {
             return "sysadmin/fragments/form_admin :: modal";
         }
 
+        // Valida tamanho da senha apenas quando fornecida
+        if (form.senha() != null && !form.senha().isBlank() && form.senha().length() < 8) {
+            bindingResult.rejectValue("senha", "Size.form.senha", "A senha deve ter no mínimo 8 caracteres");
+            model.addAttribute("adminId", id);
+            return "sysadmin/fragments/form_admin :: modal";
+        }
+
         try {
             String novaSenha = (form.senha() != null && !form.senha().isBlank())
                     ? form.senha() : null;
-            usuarioService.atualizarPerfil(id, form.nome(), form.email(), null, novaSenha);
+            usuarioService.atualizarAdmin(id, form.nome(), form.email(), novaSenha);
 
             auditoriaService.registrarSysAdmin(
                     atorEmail(auth),
@@ -159,7 +168,7 @@ public class SysAdminController {
             model.addAttribute("busca", "");
             return "sysadmin/fragments/tabela_admins :: tabela";
 
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | ApiException e) {
             bindingResult.rejectValue("email", "error.form", e.getMessage());
             model.addAttribute("adminId", id);
             return "sysadmin/fragments/form_admin :: modal";

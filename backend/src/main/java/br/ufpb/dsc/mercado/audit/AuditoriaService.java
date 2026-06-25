@@ -1,16 +1,19 @@
 package br.ufpb.dsc.mercado.audit;
 
+import jakarta.persistence.criteria.Predicate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.scheduling.annotation.Async;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Serviço central de auditoria.
@@ -116,6 +119,7 @@ public class AuditoriaService {
         if (papelFiltro == null && atorFiltro == null && desde == null) {
             return repository.findAllByOrderByCriadoEmDesc(pageable);
         }
+
         return repository.filtrar(papelFiltro, atorFiltro, desde, pageable);
     }
 }

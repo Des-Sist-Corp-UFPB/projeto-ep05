@@ -148,6 +148,29 @@ public class UsuarioService {
         return usuarioRepository.save(usuario);
     }
 
+    /**
+     * Atualiza um administrador pelo SysAdmin (sem exigir senha atual).
+     * Se novaSenha for nula ou vazia, a senha existente é mantida.
+     */
+    @Transactional
+    public Usuario atualizarAdmin(Long id, String nome, String email, String novaSenha) {
+        Usuario usuario = buscarPorId(id);
+
+        if (!usuario.getEmail().equalsIgnoreCase(email)
+                && usuarioRepository.existsByEmailAndIdNot(email, id)) {
+            throw ApiException.conflito("Este e-mail já está em uso por outro usuário");
+        }
+
+        usuario.setNome(nome);
+        usuario.setEmail(email);
+
+        if (novaSenha != null && !novaSenha.isBlank()) {
+            usuario.setSenha(passwordEncoder.encode(novaSenha));
+        }
+
+        return usuarioRepository.save(usuario);
+    }
+
     // ── Administração ─────────────────────────────────────────────────────────
 
     @Transactional
