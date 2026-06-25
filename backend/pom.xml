@@ -20,6 +20,16 @@
 
     <properties>
         <java.version>21</java.version>
+        <!-- Flags para Mockito inline no Java 16+.
+             O JaCoCo injeta o agente via @{argLine}, que é concatenado aqui. -->
+        <argLine>
+            --add-opens java.base/java.lang=ALL-UNNAMED
+            --add-opens java.base/java.util=ALL-UNNAMED
+            --add-opens java.base/java.time=ALL-UNNAMED
+            --add-opens java.base/java.math=ALL-UNNAMED
+            --add-opens java.base/java.io=ALL-UNNAMED
+            --add-opens java.base/sun.reflect=ALL-UNNAMED
+        </argLine>
         <!-- Versões de dependências -->
         <testcontainers.version>1.20.4</testcontainers.version>
         <webjars-bootstrap.version>5.3.3</webjars-bootstrap.version>
@@ -29,7 +39,7 @@
         <findsecbugs-plugin.version>1.13.0</findsecbugs-plugin.version>
         <dependency-check-maven.version>11.1.1</dependency-check-maven.version>
         <versions-maven-plugin.version>2.18.0</versions-maven-plugin.version>
-        <jacoco-maven-plugin.version>0.8.12</jacoco-maven-plugin.version>
+        <jacoco-maven-plugin.version>0.8.13</jacoco-maven-plugin.version>
     </properties>
 
     <dependencies>
@@ -44,7 +54,6 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-thymeleaf</artifactId>
         </dependency>
-        <!-- Integração do Thymeleaf com Spring Security (dialeto extras) -->
         <dependency>
             <groupId>org.thymeleaf.extras</groupId>
             <artifactId>thymeleaf-extras-springsecurity6</artifactId>
@@ -66,7 +75,6 @@
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
-        <!-- Flyway: gerenciamento de migrações de banco -->
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
@@ -123,7 +131,6 @@
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
-        <!-- Testcontainers: banco PostgreSQL real nos testes de integração -->
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>junit-jupiter</artifactId>
@@ -145,7 +152,6 @@
 
     <build>
         <plugins>
-            <!-- Plugin principal do Spring Boot -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
@@ -156,6 +162,21 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>${jacoco-maven-plugin.version}</version>
+                <configuration>
+                    <excludes>
+                        <exclude>**/domain/**</exclude>
+                        <exclude>**/dto/**</exclude>
+                        <exclude>**/MercadoApplication.class</exclude>
+                        <exclude>**/config/SecurityConfig.class</exclude>
+                        <exclude>**/config/DatabaseSeeder.class</exclude>
+                        <exclude>**/config/GlobalModelAttributes.class</exclude>
+                        <exclude>**/config/JwtFilter.class</exclude>
+                        <exclude>**/config/CustomUserDetailsService.class</exclude>
+                        <exclude>**/controller/PingController.class</exclude>
+                        <exclude>**/exception/ErroResponse.class</exclude>
+                        <exclude>**/exception/ProdutoNaoEncontradoException.class</exclude>
+                    </excludes>
+                </configuration>
                 <executions>
                     <execution>
                         <goals><goal>prepare-agent</goal></goals>
@@ -165,19 +186,40 @@
                         <phase>verify</phase>
                         <goals><goal>report</goal></goals>
                     </execution>
+                    <execution>
+                        <id>check</id>
+                        <phase>verify</phase>
+                        <goals><goal>check</goal></goals>
+                        <configuration>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.85</minimum>
+                                        </limit>
+                                        <limit>
+                                            <counter>BRANCH</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.80</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
         </plugins>
     </build>
 
-    <!-- Perfil 'security': ativa SAST + verificação de dependências -->
-    <!-- Uso: mvn verify -Psecurity -->
     <profiles>
         <profile>
             <id>security</id>
             <build>
                 <plugins>
-                    <!-- SpotBugs + FindSecBugs: análise estática do bytecode Java -->
                     <plugin>
                         <groupId>com.github.spotbugs</groupId>
                         <artifactId>spotbugs-maven-plugin</artifactId>
@@ -202,8 +244,6 @@
                             </execution>
                         </executions>
                     </plugin>
-
-                    <!-- OWASP Dependency-Check: CVEs nas dependências -->
                     <plugin>
                         <groupId>org.owasp</groupId>
                         <artifactId>dependency-check-maven</artifactId>
@@ -225,8 +265,6 @@
             </build>
         </profile>
 
-        <!-- Perfil 'versions': mostra dependências desatualizadas -->
-        <!-- Uso: mvn versions:display-dependency-updates -Pversions -->
         <profile>
             <id>versions</id>
             <build>

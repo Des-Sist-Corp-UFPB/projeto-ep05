@@ -34,5 +34,5 @@ public interface ProdutoRepository extends JpaRepository<Produto, Long> {
         JOIN p.itensPedido ip
         """
     )
-     public  Page<Produto> findMaisVendidos(Pageable pageable);
+    public  Page<Produto> findMaisVendidos(Pageable pageable);
 }

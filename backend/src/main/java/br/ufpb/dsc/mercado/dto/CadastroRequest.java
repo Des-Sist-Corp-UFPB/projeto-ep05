@@ -7,15 +7,10 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 /**
- * DTO de cadastro genérico — usado pelo endpoint REST /api/auth/cadastro (frontend React)
- * e pelo SysAdminController para criar admins via formulário web.
+ * DTO de cadastro — usado para CRIAR novos usuários/admins.
+ * Senha é obrigatória neste contexto.
  *
- * A validação de senha aqui é intencional simples (@Size min=8) pois:
- * - O frontend React aplica suas próprias regras avançadas antes de enviar
- * - O SysAdmin precisa criar admins com senhas operacionais sem restrições de caractere especial
- *
- * Regras fortes de senha (maiúscula, número, especial) ficam no CadastroClienteRequest,
- * que é exclusivo do formulário web de auto-cadastro de clientes.
+ * Para edição (senha opcional), use {@link EditarAdminRequest}.
  */
 public record CadastroRequest(
     @NotBlank(message = "O nome é obrigatório")

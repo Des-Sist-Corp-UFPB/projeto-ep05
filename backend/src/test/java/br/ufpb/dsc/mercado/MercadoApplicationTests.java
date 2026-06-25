@@ -2,41 +2,15 @@ package br.ufpb.dsc.mercado;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.test.context.ActiveProfiles;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * Teste de carregamento do contexto Spring Boot.
- *
- * <p><strong>O que este teste verifica?</strong><br>
- * {@code @SpringBootTest} inicializa o contexto completo do Spring Boot e verifica se
- * todos os beans são criados corretamente, sem erros de configuração ou dependências
- * circulares. É o teste mais básico e deve sempre passar.
- *
- * <p><strong>{@code @ActiveProfiles("test")}:</strong><br>
- * Ativa o perfil "test", que usa as configurações de {@code application-test.yml}.
- * Isso garante que os testes usem um banco de dados isolado (Testcontainers)
- * em vez do banco de desenvolvimento.
- *
- * <p><strong>Testcontainers:</strong><br>
- * Para que este teste funcione, o Docker deve estar rodando.
- * O Testcontainers sobe automaticamente um container PostgreSQL para os testes
- * e o derruba ao final. Isso garante que os testes de integração usem um banco
- * real, idêntico ao de produção, sem depender de configurações locais.
- *
- * @author DSC - UFPB Campus IV
+ * Usa o banco configurado em application-test.yml.
  */
 @SpringBootTest
 @ActiveProfiles("test")
-@Testcontainers
 class MercadoApplicationTests {
-
-    @Container
-    @ServiceConnection
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
 
     @Test
     void contextLoads() {

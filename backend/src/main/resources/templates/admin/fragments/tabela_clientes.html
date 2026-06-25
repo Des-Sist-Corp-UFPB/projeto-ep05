@@ -27,13 +27,22 @@
                     </span>
                 </td>
                 <td class="text-end">
-                    <button class="btn btn-sm"
-                            th:classappend="${c.status.name() == 'ATIVO'} ? 'btn-outline-danger' : 'btn-outline-success'"
-                            th:hx-post="@{/admin/clientes/{id}/bloquear(id=${c.id})}"
-                            hx-target="#tabela-clientes"
-                            hx-swap="outerHTML"
-                            th:text="${c.status.name() == 'ATIVO'} ? 'Bloquear' : 'Desbloquear'">
-                    </button>
+                    <div class="d-flex gap-2 justify-content-end">
+                        <button class="btn btn-sm"
+                                th:classappend="${c.status.name() == 'ATIVO'} ? 'btn-outline-warning' : 'btn-outline-success'"
+                                th:hx-post="@{/admin/clientes/{id}/bloquear(id=${c.id})}"
+                                hx-target="#tabela-clientes"
+                                hx-swap="outerHTML"
+                                th:text="${c.status.name() == 'ATIVO'} ? 'Bloquear' : 'Desbloquear'">
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger"
+                                th:hx-delete="@{/admin/clientes/{id}(id=${c.id})}"
+                                hx-target="#tabela-clientes"
+                                hx-swap="outerHTML"
+                                hx-confirm="Tem certeza que deseja EXCLUIR este cliente? Esta ação não pode ser desfeita.">
+                            🗑️ Excluir
+                        </button>
+                    </div>
                 </td>
             </tr>
         </tbody>

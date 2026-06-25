@@ -11,12 +11,10 @@ spring:
     show-sql: false
   flyway:
     enabled: true
+    out-of-order: true
+    baseline-on-migrate: true
 
 logging:
   level:
     root: WARN
     br.ufpb.dsc.mercado: INFO
-
-
-
-

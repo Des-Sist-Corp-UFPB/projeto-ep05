@@ -48,6 +48,9 @@ services:
   # Backend Spring Boot — interno, sem porta exposta ao host
   # ---------------------------------------------------------------------------
   app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
     image: ${APP_IMAGE}
     container_name: mercado-app-prod
     environment:
@@ -75,6 +78,9 @@ services:
   # Frontend React — interno, sem porta exposta ao host
   # ---------------------------------------------------------------------------
   frontend:
+    build:
+      context: ../../frontend-cliente
+      dockerfile: docker/Dockerfile
     image: ${FRONTEND_IMAGE}
     container_name: mercado-frontend-prod
     expose:
@@ -96,6 +102,9 @@ services:
   # Nginx — proxy reverso central, única porta exposta (80)
   # ---------------------------------------------------------------------------
   nginx:
+    build:
+      context: ../../nginx
+      dockerfile: Dockerfile
     image: ${NGINX_IMAGE}
     container_name: mercado-nginx-prod
     ports:

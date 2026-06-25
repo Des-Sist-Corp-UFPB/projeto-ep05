@@ -1,14 +1,15 @@
 spring:
   datasource:
-    # Banco dedicado para testes — separado do dev para não poluir dados reais
+    # Quando rodando via docker-compose.test.yml, a URL é sobrescrita pela
+    # variável de ambiente SPRING_DATASOURCE_URL injetada pelo compose.
+    # Este valor é usado apenas como fallback local (mvn test sem compose).
     url: jdbc:postgresql://localhost:5432/mercado_test
     username: mercado
     password: mercado123
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      # create-drop: cria o schema antes dos testes e apaga ao terminar.
-      # Ideal para testes: sempre começa com banco limpo e previsível.
+      # create-drop: schema criado antes dos testes e apagado ao terminar.
       ddl-auto: create-drop
     show-sql: true
     properties:
@@ -17,11 +18,14 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
-    # clean-on-validation-error: limpa e recria o banco se o schema divergir.
-    # Seguro em test porque os dados de teste nunca devem ser persistidos.
     clean-on-validation-error: true
 
 logging:
   level:
     br.ufpb.dsc.mercado: DEBUG
     org.springframework.web: DEBUG
+
+app:
+  jwt:
+    secret: test-secret-key-for-unit-tests-only-not-for-production
+    expiration-seconds: 86400
