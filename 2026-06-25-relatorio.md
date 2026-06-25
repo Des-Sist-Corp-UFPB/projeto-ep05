@@ -5,16 +5,16 @@
 | **Data** | 2026-06-25 |
 | **Repositório** | https://github.com/des-sist-corp-ufpb/projeto-ep05 |
 | **Aplicação** | https://eq05.dsc.rodrigor.com |
-| **Período de atividade** | 2026-06-20 → 2026-06-20 |
-| **Total de commits** (sem merges) | 1 |
-| **Integrantes** | Arthur Cezar Silva De Araujo (@UpSnow) |
+| **Período de atividade** | 2026-06-20 → 2026-06-25 |
+| **Total de commits** (sem merges, branch main) | 7 |
+| **Integrantes** | Arthur Cezar Silva De Araujo (@UpSnow), Jau Italo Batista Dos Santos (@JauItalo) |
 
 ---
 
 ## 1. Tecnologias
 
 - Thymeleaf
-- Flyway (4 migrations)
+- Flyway (5 migrations)
 - Spring Security
 - JWT
 - Testcontainers
@@ -23,7 +23,7 @@
 
 ## 2. Análise Funcional
 
-### Endpoints REST (62 mapeados)
+### Endpoints REST (63 mapeados)
 
 | Método | Path | Arquivo |
 |--------|------|---------|
@@ -80,6 +80,7 @@
 | `GET` | `/api/produtos/{id}` | `ProdutoRestController.java` |
 | `GET` | `/api/produtos/{id}/avaliacoes` | `ProdutoRestController.java` |
 | `POST` | `/api/produtos/{id}/avaliacoes` | `ProdutoRestController.java` |
+| `DELETE` | `/sysadmin/admins/{id}` | `SysAdminController.java` |
 | `GET` | `/sysadmin/admins` | `SysAdminController.java` |
 | `GET` | `/sysadmin/admins/novo` | `SysAdminController.java` |
 | `GET` | `/sysadmin/admins/{id}/editar` | `SysAdminController.java` |
@@ -90,7 +91,7 @@
 | `POST` | `/sysadmin/admins/{id}/bloquear` | `SysAdminController.java` |
 | `PUT` | `/sysadmin/admins/{id}` | `SysAdminController.java` |
 
-### Entidades / Tabelas (22 encontradas)
+### Entidades / Tabelas (26 encontradas)
 
 - `categoria`
 - `produto`
@@ -103,6 +104,7 @@
 - `recuperacao_senha`
 - `usuario`
 - `produto_imagem`
+- `log_auditoria`
 - `recuperacao_senha (via V4__criar_tabela_recuperacao_senha.sql)`
 - `produto (via V1__criar_tabela_produto.sql)`
 - `categoria (via V2__criar_tabelas_sistema.sql)`
@@ -114,13 +116,18 @@
 - `avaliacao (via V2__criar_tabelas_sistema.sql)`
 - `pedido (via V2__criar_tabelas_sistema.sql)`
 - `pedido_item (via V2__criar_tabelas_sistema.sql)`
+- `log_auditoria (via V5__criar_tabela_log_auditoria.sql)`
+- `recuperacao_senha (via R__garantir_tabelas_v4_v5.sql)`
+- `log_auditoria (via R__garantir_tabelas_v4_v5.sql)`
 
-### Migrations (4 arquivos)
+### Migrations (6 arquivos)
 
+- `R__garantir_tabelas_v4_v5.sql`
 - `V1__criar_tabela_produto.sql`
 - `V2__criar_tabelas_sistema.sql`
 - `V3__adicionar_campos_usuario.sql`
 - `V4__criar_tabela_recuperacao_senha.sql`
+- `V5__criar_tabela_log_auditoria.sql`
 
 ---
 
@@ -130,8 +137,8 @@
 |---------|--------|-----------|
 | Arquitetura em camadas | ✅ | controller=✅  service=✅  repository=✅ |
 | Testes automatizados | ❌ | 0 arquivo(s) de teste |
-| Migrations versionadas | ✅ | 4 migration(s) |
-| Logging | ❌ | não detectado |
+| Migrations versionadas | ✅ | 6 migration(s) |
+| Logging | ✅ | @Slf4j / LoggerFactory / logging.getLogger detectado |
 | Autenticação / Segurança | ✅ | Spring Security / JWT / decorator detectado |
 | DTOs / Separação de dados | ✅ | classes *DTO / *Request / *Response detectadas |
 | Tratamento global de exceções | ✅ | @ControllerAdvice / @ExceptionHandler detectado |
@@ -145,18 +152,26 @@
 
 ### Resumo
 
-| Usuário | Commits | % commits | Linhas adicionadas | Linhas no código atual | % código atual |
-|---------|---------|-----------|-------------------|----------------------|----------------|
-| Arthur Cezar Silva De Araujo (@UpSnow) | 1 | 100% | 19.043 | 11.431 | 100% |
+| Usuário | Commits (main) | Commits (GitHub API) | Linhas adicionadas | Linhas no código atual | % código atual |
+|---------|---------------|---------------------|-------------------|----------------------|----------------|
+| Arthur Cezar Silva De Araujo (@UpSnow) | 6 | **70** ⚠️ | 44.815 | 15.873 | 100% |
+| Jau Italo Batista Dos Santos (@JauItalo) | 0 | **41** ⚠️ | 0 | 0 | 0% |
+| *(sem login GitHub)* | 1 | 14% | — | — | — |
+
+> **⚠️ Divergência entre commits locais e GitHub API:**
+> - **@UpSnow**: 6 commit(s) na branch `main` vs **70** registrados na API GitHub (commits em branches não mergeadas ou absorvidos via squash-merge sem preservação de autoria).
+> - **@JauItalo**: 0 commit(s) na branch `main` vs **41** registrados na API GitHub (commits em branches não mergeadas ou absorvidos via squash-merge sem preservação de autoria).
+>
 
 ### Contribuição por Camada
 
-| Camada | Total linhas | Arthur Cezar Silva De Araujo (@UpSnow) |
-|--------|-------------|---------|
-| Controller | 4.810 | 100% |
-| Frontend | 2.133 | 100% |
-| Repository | 178 | 100% |
-| Service | 1.279 | 100% |
+| Camada | Total linhas | Arthur Cezar Silva De Araujo (@UpSnow) | Jau Italo Batista Dos Santos (@JauItalo) |
+|--------|-------------|---------|---------|
+| Controller | 6.322 | 100% | 0% |
+| Frontend | 2.133 | 100% | 0% |
+| Repository | 259 | 100% | 0% |
+| Service | 2.988 | 100% | 0% |
+| Test | 948 | 100% | 0% |
 
 ---
 
@@ -164,62 +179,79 @@
 
 Baseado em `git blame` nos arquivos de controller e service.
 
-| Arquivo | Total linhas | Arthur Cezar Silva De Araujo (@UpSnow) |
-|---------|-------------|---------|
-| `cadastro.html` | 420 | 100% |
-| `layout.html` | 412 | 100% |
-| `AdminController.java` | 314 | 100% |
-| `UsuarioService.java` | 273 | 100% |
-| `login.html` | 270 | 100% |
-| `PedidoService.java` | 237 | 100% |
-| `SysAdminController.java` | 230 | 100% |
-| `dashboard.html` | 199 | 100% |
-| `form.html` | 191 | 100% |
-| `ProdutoServiceTest.java` | 188 | 100% |
-| `SysAdminControllerTest.java` | 183 | 100% |
-| `ProdutoControllerTest.java` | 176 | 100% |
-| `ProdutoService.java` | 173 | 100% |
-| `ClienteRestController.java` | 155 | 100% |
-| `ProdutoController.java` | 153 | 100% |
-| `form_admin.html` | 142 | 100% |
-| `ProdutoRestController.java` | 132 | 100% |
-| `lista.html` | 122 | 100% |
-| `V2__criar_tabelas_sistema.sql` | 116 | 100% |
-| `tabela_admins.html` | 108 | 100% |
-| `AuthRestController.java` | 107 | 100% |
-| `tabela.html` | 107 | 100% |
-| `modal_pedido.html` | 105 | 100% |
-| `PedidoRestController.java` | 92 | 100% |
-| `AuthController.java` | 90 | 100% |
-| `CupomService.java` | 89 | 100% |
-| `form_categoria.html` | 85 | 100% |
-| `tabela_cupons.html` | 73 | 100% |
-| `admins.html` | 70 | 100% |
-| `linha.html` | 69 | 100% |
-| `RecuperacaoSenhaService.java` | 67 | 100% |
-| `form_cupom.html` | 67 | 100% |
-| `CategoriaService.java` | 63 | 100% |
-| `tabela_pedidos.html` | 62 | 100% |
-| `AvaliacaoService.java` | 61 | 100% |
-| `tabela_categorias.html` | 61 | 100% |
-| `tabela_clientes.html` | 59 | 100% |
-| `configuracoes.html` | 58 | 100% |
-| `clientes.html` | 55 | 100% |
-| `logs.html` | 46 | 100% |
-| `MercadoApplicationTests.java` | 45 | 100% |
-| `CustomUserDetailsService.java` | 43 | 100% |
-| `MercadoApplication.java` | 40 | 100% |
-| `linha_cupom.html` | 39 | 100% |
-| `cupons.html` | 36 | 100% |
-| `categorias.html` | 36 | 100% |
-| `linha_admin.html` | 34 | 100% |
-| `linha_pedido.html` | 28 | 100% |
-| `pedidos.html` | 26 | 100% |
-| `V1__criar_tabela_produto.sql` | 25 | 100% |
-| `linha_categoria.html` | 25 | 100% |
-| `PingController.java` | 17 | 100% |
-| `V4__criar_tabela_recuperacao_senha.sql` | 10 | 100% |
-| `V3__adicionar_campos_usuario.sql` | 5 | 100% |
+| Arquivo | Total linhas | Arthur Cezar Silva De Araujo (@UpSnow) | Jau Italo Batista Dos Santos (@JauItalo) |
+|---------|-------------|---------|---------|
+| `PedidoServiceTest.java` | 530 | 100% | 0% |
+| `layout.html` | 420 | 100% | 0% |
+| `cadastro.html` | 420 | 100% | 0% |
+| `UsuarioService.java` | 296 | 100% | 0% |
+| `AdminController.java` | 293 | 100% | 0% |
+| `ProdutoRestControllerTest.java` | 279 | 100% | 0% |
+| `login.html` | 270 | 100% | 0% |
+| `SysAdminControllerTest.java` | 251 | 100% | 0% |
+| `SysAdminController.java` | 250 | 100% | 0% |
+| `PedidoService.java` | 237 | 100% | 0% |
+| `AdminControllerTest.java` | 237 | 100% | 0% |
+| `CupomServiceTest.java` | 234 | 100% | 0% |
+| `PedidoRestControllerTest.java` | 213 | 100% | 0% |
+| `ClienteRestControllerTest.java` | 208 | 100% | 0% |
+| `dashboard.html` | 199 | 100% | 0% |
+| `UsuarioServiceTest.java` | 195 | 100% | 0% |
+| `CategoriaServiceTest.java` | 194 | 100% | 0% |
+| `AuthRestControllerTest.java` | 193 | 100% | 0% |
+| `form.html` | 191 | 100% | 0% |
+| `ProdutoServiceTest.java` | 188 | 100% | 0% |
+| `ProdutoController.java` | 185 | 100% | 0% |
+| `ProdutoService.java` | 173 | 100% | 0% |
+| `ProdutoControllerTest.java` | 168 | 100% | 0% |
+| `AuditoriaServiceTest.java` | 161 | 100% | 0% |
+| `ClienteRestController.java` | 155 | 100% | 0% |
+| `AvaliacaoServiceTest.java` | 143 | 100% | 0% |
+| `form_admin.html` | 142 | 100% | 0% |
+| `ProdutoRestController.java` | 132 | 100% | 0% |
+| `RecuperacaoSenhaServiceTest.java` | 130 | 100% | 0% |
+| `AuditoriaService.java` | 125 | 100% | 0% |
+| `AuthControllerTest.java` | 125 | 100% | 0% |
+| `lista.html` | 122 | 100% | 0% |
+| `V2__criar_tabelas_sistema.sql` | 116 | 100% | 0% |
+| `tabela_admins.html` | 116 | 100% | 0% |
+| `AuthRestController.java` | 107 | 100% | 0% |
+| `tabela.html` | 107 | 100% | 0% |
+| `modal_pedido.html` | 105 | 100% | 0% |
+| `PedidoRestController.java` | 92 | 100% | 0% |
+| `AuthController.java` | 90 | 100% | 0% |
+| `CupomService.java` | 89 | 100% | 0% |
+| `form_categoria.html` | 85 | 100% | 0% |
+| `tabela_logs.html` | 79 | 100% | 0% |
+| `tabela_cupons.html` | 73 | 100% | 0% |
+| `admins.html` | 70 | 100% | 0% |
+| `linha.html` | 69 | 100% | 0% |
+| `tabela_clientes.html` | 68 | 100% | 0% |
+| `RecuperacaoSenhaService.java` | 67 | 100% | 0% |
+| `form_cupom.html` | 67 | 100% | 0% |
+| `CategoriaService.java` | 63 | 100% | 0% |
+| `tabela_pedidos.html` | 62 | 100% | 0% |
+| `AvaliacaoService.java` | 61 | 100% | 0% |
+| `tabela_categorias.html` | 61 | 100% | 0% |
+| `logs.html` | 61 | 100% | 0% |
+| `configuracoes.html` | 58 | 100% | 0% |
+| `clientes.html` | 55 | 100% | 0% |
+| `CustomUserDetailsService.java` | 43 | 100% | 0% |
+| `MercadoApplication.java` | 40 | 100% | 0% |
+| `linha_cupom.html` | 39 | 100% | 0% |
+| `cupons.html` | 36 | 100% | 0% |
+| `categorias.html` | 36 | 100% | 0% |
+| `linha_admin.html` | 34 | 100% | 0% |
+| `R__garantir_tabelas_v4_v5.sql` | 31 | 100% | 0% |
+| `linha_pedido.html` | 28 | 100% | 0% |
+| `pedidos.html` | 26 | 100% | 0% |
+| `V1__criar_tabela_produto.sql` | 25 | 100% | 0% |
+| `linha_categoria.html` | 25 | 100% | 0% |
+| `MercadoApplicationTests.java` | 19 | 100% | 0% |
+| `PingController.java` | 17 | 100% | 0% |
+| `V5__criar_tabela_log_auditoria.sql` | 16 | 100% | 0% |
+| `V4__criar_tabela_recuperacao_senha.sql` | 10 | 100% | 0% |
+| `V3__adicionar_campos_usuario.sql` | 5 | 100% | 0% |
 
 ---
 
