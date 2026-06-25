@@ -190,7 +190,7 @@ class AdminControllerTest {
         Usuario alvo = new Usuario();
         alvo.setEmail("cliente@teste.com");
         when(usuarioService.buscarPorId(1L)).thenReturn(alvo);
-        doNothing().when(usuarioService).alternarStatus(1L);
+        when(usuarioService.alternarStatus(1L)).thenReturn(StatusUsuario.BLOQUEADO);
 
         ResponseEntity<?> resp = controller.bloquearCliente(1L, auth);
 

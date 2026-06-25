@@ -230,9 +230,9 @@ public class AdminController {
     public ResponseEntity<?> bloquearCliente(@PathVariable Long id, Authentication auth) {
         try {
             Usuario alvo = usuarioService.buscarPorId(id);
-            usuarioService.alternarStatus(id);
+            StatusUsuario novoStatus = usuarioService.alternarStatus(id);
             auditoriaService.registrarAdmin(atorEmail(auth), "USER_MGMT",
-                    "Alterou status do cliente " + alvo.getEmail(), id);
+                    "Alterou status do cliente " + alvo.getEmail() + " → " + novoStatus.name(), id);
             return ResponseEntity.ok().build();
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());

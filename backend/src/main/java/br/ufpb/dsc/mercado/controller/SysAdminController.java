@@ -3,6 +3,7 @@ package br.ufpb.dsc.mercado.controller;
 import br.ufpb.dsc.mercado.audit.AuditoriaService;
 import br.ufpb.dsc.mercado.audit.LogAuditoria;
 import br.ufpb.dsc.mercado.domain.Papel;
+import br.ufpb.dsc.mercado.domain.StatusUsuario;
 import br.ufpb.dsc.mercado.domain.Usuario;
 import br.ufpb.dsc.mercado.dto.CadastroRequest;
 import br.ufpb.dsc.mercado.dto.EditarAdminRequest;
@@ -178,13 +179,12 @@ public class SysAdminController {
     @PostMapping("/admins/{id}/bloquear")
     public String alternarStatus(@PathVariable Long id, Authentication auth, Model model) {
         Usuario alvo = usuarioService.buscarPorId(id);
-        usuarioService.alternarStatus(id);
+        StatusUsuario novoStatus = usuarioService.alternarStatus(id);
 
-        String novoStatus = alvo.getStatus().name().equals("ATIVO") ? "BLOQUEADO" : "ATIVO";
         auditoriaService.registrarSysAdmin(
                 atorEmail(auth),
                 "USER_MGMT",
-                "Alterou status do Administrador " + alvo.getEmail() + " → " + novoStatus,
+                "Alterou status do Administrador " + alvo.getEmail() + " → " + novoStatus.name(),
                 id);
 
         Page<Usuario> admins = usuarioService.listarPorPapel(

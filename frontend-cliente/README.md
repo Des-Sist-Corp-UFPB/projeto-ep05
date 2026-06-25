@@ -1,16 +1,74 @@
-# React + Vite
+# Sweet Delights — Frontend Cliente
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Interface React do e-commerce Sweet Delights. Consome a API REST do backend Spring Boot e fornece ao usuário final as telas de catálogo, carrinho, checkout, perfil e recuperação de senha.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Pré-requisitos
 
-## React Compiler
+- Node.js 18+
+- npm (incluído com Node)
+- Backend rodando em `http://localhost:8080` (ou configure `VITE_API_URL`)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## Como rodar localmente
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+cd frontend-cliente
+
+npm install        # instala dependências (apenas na primeira vez)
+npm run dev        # inicia em http://localhost:5173
+```
+
+### Configurar a URL da API
+
+Crie um arquivo `.env.local` na raiz de `frontend-cliente/`:
+
+```env
+VITE_API_URL=http://localhost:8080
+```
+
+Por padrão, `src/api/api.js` usa `http://localhost:8080` se a variável não estiver definida.
+
+---
+
+## Build de produção
+
+```bash
+npm run build      # gera dist/
+npm run preview    # visualiza o build localmente
+```
+
+A imagem Docker de produção está em `frontend-cliente/docker/Dockerfile` e é orquestrada pelo `docker/docker-compose.prod.yml` na raiz do monorepo.
+
+---
+
+## Testes
+
+```bash
+npm test              # roda todos os testes (com cobertura)
+npm run test:watch    # modo watch — ideal durante desenvolvimento
+npm run test:ui       # interface visual no navegador
+```
+
+Cobertura mínima exigida: **85%** em linhas, funções, branches e statements. Veja o `TESTING.md` na raiz do projeto para a documentação completa dos 22 arquivos de teste.
+
+---
+
+## Estrutura principal
+
+```
+frontend-cliente/
+├── src/
+│   ├── api/          ← funções de chamada à API REST
+│   ├── components/   ← componentes reutilizáveis
+│   ├── context/      ← AuthContext, CartContext
+│   ├── pages/        ← uma pasta por página
+│   ├── Routes/       ← definição de rotas (PrivateRoute)
+│   └── utils/        ← validações e máscaras
+├── docker/
+│   ├── Dockerfile    ← imagem de produção (nginx)
+│   └── nginx.conf
+└── vite.config.js    ← configuração do Vite + Vitest
+```
