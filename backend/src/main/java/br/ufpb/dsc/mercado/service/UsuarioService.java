@@ -174,7 +174,7 @@ public class UsuarioService {
     // ── Administração ─────────────────────────────────────────────────────────
 
     @Transactional
-    public void alternarStatus(Long id) {
+    public StatusUsuario alternarStatus(Long id) {
         Usuario usuario = buscarPorId(id);
         if (usuario.getPapel() == Papel.SYSADMIN) {
             throw ApiException.proibido("Não é possível bloquear um SYSADMIN");
@@ -184,6 +184,7 @@ public class UsuarioService {
                 : StatusUsuario.ATIVO;
         usuario.setStatus(novoStatus);
         usuarioRepository.save(usuario);
+        return novoStatus;
     }
 
     @Transactional
