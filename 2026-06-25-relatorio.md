@@ -6,7 +6,7 @@
 | **Repositório** | https://github.com/des-sist-corp-ufpb/projeto-ep05 |
 | **Aplicação** | https://eq05.dsc.rodrigor.com |
 | **Período de atividade** | 2026-06-20 → 2026-06-25 |
-| **Total de commits** (sem merges, branch main) | 7 |
+| **Total de commits** (sem merges, branch main) | 8 |
 | **Integrantes** | Arthur Cezar Silva De Araujo (@UpSnow), Jau Italo Batista Dos Santos (@JauItalo) |
 
 ---
@@ -136,7 +136,7 @@
 | Aspecto | Status | Observação |
 |---------|--------|-----------|
 | Arquitetura em camadas | ✅ | controller=✅  service=✅  repository=✅ |
-| Testes automatizados | ❌ | 0 arquivo(s) de teste |
+| Testes automatizados | ✅ | 22 Java, 0 JS/TS, 0 Python |
 | Migrations versionadas | ✅ | 6 migration(s) |
 | Logging | ✅ | @Slf4j / LoggerFactory / logging.getLogger detectado |
 | Autenticação / Segurança | ✅ | Spring Security / JWT / decorator detectado |
@@ -156,7 +156,7 @@
 |---------|---------------|---------------------|-------------------|----------------------|----------------|
 | Arthur Cezar Silva De Araujo (@UpSnow) | 6 | **70** ⚠️ | 44.815 | 15.873 | 100% |
 | Jau Italo Batista Dos Santos (@JauItalo) | 0 | **41** ⚠️ | 0 | 0 | 0% |
-| *(sem login GitHub)* | 1 | 14% | — | — | — |
+| *(sem login GitHub)* | 2 | 25% | — | — | — |
 
 > **⚠️ Divergência entre commits locais e GitHub API:**
 > - **@UpSnow**: 6 commit(s) na branch `main` vs **70** registrados na API GitHub (commits em branches não mergeadas ou absorvidos via squash-merge sem preservação de autoria).
