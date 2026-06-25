@@ -49,7 +49,7 @@ services:
   # ---------------------------------------------------------------------------
   app:
     build:
-      context: ..
+      context: ../backend
       dockerfile: docker/Dockerfile
     image: ${APP_IMAGE}
     container_name: mercado-app-prod
@@ -79,7 +79,7 @@ services:
   # ---------------------------------------------------------------------------
   frontend:
     build:
-      context: ../../frontend-cliente
+      context: ../frontend-cliente
       dockerfile: docker/Dockerfile
     image: ${FRONTEND_IMAGE}
     container_name: mercado-frontend-prod
@@ -103,7 +103,7 @@ services:
   # ---------------------------------------------------------------------------
   nginx:
     build:
-      context: ../../nginx
+      context: ../nginx
       dockerfile: Dockerfile
     image: ${NGINX_IMAGE}
     container_name: mercado-nginx-prod

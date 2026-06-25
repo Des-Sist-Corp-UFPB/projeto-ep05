@@ -57,7 +57,7 @@ services:
   # ---------------------------------------------------------------------------
   app:
     build:
-      context: ..
+      context: ../backend
       dockerfile: docker/Dockerfile.dev
     container_name: mercado-app-dev
     environment:
@@ -72,7 +72,7 @@ services:
       - "8080:8080"
     volumes:
       # Hot-reload: monta o código-fonte para o Spring DevTools detectar mudanças
-      - ../src:/app/src
+      - ../backend/src:/app/src
       # Cache Maven: evita re-download das dependências a cada rebuild
       - maven-cache:/root/.m2
     depends_on:
