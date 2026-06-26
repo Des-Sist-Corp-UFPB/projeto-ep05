@@ -10,32 +10,35 @@ import { validarCampo, validarFormulario } from "../../utils/validarFormulario";
 import { useAuth } from "../../context/AuthContext";
 import MainScrollContainer from "../../components/MainScrollContainer/MainScrollContainer";
 
-/**
- * Página de Cadastro refatorada.
- *
- * MUDANÇAS:
- * ─────────
- * 1. handlechange → handleChange (capitalização consistente).
- * 2. Erro geral de API exibido em elemento próprio .register-erro
- *    em vez de ser injetado em erros.email (que confunde o usuário).
- * 3. autoComplete attributes adicionados para melhor UX.
- */
 const Register = () => {
   const navigate = useNavigate();
   const { register } = useAuth();
 
-  const [form, setForm] = useState({ nome: "", email: "", senha: "", confirmarSenha: "" });
+  const [form, setForm] = useState({
+    nome: "",
+    sobrenome: "",
+    email: "",
+    cpf: "",
+    telefone: "",
+    dataNascimento: "",
+    senha: "",
+    confirmarSenha: "",
+  });
   const [erros, setErros] = useState({});
   const [erroGeral, setErroGeral] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    const novosDados = { ...form, [name]: value };
+
+    let formatted = value;
+    if (name === "cpf") formatted = formatCPF(value);
+    if (name === "telefone") formatted = formatTelefone(value);
+
+    const novosDados = { ...form, [name]: formatted };
     setForm(novosDados);
-    // Valida o campo em tempo real
-    const errosCampo = validarCampo(name, novosDados);
-    setErros((prev) => ({ ...prev, [name]: errosCampo }));
+    const erroCampo = validarCampo(name, novosDados);
+    setErros((prev) => ({ ...prev, [name]: erroCampo }));
     if (erroGeral) setErroGeral("");
   };
 
@@ -66,11 +69,18 @@ const Register = () => {
         <BackButton />
         <LayoutStripes image={Logo} title="Cadastro">
           <form className="register-form-grid" onSubmit={handleSubmit}>
+
             <Input
-              id="nome" label="Nome completo" name="nome" type="text"
+              id="nome" label="Nome" name="nome" type="text"
               value={form.nome} onChange={handleChange}
-              placeholder="Seu nome completo" erro={erros.nome}
-              autoComplete="name"
+              placeholder="Seu nome" erro={erros.nome}
+              autoComplete="given-name"
+            />
+            <Input
+              id="sobrenome" label="Sobrenome" name="sobrenome" type="text"
+              value={form.sobrenome} onChange={handleChange}
+              placeholder="Seu sobrenome" erro={erros.sobrenome}
+              autoComplete="family-name"
             />
             <Input
               id="email" name="email" label="E-mail" type="email"
@@ -79,9 +89,29 @@ const Register = () => {
               autoComplete="email"
             />
             <Input
+              id="cpf" name="cpf" label="CPF" type="text"
+              value={form.cpf} onChange={handleChange}
+              placeholder="000.000.000-00" erro={erros.cpf}
+              maxLength={14}
+              autoComplete="off"
+            />
+            <Input
+              id="telefone" name="telefone" label="Telefone" type="text"
+              value={form.telefone} onChange={handleChange}
+              placeholder="(00) 00000-0000" erro={erros.telefone}
+              maxLength={15}
+              autoComplete="tel"
+            />
+            <Input
+              id="dataNascimento" name="dataNascimento" label="Data de nascimento" type="date"
+              value={form.dataNascimento} onChange={handleChange}
+              erro={erros.dataNascimento}
+              autoComplete="bday"
+            />
+            <Input
               id="senha" name="senha" label="Senha" type="password"
               value={form.senha} onChange={handleChange}
-              placeholder="Mínimo 6 caracteres" erro={erros.senha}
+              placeholder="Mínimo 8 caracteres" erro={erros.senha}
               autoComplete="new-password"
             />
             <Input
@@ -91,8 +121,7 @@ const Register = () => {
               autoComplete="new-password"
             />
 
-            {/* Erro geral de API (ex: e-mail já cadastrado) */}
-            {erroGeral && <p className="register-erro">{erroGeral}</p>}
+            {erroGeral && <p className="register-erro" style={{ gridColumn: "1 / -1", color: "red" }}>{erroGeral}</p>}
 
             <Button className="register-button" variant="primary" type="submit" disabled={loading}>
               {loading ? "Cadastrando..." : "Cadastrar"}
@@ -110,5 +139,24 @@ const Register = () => {
     </div>
   );
 };
+
+// ── Máscaras ──────────────────────────────────────────────────────────────────
+
+function formatCPF(value) {
+  return value
+    .replace(/\D/g, "")
+    .slice(0, 11)
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+}
+
+function formatTelefone(value) {
+  return value
+    .replace(/\D/g, "")
+    .slice(0, 11)
+    .replace(/(\d{2})(\d)/, "($1) $2")
+    .replace(/(\d{4,5})(\d{4})$/, "$1-$2");
+}
 
 export default Register;

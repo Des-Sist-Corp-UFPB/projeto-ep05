@@ -7,17 +7,15 @@
 #     /api/*, /admin/*, /sysadmin/*, /produtos/*, /login, /cadastro → app:8080
 #     /* → frontend:80
 #
-# Como usar (a partir da pasta raiz do projeto):
-#   docker compose -f docker/docker-compose.prod.yml --env-file .env up -d
-#   docker compose -f docker/docker-compose.prod.yml --env-file .env up -d --build
-#
-# VARIÁVEIS DE AMBIENTE — arquivo .env na raiz do projeto (ou no servidor):
+# VARIÁVEIS DE AMBIENTE — arquivo .env no servidor:
 #   APP_IMAGE=ghcr.io/usuario/repo:latest
 #   FRONTEND_IMAGE=ghcr.io/usuario/repo-frontend:latest
 #   NGINX_IMAGE=ghcr.io/usuario/repo-nginx:latest
-#   DATABASE_URL=jdbc:postgresql://postgres:5432/mercado_prod
 #   DATABASE_USERNAME=mercado
 #   DATABASE_PASSWORD=<senha-forte>
+#   SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/mercado_prod
+#   SPRING_DATASOURCE_USERNAME=${DATABASE_USERNAME}
+#   SPRING_DATASOURCE_PASSWORD=${DATABASE_PASSWORD}
 #   APP_JWT_SECRET=<segredo-jwt>
 #   APP_SEED_ADMIN_PASSWORD=<senha-admin>
 #   MERCADOPAGO_ACCESS_TOKEN=<chave-live-APP_USR-...>
@@ -54,7 +52,7 @@ services:
   # ---------------------------------------------------------------------------
   app:
     build:
-      context: ../backend
+      context: ..
       dockerfile: docker/Dockerfile
     image: ${APP_IMAGE}
     container_name: mercado-app-prod
@@ -85,7 +83,7 @@ services:
   # ---------------------------------------------------------------------------
   frontend:
     build:
-      context: ../frontend-cliente
+      context: ../../frontend-cliente
       dockerfile: docker/Dockerfile
     image: ${FRONTEND_IMAGE}
     container_name: mercado-frontend-prod
@@ -109,8 +107,8 @@ services:
   # ---------------------------------------------------------------------------
   nginx:
     build:
-      context: ../nginx
-      dockerfile: Dockerfile.prod
+      context: ../../nginx
+      dockerfile: Dockerfile
     image: ${NGINX_IMAGE}
     container_name: mercado-nginx-prod
     ports:

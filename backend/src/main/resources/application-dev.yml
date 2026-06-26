@@ -26,3 +26,8 @@ logging:
   level:
     br.ufpb.dsc.mercado: DEBUG
     org.springframework.web: DEBUG
+
+# Mercado Pago — use sua chave de TESTE (começa com TEST-)
+# Obtenha em: https://www.mercadopago.com.br/developers/panel/credentials
+mercadopago:
+  access-token: ${MERCADOPAGO_ACCESS_TOKEN:TEST-sua-chave-de-teste-aqui}

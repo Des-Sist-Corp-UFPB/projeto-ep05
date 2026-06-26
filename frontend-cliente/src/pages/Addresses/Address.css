@@ -147,3 +147,107 @@ input:read-only {
     padding: var(--esp-lg);
   }
 }
+
+/* ── Lista de endereços salvos ─────────────────────────────────── */
+
+.address-lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-sm);
+  width: 100%;
+}
+
+.address-lista-titulo {
+  font-size: var(--font-sm);
+  font-weight: var(--peso-semi);
+  color: var(--cor-texto-3);
+  margin-bottom: var(--esp-xs);
+}
+
+.address-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--esp-sm);
+  padding: var(--esp-md);
+  border-radius: var(--radius-lg);
+  border: 2px solid var(--cor-detalhe-2);
+  background-color: var(--cor-detalhe);
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.address-item:hover {
+  border-color: var(--cor-botao);
+  background-color: #fff0f5;
+}
+
+.address-item--selecionado {
+  border-color: var(--cor-secundaria);
+  background-color: #fce8ee;
+}
+
+.address-item-radio {
+  padding-top: 3px;
+  flex-shrink: 0;
+}
+
+.radio-circulo {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--cor-detalhe-2);
+  background-color: white;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.radio-circulo--ativo {
+  border-color: var(--cor-secundaria);
+  background-color: var(--cor-secundaria);
+  box-shadow: inset 0 0 0 3px white;
+}
+
+.address-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.address-item-rua {
+  font-size: var(--font-md);
+  font-weight: var(--peso-semi);
+  color: var(--cor-texto);
+}
+
+.address-item-detalhe {
+  font-size: var(--font-sm);
+  color: var(--cor-texto-3);
+}
+
+.address-acoes {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--esp-sm);
+  margin-top: var(--esp-md);
+}
+
+.address-link-novo {
+  background: none;
+  border: none;
+  color: var(--cor-botao);
+  font-size: var(--font-sm);
+  font-weight: var(--peso-semi);
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+}
+
+.address-link-novo:hover {
+  color: var(--cor-secundaria);
+}
+
+.address-form-wrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}

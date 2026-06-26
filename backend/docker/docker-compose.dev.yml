@@ -1,29 +1,33 @@
 # =============================================================================
 # Docker Compose — DESENVOLVIMENTO
 # =============================================================================
-# Sobe o ambiente completo com:
-#   - postgres:   PostgreSQL 16
-#   - app:        Spring Boot com hot-reload
-#   - frontend:   React buildado servido pelo Nginx interno
-#   - nginx:      Proxy reverso (porta 80) usando nomes de container *-dev
-#   - adminer:    Gerenciador de banco (http://localhost:8888)
+# Sobe o ambiente completo de desenvolvimento com:
+#   - postgres:  Banco PostgreSQL 16 com dados PERSISTIDOS em volume nomeado
+#   - app:       Aplicação Spring Boot com hot-reload
+#   - adminer:   Interface web para inspecionar o banco (http://localhost:8888)
+#   - trivy:     Scanner de vulnerabilidades (perfil opcional: --profile scan
 #
-# Como usar (a partir da raiz do projeto):
-#   docker compose -f docker/docker-compose.dev.yml --env-file backend/.env.dev up --build
+# Como usar:
+#   docker compose -f docker/docker-compose.dev.yml up
+#   docker compose -f docker/docker-compose.dev.yml up --build  # forçar rebuild
 #
-# Acessos:
-#   http://localhost        → aplicação completa via Nginx
-#   http://localhost:8080   → backend diretamente
-#   http://localhost:5173   → frontend diretamente
-#   http://localhost:8888   → Adminer
+# ⚠️  ATENÇÃO — DADOS PERSISTIDOS:
+#   O volume "postgres-dev-data" sobrevive ao `docker compose down`.
+#   Para parar sem perder dados:
+#     docker compose -f docker/docker-compose.dev.yml down          ✅ dados preservados
+#   Para apagar TUDO (dados incluídos) — use apenas se quiser resetar o banco:
+#     docker compose -f docker/docker-compose.dev.yml down -v       ❌ APAGA OS DADOS
 #
-# ⚠️  Para apagar dados do banco: docker compose ... down -v
+# Para rodar só o banco (sem a aplicação):
+#   docker compose -f docker/docker-compose.dev.yml up postgres adminer
 # =============================================================================
 
 services:
 
   # ---------------------------------------------------------------------------
   # Banco de dados PostgreSQL
+  # Volume nomeado garante persistência entre `docker compose down` e `up`.
+  # Apenas `down -v` ou `docker volume rm` apaga os dados.
   # ---------------------------------------------------------------------------
   postgres:
     image: postgres:16-alpine
@@ -35,6 +39,8 @@ services:
     ports:
       - "5432:5432"
     volumes:
+      # Volume NOMEADO — gerenciado pelo Docker, persiste entre restarts.
+      # Para inspecionar: docker volume inspect sweet-delights_postgres-dev-data
       - postgres-dev-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME} -d mercado_dev"]
@@ -46,15 +52,17 @@ services:
       - mercado-net
 
   # ---------------------------------------------------------------------------
-  # Backend Spring Boot (hot-reload via Spring DevTools)
+  # Aplicação Spring Boot (hot-reload via Spring DevTools)
+  # O código-fonte é montado como volume — salvar um .java reinicia a app.
   # ---------------------------------------------------------------------------
   app:
     build:
-      context: ../backend
+      context: ..
       dockerfile: docker/Dockerfile.dev
     container_name: mercado-app-dev
     environment:
       SPRING_PROFILES_ACTIVE: dev
+      # Sobrescreve a URL do application-dev.yml para usar o hostname do container
       SPRING_DATASOURCE_URL: ${DATABASE_URL}
       SPRING_DATASOURCE_USERNAME: ${DATABASE_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${DATABASE_PASSWORD}
@@ -64,7 +72,9 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - ../backend/src:/app/src
+      # Hot-reload: monta o código-fonte para o Spring DevTools detectar mudanças
+      - ../src:/app/src
+      # Cache Maven: evita re-download das dependências a cada rebuild
       - maven-cache:/root/.m2
     depends_on:
       postgres:
@@ -73,42 +83,10 @@ services:
       - mercado-net
 
   # ---------------------------------------------------------------------------
-  # Frontend React
-  # Porta 5173 exposta para acesso direto (sem passar pelo nginx)
-  # ---------------------------------------------------------------------------
-  frontend:
-    build:
-      context: ../frontend-cliente
-      dockerfile: docker/Dockerfile
-    container_name: mercado-frontend-dev
-    expose:
-      - "80"
-    ports:
-      - "5173:80"
-    depends_on:
-      - app
-    networks:
-      - mercado-net
-
-  # ---------------------------------------------------------------------------
-  # Nginx (dev) — usa nginx.dev.conf que aponta para os containers *-dev
-  # Acesse: http://localhost
-  # ---------------------------------------------------------------------------
-  nginx:
-    build:
-      context: ../nginx
-      dockerfile: Dockerfile.dev
-    container_name: mercado-nginx-dev
-    ports:
-      - "80:80"
-    depends_on:
-      - app
-      - frontend
-    networks:
-      - mercado-net
-
-  # ---------------------------------------------------------------------------
-  # Adminer: gerenciador do banco (http://localhost:8888)
+  # Adminer: interface web para gerenciar o banco
+  # Acesse: http://localhost:8888
+  # Sistema: PostgreSQL | Servidor: postgres | Banco: mercado_dev
+  # Usuário: mercado | Senha: mercado123
   # ---------------------------------------------------------------------------
   adminer:
     image: adminer:latest
@@ -122,7 +100,7 @@ services:
 
   # ---------------------------------------------------------------------------
   # Trivy: scanner de vulnerabilidades (perfil opcional)
-  # Uso: docker compose ... --profile scan up trivy
+  # Uso: docker compose -f docker/docker-compose.dev.yml --profile scan up trivy
   # ---------------------------------------------------------------------------
   trivy:
     image: aquasec/trivy:latest
@@ -137,6 +115,8 @@ services:
       - mercado-net
 
 volumes:
+  # ⚠️  Este volume persiste os dados do banco entre restarts.
+  # Para apagar: docker compose -f docker/docker-compose.dev.yml down -v
   postgres-dev-data:
   maven-cache:
   trivy-cache:

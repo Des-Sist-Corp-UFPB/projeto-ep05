@@ -1,18 +1,17 @@
-/* Perfil.css */
-
+/* ── Layout geral ─────────────────────────────────────────────────────────── */
 .profile-page {
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   padding: var(--esp-xl);
-  height: 100vh;
+  min-height: 100vh;
   background-color: var(--cor-fundo);
 }
 
 .profile-card {
-  background-color: var(--cor-detalhe); 
+  background-color: var(--cor-detalhe);
   width: 100%;
-  max-width: 480px;
+  max-width: 520px;
   padding: var(--esp-xl);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-md);
@@ -20,6 +19,7 @@
   max-height: 90vh;
 }
 
+/* ── Header ──────────────────────────────────────────────────────────────── */
 .profile-header {
   text-align: center;
   margin-bottom: var(--esp-lg);
@@ -28,8 +28,8 @@
 .avatar-circle {
   width: 80px;
   height: 80px;
-  background-color: var(--cor-backgroundDetails); 
-  color: var(--cor-texto-2); 
+  background-color: var(--cor-backgroundDetails);
+  color: var(--cor-texto-2);
   font-size: var(--font-xxl);
   font-weight: var(--peso-bold);
   display: flex;
@@ -51,7 +51,65 @@
   font-size: var(--font-sm);
 }
 
-/* --- Alertas --- */
+/* ── Abas ────────────────────────────────────────────────────────────────── */
+.profile-tabs {
+  display: flex;
+  gap: var(--esp-xs);
+  margin-bottom: var(--esp-lg);
+  border-bottom: 2px solid var(--cor-detalhe-2);
+  padding-bottom: 0;
+}
+
+.profile-tab {
+  background: none;
+  border: none;
+  padding: var(--esp-sm) var(--esp-md);
+  cursor: pointer;
+  font-size: var(--font-sm);
+  font-weight: var(--peso-medio);
+  color: var(--cor-texto-3);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.2s ease;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+
+.profile-tab:hover {
+  color: var(--cor-secundaria);
+}
+
+.profile-tab.ativa {
+  color: var(--cor-botao);
+  border-bottom-color: var(--cor-botao);
+  font-weight: var(--peso-bold);
+}
+
+.profile-tab.tab-perigo {
+  color: var(--cor-backgroundDetails);
+  margin-left: auto;
+}
+
+.profile-tab.tab-perigo.ativa {
+  border-bottom-color: var(--cor-backgroundDetails);
+}
+
+/* ── Conteúdo das abas ───────────────────────────────────────────────────── */
+.tab-content {
+  width: 100%;
+}
+
+.tab-loading {
+  text-align: center;
+  color: var(--cor-texto-3);
+  padding: var(--esp-lg);
+}
+
+/* ── Inputs e grupos ─────────────────────────────────────────────────────── */
+.input-group {
+  margin-bottom: var(--esp-md);
+}
+
+/* ── Alertas ─────────────────────────────────────────────────────────────── */
 .alert {
   padding: var(--esp-sm);
   border-radius: var(--radius-md);
@@ -61,31 +119,28 @@
 }
 
 .alert.success {
-  background-color: var(--cor-botao-secundario); /* Verde */
+  background-color: var(--cor-botao-secundario);
   color: white;
 }
 
 .alert.error {
-  background-color: var(--cor-backgroundDetails); /* Rosa escuro/Avermelhado */
+  background-color: var(--cor-backgroundDetails);
   color: white;
 }
 
-/* --- Inputs e Ações --- */
-.input-group {
-  margin-bottom: var(--esp-md);
-}
-
+/* ── Ações de perfil ─────────────────────────────────────────────────────── */
 .profile-actions {
   margin-top: var(--esp-lg);
 }
 
-.profile-actions div {
+.profile-actions-edit {
   display: flex;
   gap: var(--esp-sm);
+  flex-wrap: wrap;
 }
 
-/* --- Botões Customizados --- */
-.btn-edit, .btn-save {
+.btn-edit,
+.btn-save {
   background-color: var(--cor-botao) !important;
   color: var(--cor-texto-2) !important;
 }
@@ -96,9 +151,109 @@
   border: 1px solid var(--cor-secundaria) !important;
 }
 
-/* --- Zona de Perigo --- */
+/* ── Endereços ───────────────────────────────────────────────────────────── */
+.empty-state {
+  text-align: center;
+  color: var(--cor-texto-3);
+  font-size: var(--font-sm);
+  padding: var(--esp-lg) 0;
+}
+
+.address-card-item {
+  background-color: var(--cor-fundo);
+  border: 1px solid var(--cor-detalhe-2);
+  border-radius: var(--radius-md);
+  padding: var(--esp-md);
+  margin-bottom: var(--esp-md);
+  position: relative;
+}
+
+.address-card-item.principal {
+  border-color: var(--cor-botao);
+}
+
+.badge-principal {
+  display: inline-block;
+  background-color: var(--cor-botao);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: var(--peso-bold);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--esp-xs);
+}
+
+.address-line {
+  font-size: var(--font-sm);
+  color: var(--cor-texto);
+  margin-bottom: 2px;
+}
+
+.btn-remover {
+  margin-top: var(--esp-sm);
+  background: none;
+  border: 1px solid var(--cor-backgroundDetails);
+  color: var(--cor-backgroundDetails);
+  font-size: var(--font-xs);
+  padding: 3px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-remover:hover {
+  background-color: var(--cor-backgroundDetails);
+  color: white;
+}
+
+.btn-novo-endereco {
+  width: 100%;
+  margin-top: var(--esp-sm);
+}
+
+.form-novo-endereco {
+  margin-top: var(--esp-lg);
+  border-top: 1px solid var(--cor-detalhe-2);
+  padding-top: var(--esp-lg);
+}
+
+.form-novo-endereco h3 {
+  color: var(--cor-secundaria);
+  margin-bottom: var(--esp-md);
+  font-size: var(--font-md);
+}
+
+.address-form-inline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-md);
+}
+
+.address-row {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: var(--esp-sm);
+}
+
+.form-actions {
+  display: flex;
+  gap: var(--esp-sm);
+  margin-top: var(--esp-sm);
+}
+
+.form-api-error {
+  color: red;
+  font-size: var(--font-sm);
+}
+
+.loading-cep-text {
+  font-size: var(--font-xs);
+  color: var(--cor-texto-3);
+  font-style: italic;
+}
+
+/* ── Zona de perigo ──────────────────────────────────────────────────────── */
 .danger-zone {
-  margin-top: var(--esp-xl);
   padding: var(--esp-md);
   background-color: rgba(225, 84, 119, 0.05);
   border-radius: var(--radius-lg);
@@ -133,21 +288,6 @@
   color: white;
 }
 
-
-hr {
-  border: 0;
-  border-top: 1px solid var(--cor-detalhe-2);
-  margin: var(--esp-lg) 0;
-}/* Copia as classes originais e adiciona as novas */
-
-/* ── Ações em modo edição ─────────────────────────────────────────────────── */
-.profile-actions-edit {
-  display: flex;
-  gap: var(--esp-sm);
-  flex-wrap: wrap;
-}
-
-/* ── Confirmação de exclusão inline ─────────────────────────────────────── */
 .confirm-delete {
   margin-top: var(--esp-sm);
 }
@@ -178,4 +318,21 @@ hr {
 
 .btn-cancel-delete:hover {
   background: #f0f0f0;
+}
+
+/* ── Responsivo ──────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .profile-card {
+    padding: var(--esp-md);
+  }
+  .profile-tabs {
+    gap: 2px;
+  }
+  .profile-tab {
+    padding: var(--esp-xs) var(--esp-sm);
+    font-size: 0.75rem;
+  }
+  .address-row {
+    grid-template-columns: 1fr;
+  }
 }

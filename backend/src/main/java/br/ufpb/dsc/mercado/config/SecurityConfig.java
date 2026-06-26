@@ -1,5 +1,6 @@
 package br.ufpb.dsc.mercado.config;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -38,6 +39,7 @@ public class SecurityConfig {
     /**
      * Cadeia de filtros 1: API REST (/api/**)
      * Autenticação via JWT, sem estado (stateless).
+     * Retorna 401 JSON em vez de redirecionar para /admin/login.
      */
     @Bean
     @Order(1)
@@ -52,8 +54,19 @@ public class SecurityConfig {
                         // Cadastro, Login e catálogo de produtos são públicos
                         .requestMatchers("/api/auth/login", "/api/auth/cadastro").permitAll()
                         .requestMatchers("/api/produtos/**").permitAll()
-                        // Quaisquer outros endpoints da API exigem login (papel de CLIENTE ou outros)
+                        // Quaisquer outros endpoints da API exigem login
                         .anyRequest().authenticated()
+                )
+                // Garante que requisições /api/** sem token retornam 401 JSON,
+                // NUNCA um redirect 302 para /admin/login
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.getWriter().write(
+                                "{\"status\":401,\"mensagem\":\"Nao autenticado. Faca login para continuar.\"}"
+                            );
+                        })
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -63,6 +76,7 @@ public class SecurityConfig {
     /**
      * Cadeia de filtros 2: Páginas MVC / Thymeleaf (admins e sysadmins)
      * Autenticação baseada em sessão (cookie).
+     * Restrito explicitamente a rotas não-API.
      */
     @Bean
     @Order(2)
@@ -80,7 +94,6 @@ public class SecurityConfig {
                 )
                 .formLogin(form -> form
                         .loginPage("/admin/login")
-                        // Redireciona dinamicamente pós-login baseado na role do usuário
                         .successHandler((request, response, authentication) -> {
                             var authorities = authentication.getAuthorities();
                             boolean isSysAdmin = authorities.stream().anyMatch(a -> a.getAuthority().equals("ROLE_SYSADMIN"));
@@ -98,8 +111,6 @@ public class SecurityConfig {
                         .permitAll()
                 )
                 .csrf(csrf -> csrf
-                        // Desabilita apenas para requisições de produtos HTMX para simplificação educacional
-                        // Em produção, deve-se passar o header X-CSRF-Token no HTMX
                         .ignoringRequestMatchers("/produtos/**", "/admin/**", "/sysadmin/**", "/admin/cadastro", "/logout")
                 );
 

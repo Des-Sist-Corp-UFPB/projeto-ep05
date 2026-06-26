@@ -16,10 +16,16 @@ import MainScrollContainer from "../../components/MainScrollContainer/MainScroll
 const Address = () => {
   const navigate = useNavigate();
 
+  // ── Endereços existentes ──────────────────────────────────────
+  const [enderecos, setEnderecos] = useState([]);
+  const [loadingEnderecos, setLoadingEnderecos] = useState(true);
+  const [enderecoSelecionado, setEnderecoSelecionado] = useState(null);
+  const [mostrarFormulario, setMostrarFormulario] = useState(false);
+
+  // ── Formulário novo endereço ──────────────────────────────────
   const [form, setForm] = useState({
     cep: "", rua: "", numero: "", complemento: "", bairro: "", cidade: "", estado: "",
   });
-
   const [erros, setErros] = useState({});
   const [loadingCep, setLoadingCep] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -29,6 +35,22 @@ const Address = () => {
   const debounceRef = useRef(null);
   const cepValido = form.cep.replace(/\D/g, "").length === 8;
 
+  // ── Busca endereços ao montar ─────────────────────────────────
+  useEffect(() => {
+    apiFetch("/clientes/enderecos")
+      .then((data) => {
+        setEnderecos(data || []);
+        if (data && data.length > 0) {
+          setEnderecoSelecionado(data[0].id);
+        } else {
+          setMostrarFormulario(true);
+        }
+      })
+      .catch(() => setMostrarFormulario(true))
+      .finally(() => setLoadingEnderecos(false));
+  }, []);
+
+  // ── Handlers formulário ───────────────────────────────────────
   const handleChange = (e) => {
     const { name, value } = e.target;
     let formattedValue = name === "cep" ? formatCep(value) : value;
@@ -67,7 +89,7 @@ const Address = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmitNovo = async (e) => {
     e.preventDefault();
 
     const errosValidados = validarFormularioAddress(form);
@@ -100,6 +122,10 @@ const Address = () => {
     }
   };
 
+  const handleUsarSelecionado = () => {
+    navigate("/checkout");
+  };
+
   useEffect(() => {
     if (success) {
       const timer = setTimeout(() => navigate("/checkout"), 2000);
@@ -107,12 +133,27 @@ const Address = () => {
     }
   }, [success, navigate]);
 
+  // ── Tela de sucesso ───────────────────────────────────────────
   if (success) {
     return (
       <div className="success-container">
         <div className="success-card">
           <h1>✅ Endereço salvo!</h1>
           <p>Redirecionando para o pagamento...</p>
+          <div className="loader-dots">
+            <div></div><div></div><div></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Loading inicial ───────────────────────────────────────────
+  if (loadingEnderecos) {
+    return (
+      <div className="success-container">
+        <div className="success-card">
+          <p>Carregando endereços...</p>
           <div className="loader-dots">
             <div></div><div></div><div></div>
           </div>
@@ -128,25 +169,85 @@ const Address = () => {
           <BackButton variant="2" />
           <h1>Endereço de Entrega</h1>
 
-          {apiError && <p style={{ color: "red" }}>{apiError}</p>}
+          {/* ── Lista de endereços existentes ── */}
+          {enderecos.length > 0 && (
+            <div className="address-lista">
+              <p className="address-lista-titulo">Escolha um endereço salvo:</p>
 
-          <form onSubmit={handleSubmit} className="address-form">
-            <Input name="cep" placeholder="CEP" value={form.cep} onChange={handleChange} erro={erros.cep} />
-            {loadingCep && <p>Buscando CEP...</p>}
-            <Input name="rua" placeholder="Rua / Logradouro" value={form.rua} onChange={handleChange} erro={erros.rua} />
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "1px" }}>
-              <Input style={{ width: "91px" }} name="numero" placeholder="Número" value={form.numero} onChange={handleChange} erro={erros.numero} />
-              <Input style={{ width: "200px" }} name="bairro" placeholder="Bairro" value={form.bairro} onChange={handleChange} erro={erros.bairro} />
+              {enderecos.map((end) => (
+                <div
+                  key={end.id}
+                  className={`address-item ${enderecoSelecionado === end.id ? "address-item--selecionado" : ""}`}
+                  onClick={() => {
+                    setEnderecoSelecionado(end.id);
+                    setMostrarFormulario(false);
+                  }}
+                >
+                  <div className="address-item-radio">
+                    <div className={`radio-circulo ${enderecoSelecionado === end.id ? "radio-circulo--ativo" : ""}`} />
+                  </div>
+                  <div className="address-item-info">
+                    <p className="address-item-rua">{end.logradouro}, {end.numero}</p>
+                    {end.complemento && <p className="address-item-detalhe">{end.complemento}</p>}
+                    <p className="address-item-detalhe">{end.bairro} — {end.cidade}/{end.estado}</p>
+                    <p className="address-item-detalhe">CEP: {end.cep}</p>
+                  </div>
+                </div>
+              ))}
+
+              {!mostrarFormulario && (
+                <div className="address-acoes">
+                  <Button onClick={handleUsarSelecionado} disabled={!enderecoSelecionado}>
+                    Usar este endereço
+                  </Button>
+                  <button
+                    className="address-link-novo"
+                    onClick={() => { setMostrarFormulario(true); setEnderecoSelecionado(null); }}
+                  >
+                    + Adicionar novo endereço
+                  </button>
+                </div>
+              )}
             </div>
-            <Input name="complemento" placeholder="Complemento (opcional)" value={form.complemento} onChange={handleChange} />
-            <Input name="cidade" placeholder="Cidade" value={form.cidade} onChange={handleChange} erro={erros.cidade} readOnly={cepValido} />
-            <Input name="estado" placeholder="Estado" value={form.estado} onChange={handleChange} erro={erros.estado} readOnly={cepValido} />
-            <div className="btn-save-address">
-              <Button type="submit" disabled={saving}>
-                {saving ? "Salvando..." : "Salvar endereço"}
-              </Button>
+          )}
+
+          {/* ── Formulário novo endereço ── */}
+          {mostrarFormulario && (
+            <div className="address-form-wrapper">
+              {enderecos.length > 0 && (
+                <button
+                  className="address-link-novo"
+                  onClick={() => { setMostrarFormulario(false); setEnderecoSelecionado(enderecos[0].id); }}
+                >
+                  ← Voltar para endereços salvos
+                </button>
+              )}
+
+              <p className="address-lista-titulo" style={{ marginTop: "var(--esp-md)" }}>
+                {enderecos.length === 0 ? "Cadastre seu endereço de entrega:" : "Novo endereço:"}
+              </p>
+
+              {apiError && <p style={{ color: "red" }}>{apiError}</p>}
+
+              <form onSubmit={handleSubmitNovo} className="address-form">
+                <Input name="cep" placeholder="CEP" value={form.cep} onChange={handleChange} erro={erros.cep} />
+                {loadingCep && <p>Buscando CEP...</p>}
+                <Input name="rua" placeholder="Rua / Logradouro" value={form.rua} onChange={handleChange} erro={erros.rua} />
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "1px" }}>
+                  <Input style={{ width: "91px" }} name="numero" placeholder="Número" value={form.numero} onChange={handleChange} erro={erros.numero} />
+                  <Input style={{ width: "200px" }} name="bairro" placeholder="Bairro" value={form.bairro} onChange={handleChange} erro={erros.bairro} />
+                </div>
+                <Input name="complemento" placeholder="Complemento (opcional)" value={form.complemento} onChange={handleChange} />
+                <Input name="cidade" placeholder="Cidade" value={form.cidade} onChange={handleChange} erro={erros.cidade} readOnly={cepValido} />
+                <Input name="estado" placeholder="Estado" value={form.estado} onChange={handleChange} erro={erros.estado} readOnly={cepValido} />
+                <div className="btn-save-address">
+                  <Button type="submit" disabled={saving}>
+                    {saving ? "Salvando..." : "Salvar e usar este endereço"}
+                  </Button>
+                </div>
+              </form>
             </div>
-          </form>
+          )}
         </div>
       </div>
     </MainScrollContainer>

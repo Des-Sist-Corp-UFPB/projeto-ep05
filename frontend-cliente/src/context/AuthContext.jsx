@@ -80,9 +80,13 @@ export const AuthProvider = ({ children }) => {
         method: "POST",
         body: JSON.stringify({
           nome: newUser.nome,
+          sobrenome: newUser.sobrenome,
           email: newUser.email,
+          cpf: newUser.cpf,
+          telefone: newUser.telefone,
+          dataNascimento: newUser.dataNascimento,
           senha: newUser.senha,
-          papel: "CLIENTE",
+          confirmacaoSenha: newUser.confirmarSenha,
         }),
       });
       persistirUsuario(data);

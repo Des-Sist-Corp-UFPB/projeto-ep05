@@ -46,15 +46,18 @@ public class UsuarioService {
     private final EnderecoRepository enderecoRepository;
     private final CartaoRepository cartaoRepository;
     private final PasswordEncoder passwordEncoder;
+    private final MercadoPagoService mercadoPagoService;
 
     public UsuarioService(UsuarioRepository usuarioRepository,
                           EnderecoRepository enderecoRepository,
                           CartaoRepository cartaoRepository,
-                          PasswordEncoder passwordEncoder) {
+                          PasswordEncoder passwordEncoder,
+                          MercadoPagoService mercadoPagoService) {
         this.usuarioRepository = usuarioRepository;
         this.enderecoRepository = enderecoRepository;
         this.cartaoRepository = cartaoRepository;
         this.passwordEncoder = passwordEncoder;
+        this.mercadoPagoService = mercadoPagoService;
     }
 
     // ── Consultas básicas ─────────────────────────────────────────────────────
@@ -273,6 +276,15 @@ public class UsuarioService {
     public Cartao cadastrarCartao(Long clienteId, CartaoSalvarDTO dto) {
         Usuario cliente = buscarPorId(clienteId);
 
+        // Tokeniza os dados do cartão via Mercado Pago.
+        // O token é o único dado sensível que armazenamos — número e CVV nunca são persistidos.
+        String token = mercadoPagoService.tokenizarCartao(
+                dto.numeroCartao(),
+                dto.cvv(),
+                dto.dataExpiracao(),
+                dto.nomeTitular()
+        );
+
         Cartao cartao = new Cartao();
         cartao.setCliente(cliente);
         cartao.setNomeTitular(dto.nomeTitular());
@@ -280,7 +292,7 @@ public class UsuarioService {
 
         String numStr = dto.numeroCartao().replaceAll("\\s+", "");
         cartao.setQuatroUltimosDigitos(numStr.substring(numStr.length() - 4));
-        cartao.setTokenPagamento("TOK_" + UUID.randomUUID().toString().replace("-", "").toUpperCase());
+        cartao.setTokenPagamento(token);
         cartao.setDataExpiracao(dto.dataExpiracao());
 
         return cartaoRepository.save(cartao);

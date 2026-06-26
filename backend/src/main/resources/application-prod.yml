@@ -2,9 +2,9 @@ spring:
   datasource:
     # Em produção, as credenciais vêm de variáveis de ambiente — NUNCA hardcode!
     # Configure no sistema operacional, Docker, Kubernetes secrets, etc.
-    url: ${DATABASE_URL}
-    username: ${DATABASE_USERNAME}
-    password: ${DATABASE_PASSWORD}
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: validate
@@ -18,3 +18,7 @@ logging:
   level:
     root: WARN
     br.ufpb.dsc.mercado: INFO
+
+# Mercado Pago — em produção use a chave LIVE (começa com APP_USR-)
+mercadopago:
+  access-token: ${MERCADOPAGO_ACCESS_TOKEN}

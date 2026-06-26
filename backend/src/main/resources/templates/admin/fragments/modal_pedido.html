@@ -48,7 +48,7 @@
                         </tr>
                     </tbody>
                     <tfoot>
-                        <tr th:if="${pedido.totalDesconto.compareTo(java.math.BigDecimal.ZERO) > 0}">
+                        <tr th:if="${pedido.totalDesconto != null and pedido.totalDesconto.compareTo(java.math.BigDecimal.ZERO) > 0}">
                             <td colspan="3" class="text-end text-muted">Desconto (cupom)</td>
                             <td class="text-end text-danger" th:text="${'- R$ ' + #numbers.formatDecimal(pedido.totalDesconto, 1, 'POINT', 2, 'COMMA')}"></td>
                         </tr>
@@ -61,14 +61,19 @@
 
                 <hr/>
 
+                <!-- Feedback de sucesso -->
+                <div id="pedido-feedback" class="alert alert-success d-none mb-3">
+                    ✅ Atualizado com sucesso!
+                </div>
+
                 <!-- Atualizar status -->
                 <div class="row g-3">
                     <div class="col-md-6">
                         <h6 class="fw-semibold mb-2">Atualizar status</h6>
-                        <form th:hx-post="@{/admin/pedidos/{id}/status(id=${pedido.id})}"
-                              hx-target="#tabela-pedidos"
-                              hx-swap="outerHTML"
-                              hx-on::after-request="bootstrap.Modal.getInstance(document.getElementById('pedidoModal'))?.hide()">
+                        <form th:id="'form-status-' + ${pedido.id}"
+                              th:action="@{/admin/pedidos/{id}/status(id=${pedido.id})}"
+                              method="post"
+                              onsubmit="submitStatusForm(event, this)">
                             <div class="d-flex gap-2">
                                 <select name="status" class="form-select form-select-sm">
                                     <option th:each="s : ${statusList}"
@@ -77,21 +82,27 @@
                                             th:selected="${s == pedido.status}">
                                     </option>
                                 </select>
-                                <button type="submit" class="btn btn-sm btn-primary text-nowrap">Salvar</button>
+                                <button type="submit" class="btn btn-sm btn-primary text-nowrap">
+                                    <span class="btn-texto">Salvar</span>
+                                    <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+                                </button>
                             </div>
                         </form>
                     </div>
                     <div class="col-md-6">
                         <h6 class="fw-semibold mb-2">Código de rastreamento</h6>
-                        <form th:hx-post="@{/admin/pedidos/{id}/rastreamento(id=${pedido.id})}"
-                              hx-target="#tabela-pedidos"
-                              hx-swap="outerHTML"
-                              hx-on::after-request="bootstrap.Modal.getInstance(document.getElementById('pedidoModal'))?.hide()">
+                        <form th:id="'form-rastreamento-' + ${pedido.id}"
+                              th:action="@{/admin/pedidos/{id}/rastreamento(id=${pedido.id})}"
+                              method="post"
+                              onsubmit="submitRastreamentoForm(event, this)">
                             <div class="d-flex gap-2">
                                 <input type="text" name="codigoRastreamento" class="form-control form-control-sm"
                                        th:value="${pedido.codigoRastreamento}"
                                        placeholder="Ex.: BR123456789BR"/>
-                                <button type="submit" class="btn btn-sm btn-outline-primary text-nowrap">Salvar</button>
+                                <button type="submit" class="btn btn-sm btn-outline-primary text-nowrap">
+                                    <span class="btn-texto">Salvar</span>
+                                    <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+                                </button>
                             </div>
                         </form>
                     </div>
@@ -101,5 +112,103 @@
         </div>
     </div>
 </div>
+
+<script>
+function mostrarFeedback(form) {
+    const feedback = document.getElementById('pedido-feedback');
+    const btn = form.querySelector('button[type=submit]');
+    const spinner = btn.querySelector('.spinner-border');
+    const texto = btn.querySelector('.btn-texto');
+
+    spinner.classList.add('d-none');
+    texto.classList.remove('d-none');
+    btn.disabled = false;
+
+    feedback.classList.remove('d-none');
+    setTimeout(() => feedback.classList.add('d-none'), 3000);
+
+    // Recarrega a tabela de pedidos via HTMX se disponível
+    const tabela = document.getElementById('tabela-pedidos');
+    if (tabela && window.htmx) {
+        htmx.trigger(tabela, 'refresh');
+    } else {
+        // fallback: recarrega a tabela com fetch
+        fetch('/admin/pedidos?pagina=0', {
+            headers: { 'HX-Request': 'true' }
+        }).then(r => r.text()).then(html => {
+            if (tabela) {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const novaTabela = doc.getElementById('tabela-pedidos');
+                if (novaTabela) tabela.outerHTML = novaTabela.outerHTML;
+            }
+        }).catch(() => {});
+    }
+}
+
+function submitStatusForm(event, form) {
+    event.preventDefault();
+    const btn = form.querySelector('button[type=submit]');
+    const spinner = btn.querySelector('.spinner-border');
+    const texto = btn.querySelector('.btn-texto');
+    btn.disabled = true;
+    spinner.classList.remove('d-none');
+    texto.classList.add('d-none');
+
+    const action = form.action;
+    const status = form.querySelector('select[name=status]').value;
+
+    fetch(action, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'status=' + encodeURIComponent(status)
+    }).then(r => {
+        if (r.ok) mostrarFeedback(form);
+        else {
+            btn.disabled = false;
+            spinner.classList.add('d-none');
+            texto.classList.remove('d-none');
+            alert('Erro ao atualizar status.');
+        }
+    }).catch(() => {
+        btn.disabled = false;
+        spinner.classList.add('d-none');
+        texto.classList.remove('d-none');
+        alert('Erro de conexão.');
+    });
+}
+
+function submitRastreamentoForm(event, form) {
+    event.preventDefault();
+    const btn = form.querySelector('button[type=submit]');
+    const spinner = btn.querySelector('.spinner-border');
+    const texto = btn.querySelector('.btn-texto');
+    btn.disabled = true;
+    spinner.classList.remove('d-none');
+    texto.classList.add('d-none');
+
+    const action = form.action;
+    const codigo = form.querySelector('input[name=codigoRastreamento]').value;
+
+    fetch(action, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'codigoRastreamento=' + encodeURIComponent(codigo)
+    }).then(r => {
+        if (r.ok) mostrarFeedback(form);
+        else {
+            btn.disabled = false;
+            spinner.classList.add('d-none');
+            texto.classList.remove('d-none');
+            alert('Erro ao atualizar rastreamento.');
+        }
+    }).catch(() => {
+        btn.disabled = false;
+        spinner.classList.add('d-none');
+        texto.classList.remove('d-none');
+        alert('Erro de conexão.');
+    });
+}
+</script>
 </body>
 </html>
