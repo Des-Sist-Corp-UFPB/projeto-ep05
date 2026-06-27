@@ -286,6 +286,85 @@ const TabEnderecos = () => {
   );
 };
 
+
+// ── Aba: Cartões ──────────────────────────────────────────────────────────────
+
+const BANDEIRA_EMOJI = { VISA: "💳", MASTERCARD: "💳", ELO: "💳", AMEX: "💳", OUTRO: "💳" };
+
+const TabCartoes = () => {
+  const [cartoes, setCartoes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState("");
+  const [removendo, setRemovendo] = useState(null);
+
+  const carregar = async () => {
+    setLoading(true);
+    try {
+      const data = await apiFetch("/clientes/cartoes");
+      setCartoes(data ?? []);
+    } catch (err) {
+      setErro(err.mensagem || "Erro ao carregar cartões");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { carregar(); }, []);
+
+  const handleRemover = async (id) => {
+    if (!window.confirm("Remover este cartão?")) return;
+    setRemovendo(id);
+    setErro("");
+    try {
+      await apiFetch(`/clientes/cartoes/${id}`, { method: "DELETE" });
+      setCartoes((prev) => prev.filter((c) => c.id !== id));
+    } catch (err) {
+      setErro(err.mensagem || "Erro ao remover cartão");
+    } finally {
+      setRemovendo(null);
+    }
+  };
+
+  if (loading) return <p className="tab-loading">Carregando cartões...</p>;
+
+  return (
+    <div className="tab-content">
+      {erro && <div className="alert error">{erro}</div>}
+
+      {cartoes.length === 0 && (
+        <p className="empty-state">Nenhum cartão salvo. Seus cartões aparecem aqui após a primeira compra.</p>
+      )}
+
+      {cartoes.map((cartao) => (
+        <div key={cartao.id} className="address-card-item">
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+              <p className="address-line" style={{ fontWeight: 600, marginBottom: "0.25rem" }}>
+                {BANDEIRA_EMOJI[cartao.bandeira] || "💳"} {cartao.bandeira} •••• {cartao.quatroUltimosDigitos}
+              </p>
+              <p className="address-line">{cartao.nomeTitular}</p>
+              <p className="address-line" style={{ color: "#888", fontSize: "0.85rem" }}>
+                Validade: {cartao.dataExpiracao}
+              </p>
+            </div>
+            <button
+              className="btn-remover"
+              onClick={() => handleRemover(cartao.id)}
+              disabled={removendo === cartao.id}
+            >
+              {removendo === cartao.id ? "Removendo..." : "Remover"}
+            </button>
+          </div>
+        </div>
+      ))}
+
+      <p style={{ color: "#999", fontSize: "0.82rem", marginTop: "1rem" }}>
+        💡 Cartões são salvos automaticamente ao realizar uma compra.
+      </p>
+    </div>
+  );
+};
+
 // ── Aba: Excluir Conta ────────────────────────────────────────────────────────
 
 const TabPerigo = ({ deleteUser }) => {
@@ -318,7 +397,7 @@ const TabPerigo = ({ deleteUser }) => {
 
 // ── Profile principal ─────────────────────────────────────────────────────────
 
-const ABAS = ["Dados Pessoais", "Endereços", "Excluir Conta"];
+const ABAS = ["Dados Pessoais", "Endereços", "Cartões", "Excluir Conta"];
 
 const Profile = () => {
   const { user, updateUser, deleteUser } = useAuth();
@@ -343,7 +422,7 @@ const Profile = () => {
             {ABAS.map((aba, i) => (
               <button
                 key={aba}
-                className={`profile-tab ${abaAtiva === i ? "ativa" : ""} ${i === 2 ? "tab-perigo" : ""}`}
+                className={`profile-tab ${abaAtiva === i ? "ativa" : ""} ${i === 3 ? "tab-perigo" : ""}`}
                 onClick={() => setAbaAtiva(i)}
               >
                 {aba}
@@ -353,7 +432,8 @@ const Profile = () => {
 
           {abaAtiva === 0 && <TabDados user={user} updateUser={updateUser} />}
           {abaAtiva === 1 && <TabEnderecos />}
-          {abaAtiva === 2 && <TabPerigo deleteUser={deleteUser} />}
+          {abaAtiva === 2 && <TabCartoes />}
+          {abaAtiva === 3 && <TabPerigo deleteUser={deleteUser} />}
         </MainScrollContainer>
       </div>
     </div>

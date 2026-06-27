@@ -18,6 +18,7 @@ public record PedidoDTO(
     BigDecimal totalDesconto,
     BigDecimal totalGeral,
     String codigoRastreamento,
+    String motivoCancelamento,
     List<PedidoItemDTO> itens,
     Instant criadoEm,
     Instant atualizadoEm

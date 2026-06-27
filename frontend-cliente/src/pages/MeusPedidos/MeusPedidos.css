@@ -274,6 +274,69 @@
   margin: 2px 0;
 }
 
+/* ── Área de cancelamento ──────────────────────────────────────── */
+
+.pedido-cancelar-area {
+  border-top: 1px solid var(--cor-detalhe-2);
+  padding-top: var(--esp-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-sm);
+  align-items: flex-start;
+}
+
+.pedido-cancelar-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-sm);
+  width: 100%;
+}
+
+.pedido-cancelar-aviso {
+  font-size: var(--font-sm);
+  color: #856404;
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: var(--radius-sm);
+  padding: var(--esp-xs) var(--esp-md);
+  margin: 0;
+}
+
+.pedido-cancelar-botoes {
+  display: flex;
+  gap: var(--esp-sm);
+  align-items: center;
+}
+
+.pedido-cancelar-erro {
+  font-size: var(--font-xs);
+  color: #c0392b;
+  margin: 0;
+}
+
+/* Variante danger para o Button de cancelar */
+/* (adicione ao seu Button.css se ainda não tiver) */
+.btn-danger {
+  background-color: #dc3545;
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: var(--esp-xs) var(--esp-md);
+  font-size: var(--font-sm);
+  font-weight: var(--peso-semi);
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background-color: #b02a37;
+}
+
+.btn-danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* ── Paginação ─────────────────────────────────────────────────── */
 
 .meus-pedidos-paginacao {
@@ -285,7 +348,7 @@
   color: var(--cor-texto-3);
 }
 
-/* ── loader-dots (reusa do global) ────────────────────────────── */
+/* ── loader-dots ───────────────────────────────────────────────── */
 
 .loader-dots {
   display: flex;
@@ -313,4 +376,5 @@
   .pedido-card-header { flex-direction: column; align-items: flex-start; }
   .timeline-step-label { font-size: 0.55rem; max-width: 55px; }
   .timeline-step-circle { width: 32px; height: 32px; font-size: 0.9rem; }
+  .pedido-cancelar-botoes { flex-direction: column; align-items: stretch; }
 }

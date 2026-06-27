@@ -12,6 +12,10 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --silent
 
+# Recebe a chave pública do Mercado Pago como build arg
+ARG VITE_MP_PUBLIC_KEY
+ENV VITE_MP_PUBLIC_KEY=$VITE_MP_PUBLIC_KEY
+
 # Copia o restante do código e gera o build de produção
 COPY . .
 RUN npm run build

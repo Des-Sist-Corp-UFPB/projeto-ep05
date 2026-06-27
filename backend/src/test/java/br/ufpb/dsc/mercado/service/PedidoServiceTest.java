@@ -6,6 +6,7 @@ import br.ufpb.dsc.mercado.dto.CheckoutRequest;
 import br.ufpb.dsc.mercado.dto.PedidoDTO;
 import br.ufpb.dsc.mercado.repository.PedidoRepository;
 import br.ufpb.dsc.mercado.repository.ProdutoRepository;
+import br.ufpb.dsc.mercado.service.MercadoPagoService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -34,12 +35,13 @@ class PedidoServiceTest {
     @Mock ProdutoRepository produtoRepository;
     @Mock UsuarioService usuarioService;
     @Mock CupomService cupomService;
+    @Mock MercadoPagoService mercadoPagoService;
 
     private PedidoService service;
 
     @BeforeEach
     void setUp() {
-        service = new PedidoService(pedidoRepository, produtoRepository, usuarioService, cupomService);
+        service = new PedidoService(pedidoRepository, produtoRepository, usuarioService, cupomService, mercadoPagoService);
     }
 
     // ── Helpers de fixture ──────────────────────────────────────────────────

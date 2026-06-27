@@ -6,5 +6,6 @@ public record PedidoItemDTO(
     Long produtoId,
     String produtoNome,
     Integer quantidade,
-    BigDecimal precoUnitario
+    BigDecimal precoUnitario,
+    BigDecimal subtotal
 ) {}

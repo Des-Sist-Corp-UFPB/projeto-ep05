@@ -1,110 +1,104 @@
 package br.ufpb.dsc.mercado.service;
 
-import com.mercadopago.client.cardtoken.CardTokenClient;
-import com.mercadopago.client.cardtoken.CardTokenRequest;
-import com.mercadopago.core.MPRequestOptions;
+import com.mercadopago.client.payment.PaymentClient;
+import com.mercadopago.client.payment.PaymentCreateRequest;
+import com.mercadopago.client.payment.PaymentPayerRequest;
 import com.mercadopago.exceptions.MPApiException;
 import com.mercadopago.exceptions.MPException;
-import com.mercadopago.resources.CardToken;
+import com.mercadopago.resources.payment.Payment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
 
 /**
  * Serviço de integração com o Mercado Pago.
  *
- * NOTA TÉCNICA: O SDK Java 2.1.x do Mercado Pago não suporta tokenização
- * server-side com dados raw de cartão (número, CVV, validade, titular).
- * O CardTokenRequestBuilder desta versão só aceita cardId e securityCode
- * para revalidar cartões já cadastrados no Mercado Pago.
+ * A tokenização do cartão é feita pelo SDK JS do Mercado Pago no FRONTEND.
+ * O backend recebe apenas o token gerado e o usa para cobrar via Payment API.
  *
- * Em produção, a tokenização de novos cartões deve ser feita no frontend
- * via SDK JS do Mercado Pago, que retorna um token seguro (PCI-compliant).
- * O backend recebe apenas o token gerado pelo frontend.
- *
- * O método tokenizarCartao abaixo mantém a assinatura original para
- * compatibilidade com o restante do sistema, usando cardId + securityCode
- * quando disponíveis, ou delegando ao fluxo de token de frontend.
+ * Fluxo:
+ *   1. Frontend chama mp.createCardToken(cardData) → recebe token
+ *   2. Frontend envia token + dados mascarados para POST /api/clientes/cartoes
+ *   3. Backend salva o cartão com o token
+ *   4. Na criação do pedido, backend chama cobrarComToken() com o token salvo
  */
 @Service
 public class MercadoPagoService {
 
     private static final Logger log = LoggerFactory.getLogger(MercadoPagoService.class);
 
-    @Value("${mercadopago.access-token}")
-    private String accessToken;
-
     /**
-     * Tokeniza os dados de um cartão via API do Mercado Pago.
+     * Processa o pagamento usando o token de cartão gerado pelo frontend.
      *
-     * Como o SDK 2.1.x não suporta tokenização server-side com dados raw,
-     * este método revalida via securityCode (CVV) usando o número do cartão
-     * como identificador de fallback. Para novos cartões, o token deve ser
-     * gerado no frontend e enviado ao backend diretamente.
-     *
-     * @param numeroCartao   16 dígitos do cartão (usado como cardId de fallback)
-     * @param cvv            3 ou 4 dígitos do CVV
-     * @param dataExpiracao  No formato MM/AAAA (informativo)
-     * @param nomeTitular    Nome impresso no cartão (informativo)
-     * @return token gerado pelo Mercado Pago
-     * @throws IllegalArgumentException se o Mercado Pago rejeitar os dados
+     * @param token         token gerado pelo SDK JS do Mercado Pago
+     * @param valor         valor total a cobrar
+     * @param emailPagador  e-mail do cliente (obrigatório pelo Mercado Pago)
+     * @param descricao     descrição do pedido
+     * @param parcelas      número de parcelas (1 = à vista)
+     * @return Payment com o resultado da cobrança
+     * @throws IllegalArgumentException se o Mercado Pago recusar o pagamento
      */
-    public String tokenizarCartao(String numeroCartao,
-                                   String cvv,
-                                   String dataExpiracao,
-                                   String nomeTitular) {
+    public Payment cobrarComToken(String token, BigDecimal valor,
+                                  String emailPagador, String descricao,
+                                  int parcelas) {
         try {
-            // O SDK 2.1.x só aceita cardId + securityCode no builder.
-            // Usamos o número do cartão como cardId para revalidação via CVV.
-            CardTokenRequest tokenRequest = CardTokenRequest.builder()
-                    .cardId(numeroCartao.replaceAll("\\s+", ""))
-                    .securityCode(cvv)
+            PaymentCreateRequest paymentRequest = PaymentCreateRequest.builder()
+                    .transactionAmount(valor)
+                    .token(token)
+                    .description(descricao)
+                    .installments(parcelas)
+                    .paymentMethodId("visa") // será detectado automaticamente pelo token
+                    .payer(
+                        PaymentPayerRequest.builder()
+                            .email(emailPagador)
+                            .build()
+                    )
                     .build();
 
-            CardTokenClient client = new CardTokenClient();
-            MPRequestOptions options = MPRequestOptions.builder()
-                    .accessToken(accessToken)
-                    .build();
+            PaymentClient client = new PaymentClient();
+            Payment payment = client.create(paymentRequest);
 
-            CardToken cardToken = client.create(tokenRequest, options);
-
-            if (cardToken == null || cardToken.getId() == null || cardToken.getId().isBlank()) {
-                throw new IllegalArgumentException("Mercado Pago não retornou um token válido para o cartão informado.");
+            if (payment == null) {
+                throw new IllegalArgumentException("Mercado Pago não retornou resposta ao processar o pagamento.");
             }
 
-            log.info("Cartão tokenizado com sucesso. Token ID: {}", cardToken.getId());
-            return cardToken.getId();
+            String status = payment.getStatus();
+            log.info("Pagamento processado. ID: {}, Status: {}, StatusDetail: {}",
+                    payment.getId(), status, payment.getStatusDetail());
+
+            // approved = aprovado, in_process = em análise (ambos aceitáveis)
+            if ("approved".equals(status) || "in_process".equals(status) || "authorized".equals(status)) {
+                return payment;
+            }
+
+            // rejected ou qualquer outro status
+            String detalhe = payment.getStatusDetail() != null ? payment.getStatusDetail() : status;
+            throw new IllegalArgumentException("Pagamento recusado pelo Mercado Pago: " + traduzirRejeicao(detalhe));
 
         } catch (MPApiException e) {
-            String mensagem = extrairMensagemErro(e);
-            log.warn("Erro da API do Mercado Pago ao tokenizar cartão: {}", mensagem);
-            throw new IllegalArgumentException("Dados do cartão inválidos: " + mensagem);
+            String mensagem = e.getApiResponse() != null ? e.getApiResponse().getContent() : e.getMessage();
+            log.warn("Erro da API do Mercado Pago: {}", mensagem);
+            throw new IllegalArgumentException("Erro ao processar pagamento: " + mensagem);
         } catch (MPException e) {
             log.error("Falha na comunicação com o Mercado Pago", e);
-            throw new IllegalArgumentException("Não foi possível validar o cartão no momento. Tente novamente.");
+            throw new IllegalArgumentException("Não foi possível conectar ao Mercado Pago. Tente novamente.");
         }
     }
 
-    /**
-     * Valida um token já gerado pelo frontend (SDK JS do Mercado Pago).
-     *
-     * @param token token gerado pelo frontend
-     * @return o próprio token se válido
-     * @throws IllegalArgumentException se o token for nulo ou vazio
-     */
-    public String validarTokenFrontend(String token) {
-        if (token == null || token.isBlank()) {
-            throw new IllegalArgumentException("Token do cartão inválido ou ausente.");
-        }
-        log.info("Token de cartão recebido do frontend: {}", token);
-        return token;
-    }
-
-    private String extrairMensagemErro(MPApiException e) {
-        if (e.getApiResponse() != null && e.getApiResponse().getContent() != null) {
-            return e.getApiResponse().getContent();
-        }
-        return e.getMessage();
+    /** Traduz os códigos de rejeição mais comuns para português. */
+    private String traduzirRejeicao(String detalhe) {
+        return switch (detalhe) {
+            case "cc_rejected_insufficient_amount"    -> "saldo insuficiente no cartão";
+            case "cc_rejected_bad_filled_card_number" -> "número do cartão inválido";
+            case "cc_rejected_bad_filled_date"        -> "data de validade inválida";
+            case "cc_rejected_bad_filled_security_code" -> "código de segurança inválido";
+            case "cc_rejected_blacklist"              -> "cartão bloqueado";
+            case "cc_rejected_call_for_authorize"     -> "cartão requer autorização da operadora";
+            case "cc_rejected_duplicated_payment"     -> "pagamento duplicado detectado";
+            case "cc_rejected_high_risk"              -> "pagamento recusado por segurança";
+            default -> detalhe;
+        };
     }
 }

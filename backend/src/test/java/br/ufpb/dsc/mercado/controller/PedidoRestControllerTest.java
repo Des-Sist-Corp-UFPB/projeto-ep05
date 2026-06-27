@@ -69,7 +69,7 @@ class PedidoRestControllerTest {
 
     private PedidoDTO dtoBasico(Long id) {
         return new PedidoDTO(id, 1L, "Ana", "ana@teste.com", null, null, null,
-                StatusPedido.PAGO, BigDecimal.TEN, BigDecimal.ZERO, BigDecimal.TEN, null,
+                StatusPedido.PAGO, BigDecimal.TEN, BigDecimal.ZERO, BigDecimal.TEN, null, null,
                 List.of(), Instant.now(), Instant.now());
     }
 
@@ -117,10 +117,10 @@ class PedidoRestControllerTest {
         Page<Pedido> page = new PageImpl<>(List.of(pedido));
         PedidoDTO dto = dtoBasico(1L);
 
-        when(pedidoService.listarPorCliente(1L, pageable)).thenReturn(page);
+        when(pedidoService.listarPorCliente(1L, null, pageable)).thenReturn(page);
         when(pedidoService.converterParaDTO(pedido)).thenReturn(dto);
 
-        ResponseEntity<Page<PedidoDTO>> resposta = controller.listarPedidosDoCliente(pageable);
+        ResponseEntity<Page<PedidoDTO>> resposta = controller.listarPedidosDoClienteComFiltro(null, pageable);
 
         assertThat(resposta.getBody().getContent()).containsExactly(dto);
     }

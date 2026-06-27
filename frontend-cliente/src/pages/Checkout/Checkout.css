@@ -192,6 +192,117 @@
   font-size: var(--font-sm);
 }
 
+/* ── Cartões salvos ── */
+
+.cartoes-salvos-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-sm);
+  margin-bottom: var(--esp-md);
+}
+
+.cartoes-salvos-titulo {
+  font-size: var(--font-md);
+  font-weight: var(--peso-bold);
+  color: var(--cor-secundaria);
+  margin: 0 0 var(--esp-xs) 0;
+}
+
+.cartoes-lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-xs);
+}
+
+.cartao-salvo-item {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-sm);
+  padding: var(--esp-sm) var(--esp-md);
+  border: 2px solid var(--cor-detalhe-2);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  background: #fff;
+}
+
+.cartao-salvo-item.selecionado {
+  border-color: var(--cor-secundaria);
+  background: #fff5f5;
+}
+
+.cartao-salvo-item input[type="radio"] {
+  accent-color: var(--cor-secundaria);
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.cartao-salvo-info {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-sm);
+  flex: 1;
+}
+
+.cartao-salvo-bandeira {
+  height: 22px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.cartao-salvo-info > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cartao-salvo-numero {
+  font-family: "Courier New", monospace;
+  font-size: var(--font-sm);
+  font-weight: var(--peso-bold);
+  color: var(--cor-texto);
+  letter-spacing: 1px;
+}
+
+.cartao-salvo-titular {
+  font-size: var(--font-xs);
+  color: var(--cor-texto);
+  font-weight: var(--peso-medio);
+}
+
+.cartao-salvo-validade {
+  font-size: var(--font-xs);
+  color: var(--cor-texto-3);
+}
+
+.btn-usar-outro-cartao {
+  background: none;
+  border: none;
+  color: var(--cor-secundaria);
+  font-size: var(--font-sm);
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+  padding: var(--esp-xs) 0;
+  text-decoration: underline;
+  text-align: left;
+  width: fit-content;
+}
+
+.btn-usar-outro-cartao:hover {
+  opacity: 0.75;
+}
+
+.cartoes-loading {
+  text-align: center;
+  padding: var(--esp-lg);
+  color: var(--cor-texto-3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--esp-sm);
+}
+
 /* ── Card Visual (flip 3D) ── */
 
 .card-visual {
@@ -408,6 +519,29 @@
   to { transform: rotate(360deg); }
 }
 
+/* ── Loader dots ── */
+
+.loader-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.loader-dots div {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--cor-secundaria);
+  animation: bounce 1s infinite alternate;
+}
+
+.loader-dots div:nth-child(2) { animation-delay: 0.2s; }
+.loader-dots div:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes bounce {
+  from { transform: translateY(0); }
+  to { transform: translateY(-6px); }
+}
+
 /* ── Botão desabilitado ── */
 
 button:disabled {
@@ -452,7 +586,6 @@ button:disabled {
   font-size: var(--font-sm);
   margin-top: var(--esp-md);
 }
-
 
 .success-pedido-id {
   font-size: var(--font-lg);

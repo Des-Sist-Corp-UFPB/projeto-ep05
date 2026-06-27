@@ -18,9 +18,13 @@ const STATUS_INFO = {
 
 const ETAPAS = ["AGUARDANDO_PAGAMENTO", "PAGO", "ENVIADO", "ENTREGUE"];
 
+// Statuses que ainda permitem cancelamento (antes de ENVIADO)
+const STATUS_CANCELAVEIS = new Set(["AGUARDANDO_PAGAMENTO", "PAGO"]);
+
 function calcProgresso(status) {
-  const idx = ETAPAS.indexOf(status);
-  if (status === "CANCELADO") return -1;
+  const s = status?.toUpperCase() ?? "";
+  const idx = ETAPAS.indexOf(s);
+  if (s === "CANCELADO") return -1;
   return idx >= 0 ? idx : 0;
 }
 
@@ -35,9 +39,9 @@ function formatarData(instant) {
 // ── Componente de timeline de um pedido ──────────────────────────────────────
 
 function TimelinePedido({ pedido }) {
-  const progresso = calcProgresso(pedido.status);
-  const cancelado = pedido.status === "CANCELADO";
-  const info = STATUS_INFO[pedido.status] || {};
+  const statusNorm = pedido.status?.toUpperCase() ?? "";
+  const progresso = calcProgresso(statusNorm);
+  const cancelado = statusNorm === "CANCELADO";
 
   return (
     <div className="pedido-timeline">
@@ -64,8 +68,8 @@ function TimelinePedido({ pedido }) {
         </div>
       )}
 
-      <div className={`pedido-status-badge ${info.cor || ""}`}>
-        {info.emoji} {info.label}
+      <div className={`pedido-status-badge ${STATUS_INFO[statusNorm]?.cor || ""}`}>
+        {STATUS_INFO[statusNorm]?.emoji} {STATUS_INFO[statusNorm]?.label}
       </div>
 
       {pedido.codigoRastreamento && (
@@ -79,8 +83,43 @@ function TimelinePedido({ pedido }) {
 
 // ── Card de pedido ────────────────────────────────────────────────────────────
 
-function CardPedido({ pedido }) {
+function CardPedido({ pedido, onCancelar }) {
   const [aberto, setAberto] = useState(false);
+  const [cancelando, setCancelando] = useState(false);
+  const [confirmando, setConfirmando] = useState(false);
+  const [erroCancelamento, setErroCancelamento] = useState("");
+  const [motivo, setMotivo] = useState("");
+
+  // Normaliza o status para maiúsculo para garantir compatibilidade com qualquer formato da API
+  const statusNorm = pedido.status?.toUpperCase() ?? "";
+  const podeCancelar = STATUS_CANCELAVEIS.has(statusNorm);
+
+  async function handleCancelar() {
+    if (!confirmando) {
+      setMotivo("");
+      setConfirmando(true);
+      return;
+    }
+    if (!motivo.trim()) {
+      setErroCancelamento("Informe o motivo do cancelamento.");
+      return;
+    }
+    setCancelando(true);
+    setErroCancelamento("");
+    try {
+      await apiFetch(`/pedidos/${pedido.id}/cancelar`, {
+        method: "POST",
+        body: JSON.stringify({ motivo }),
+      });
+      setConfirmando(false);
+      onCancelar(pedido.id);
+    } catch (err) {
+      setErroCancelamento(err.mensagem || "Não foi possível cancelar o pedido.");
+      setConfirmando(false);
+    } finally {
+      setCancelando(false);
+    }
+  }
 
   return (
     <div className="pedido-card">
@@ -90,8 +129,8 @@ function CardPedido({ pedido }) {
           <span className="pedido-data">{formatarData(pedido.criadoEm)}</span>
         </div>
         <div className="pedido-card-direita">
-          <span className={`pedido-status-mini ${STATUS_INFO[pedido.status]?.cor || ""}`}>
-            {STATUS_INFO[pedido.status]?.emoji} {STATUS_INFO[pedido.status]?.label}
+          <span className={`pedido-status-mini ${STATUS_INFO[pedido.status?.toUpperCase()]?.cor || ""}`}>
+            {STATUS_INFO[pedido.status?.toUpperCase()]?.emoji} {STATUS_INFO[pedido.status?.toUpperCase()]?.label}
           </span>
           <span className="pedido-total">R$ {Number(pedido.totalGeral).toFixed(2)}</span>
           <span className="pedido-chevron">{aberto ? "▲" : "▼"}</span>
@@ -123,6 +162,63 @@ function CardPedido({ pedido }) {
               <p>CEP: {pedido.enderecoEntrega.cep}</p>
             </div>
           )}
+
+          {/* ── Motivo de cancelamento (se cancelado) ── */}
+          {statusNorm === "CANCELADO" && pedido.motivoCancelamento && (
+            <div style={{background:"#fff0f0",borderRadius:8,padding:"0.75rem 1rem",marginTop:"0.75rem",border:"1px solid #fcd4d4"}}>
+              <strong style={{color:"#c0392b",fontSize:"0.85rem"}}>Motivo do cancelamento:</strong>
+              <p style={{margin:"0.25rem 0 0",fontSize:"0.9rem",color:"#555"}}>{pedido.motivoCancelamento}</p>
+            </div>
+          )}
+
+          {/* ── Botão de cancelamento ── */}
+          {podeCancelar && (
+            <div className="pedido-cancelar-area">
+              {erroCancelamento && (
+                <p className="pedido-cancelar-erro">{erroCancelamento}</p>
+              )}
+
+              {confirmando ? (
+                <div className="pedido-cancelar-confirm">
+                  <p className="pedido-cancelar-aviso">
+                    ⚠️ Informe o motivo do cancelamento:
+                  </p>
+                  <textarea
+                    rows={3}
+                    placeholder="Ex: Comprei por engano, quero trocar o produto..."
+                    value={motivo}
+                    onChange={e => setMotivo(e.target.value)}
+                    disabled={cancelando}
+                    style={{width:"100%",borderRadius:8,border:"1.5px solid #e0c4d4",padding:"0.6rem",fontSize:"0.9rem",resize:"vertical",boxSizing:"border-box",marginBottom:"0.5rem"}}
+                  />
+                  <div className="pedido-cancelar-botoes">
+                    <Button
+                      variant="tertiary"
+                      onClick={() => { setConfirmando(false); setMotivo(""); setErroCancelamento(""); }}
+                      disabled={cancelando}
+                    >
+                      Não, manter
+                    </Button>
+                    <Button
+                      variant="danger"
+                      onClick={handleCancelar}
+                      disabled={cancelando || !motivo.trim()}
+                    >
+                      {cancelando ? "Cancelando..." : "Sim, cancelar"}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <Button
+                  variant="danger"
+                  onClick={handleCancelar}
+                  disabled={cancelando}
+                >
+                  Cancelar pedido
+                </Button>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -134,6 +230,8 @@ function CardPedido({ pedido }) {
 const MeusPedidos = () => {
   const navigate = useNavigate();
   const [pedidos, setPedidos] = useState([]);
+  const [filtroStatus, setFiltroStatus] = useState("");
+
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState("");
   const [pagina, setPagina] = useState(0);
@@ -155,6 +253,15 @@ const MeusPedidos = () => {
   }, []);
 
   useEffect(() => { carregarPedidos(0); }, [carregarPedidos]);
+
+  // Atualiza o status do pedido cancelado localmente sem recarregar tudo
+  function handlePedidoCancelado(pedidoId) {
+    setPedidos((prev) =>
+      prev.map((p) =>
+        p.id === pedidoId ? { ...p, status: "CANCELADO" } : p
+      )
+    );
+  }
 
   return (
     <MainScrollContainer height="calc(100vh - 40px)">
@@ -181,7 +288,11 @@ const MeusPedidos = () => {
         )}
 
         {!loading && pedidos.map((pedido) => (
-          <CardPedido key={pedido.id} pedido={pedido} />
+          <CardPedido
+            key={pedido.id}
+            pedido={pedido}
+            onCancelar={handlePedidoCancelado}
+          />
         ))}
 
         {totalPaginas > 1 && (

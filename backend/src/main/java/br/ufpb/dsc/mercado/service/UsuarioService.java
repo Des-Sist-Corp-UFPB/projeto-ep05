@@ -276,23 +276,14 @@ public class UsuarioService {
     public Cartao cadastrarCartao(Long clienteId, CartaoSalvarDTO dto) {
         Usuario cliente = buscarPorId(clienteId);
 
-        // Tokeniza os dados do cartão via Mercado Pago.
-        // O token é o único dado sensível que armazenamos — número e CVV nunca são persistidos.
-        String token = mercadoPagoService.tokenizarCartao(
-                dto.numeroCartao(),
-                dto.cvv(),
-                dto.dataExpiracao(),
-                dto.nomeTitular()
-        );
-
+        // O token foi gerado pelo SDK JS do Mercado Pago no frontend.
+        // O backend nunca recebe o numero completo nem o CVV — apenas o token seguro.
         Cartao cartao = new Cartao();
         cartao.setCliente(cliente);
         cartao.setNomeTitular(dto.nomeTitular());
         cartao.setBandeira(dto.bandeira());
-
-        String numStr = dto.numeroCartao().replaceAll("\\s+", "");
-        cartao.setQuatroUltimosDigitos(numStr.substring(numStr.length() - 4));
-        cartao.setTokenPagamento(token);
+        cartao.setQuatroUltimosDigitos(dto.quatroUltimosDigitos());
+        cartao.setTokenPagamento(dto.tokenMercadoPago());
         cartao.setDataExpiracao(dto.dataExpiracao());
 
         return cartaoRepository.save(cartao);
