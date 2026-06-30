@@ -99,4 +99,19 @@ describe('Home', () => {
     await waitFor(() => expect(screen.queryByText('Preparando suas delícias...')).not.toBeInTheDocument());
     expect(screen.getByText('Sweet Delights')).toBeInTheDocument();
   });
+
+  it('com hash #destaques, deve rolar até a seção e limpar o hash da URL', async () => {
+    mockLocationValue = { pathname: '/home', hash: '#destaques' };
+    mockGetProdutos.mockResolvedValueOnce([]);
+    mockGetMaisVendidos.mockResolvedValueOnce([{ id: 1, name: 'Cookie', price: 5, image: 'c.png' }]);
+    mockGetCategorias.mockResolvedValueOnce([]);
+
+    const scrollToMock = vi.fn();
+    Element.prototype.scrollTo = scrollToMock;
+
+    renderHome();
+
+    await waitFor(() => expect(scrollToMock).toHaveBeenCalled());
+    expect(mockNavigate).toHaveBeenCalledWith('/home', { replace: true });
+  });
 });

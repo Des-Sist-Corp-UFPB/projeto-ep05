@@ -114,6 +114,19 @@ describe('AuthContext', () => {
     expect(response.message).toBe('E-mail já cadastrado');
   });
 
+  it('register com falha sem mensagem deve usar mensagem padrão', async () => {
+    mockApiFetch.mockRejectedValueOnce({});
+    const { result } = renderHook(() => useAuth(), { wrapper: AuthProvider });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    let response;
+    await act(async () => {
+      response = await result.current.register({ nome: 'Novo', email: 'dup@b.com', senha: 'senha123' });
+    });
+    expect(response.success).toBe(false);
+    expect(response.message).toBe('Erro ao cadastrar');
+  });
+
   it('logout deve limpar o usuário', async () => {
     localStorage.setItem('user', JSON.stringify({ nome: 'Arthur', token: 'tok' }));
     const { result } = renderHook(() => useAuth(), { wrapper: AuthProvider });
@@ -152,6 +165,20 @@ describe('AuthContext', () => {
     });
     expect(response.success).toBe(false);
     expect(response.message).toBe('Senha atual incorreta');
+  });
+
+  it('updateUser com falha sem mensagem deve usar mensagem padrão', async () => {
+    localStorage.setItem('user', JSON.stringify({ nome: 'Arthur', email: 'a@b.com', token: 'tok' }));
+    mockApiFetch.mockRejectedValueOnce({});
+    const { result } = renderHook(() => useAuth(), { wrapper: AuthProvider });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    let response;
+    await act(async () => {
+      response = await result.current.updateUser({ nome: 'X', email: 'a@b.com' });
+    });
+    expect(response.success).toBe(false);
+    expect(response.message).toBe('Erro ao atualizar perfil');
   });
 
   it('deleteUser deve limpar o usuário mesmo com sucesso na API', async () => {
@@ -276,6 +303,19 @@ describe('CartContext', () => {
     act(() => result.current.addToCart({ id: 1, name: 'Brownie', price: 10 }));
     expect(result.current.cart).toHaveLength(1);
     expect(result.current.cart[0].quantity).toBe(2);
+  });
+
+  it('addToCart de produto existente com outros itens no carrinho deve preservar os demais', () => {
+    const { result } = renderHook(() => useCart(), { wrapper: CartProvider });
+    act(() => result.current.addToCart({ id: 1, name: 'Brownie', price: 10 }));
+    act(() => result.current.addToCart({ id: 2, name: 'Cookie', price: 5 }));
+    act(() => result.current.addToCart({ id: 1, name: 'Brownie', price: 10 }));
+
+    expect(result.current.cart).toHaveLength(2);
+    const brownie = result.current.cart.find((i) => i.id === 1);
+    const cookie = result.current.cart.find((i) => i.id === 2);
+    expect(brownie.quantity).toBe(2);
+    expect(cookie.quantity).toBe(1);
   });
 
   it('removeFromCart deve remover o item', () => {

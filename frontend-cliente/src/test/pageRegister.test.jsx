@@ -25,8 +25,12 @@ function renderRegister() {
 }
 
 function preencherFormularioValido() {
-  fireEvent.change(screen.getByLabelText('Nome completo'), { target: { name: 'nome', value: 'Arthur Silva' } });
+  fireEvent.change(screen.getByLabelText('Nome'), { target: { name: 'nome', value: 'Arthur Silva' } });
+  fireEvent.change(screen.getByLabelText('Sobrenome'), { target: { name: 'sobrenome', value: 'Pereira' } });
   fireEvent.change(screen.getByLabelText('E-mail'), { target: { name: 'email', value: 'arthur@b.com' } });
+  fireEvent.change(screen.getByLabelText('CPF'), { target: { name: 'cpf', value: '123.456.789-00' } });
+  fireEvent.change(screen.getByLabelText('Telefone'), { target: { name: 'telefone', value: '(11) 91234-5678' } });
+  fireEvent.change(screen.getByLabelText('Data de nascimento'), { target: { name: 'dataNascimento', value: '1990-01-01' } });
   fireEvent.change(screen.getByLabelText('Senha'), { target: { name: 'senha', value: 'Senha@123' } });
   fireEvent.change(screen.getByLabelText('Confirmar senha'), { target: { name: 'confirmarSenha', value: 'Senha@123' } });
 }
@@ -34,7 +38,7 @@ function preencherFormularioValido() {
 describe('Register', () => {
   it('deve renderizar todos os campos do formulário', () => {
     renderRegister();
-    expect(screen.getByLabelText('Nome completo')).toBeInTheDocument();
+    expect(screen.getByLabelText('Nome')).toBeInTheDocument();
     expect(screen.getByLabelText('E-mail')).toBeInTheDocument();
     expect(screen.getByLabelText('Senha')).toBeInTheDocument();
     expect(screen.getByLabelText('Confirmar senha')).toBeInTheDocument();
@@ -51,7 +55,7 @@ describe('Register', () => {
   it('digitar um campo deve validar em tempo real', () => {
     renderRegister();
     fireEvent.change(screen.getByLabelText('E-mail'), { target: { name: 'email', value: 'naoeemail' } });
-    expect(screen.getByText('Digite um email válido')).toBeInTheDocument();
+    expect(screen.getByText('Digite um e-mail válido')).toBeInTheDocument();
   });
 
   it('cadastro bem-sucedido deve navegar para "/"', async () => {
@@ -74,6 +78,19 @@ describe('Register', () => {
 
     await waitFor(() => expect(screen.getByText('E-mail já cadastrado')).toBeInTheDocument());
     expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it('editar um campo após erro geral deve limpar a mensagem de erro', async () => {
+    mockRegister.mockResolvedValueOnce({ success: false, message: 'E-mail já cadastrado' });
+    renderRegister();
+    preencherFormularioValido();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cadastrar' }));
+    await waitFor(() => expect(screen.getByText('E-mail já cadastrado')).toBeInTheDocument());
+
+    fireEvent.change(screen.getByLabelText('Nome'), { target: { name: 'nome', value: 'Outro Nome' } });
+
+    expect(screen.queryByText('E-mail já cadastrado')).not.toBeInTheDocument();
   });
 
   it('cadastro com falha sem mensagem deve usar mensagem padrão', async () => {

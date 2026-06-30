@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthAuditoriaListener.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mercado</a> &gt; <a href="index.source.html" class="el_package">br.ufpb.dsc.mercado.audit</a> &gt; <span class="el_source">AuthAuditoriaListener.java</span></div><h1>AuthAuditoriaListener.java</h1><pre class="source lang-java linenums">package br.ufpb.dsc.mercado.audit;
+
+import org.springframework.context.event.EventListener;
+import org.springframework.security.authentication.event.AbstractAuthenticationFailureEvent;
+import org.springframework.security.authentication.event.AuthenticationSuccessEvent;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
+import org.springframework.stereotype.Component;
+
+/**
+ * Captura eventos de login bem-sucedido e falha de autenticação
+ * publicados automaticamente pelo Spring Security.
+ */
+@Component
+public class AuthAuditoriaListener {
+
+    private final AuditoriaService auditoriaService;
+
+<span class="fc" id="L19">    public AuthAuditoriaListener(AuditoriaService auditoriaService) {</span>
+<span class="fc" id="L20">        this.auditoriaService = auditoriaService;</span>
+<span class="fc" id="L21">    }</span>
+
+    @EventListener
+    public void onLoginSucesso(AuthenticationSuccessEvent event) {
+<span class="fc" id="L25">        String email = resolverEmail(event.getAuthentication().getPrincipal());</span>
+<span class="fc" id="L26">        boolean isSysAdmin = event.getAuthentication().getAuthorities().stream()</span>
+<span class="fc" id="L27">                .anyMatch(a -&gt; a.getAuthority().equals(&quot;ROLE_SYSADMIN&quot;));</span>
+<span class="fc" id="L28">        boolean isAdmin = event.getAuthentication().getAuthorities().stream()</span>
+<span class="fc" id="L29">                .anyMatch(a -&gt; a.getAuthority().equals(&quot;ROLE_ADMIN&quot;));</span>
+
+<span class="fc bfc" id="L31" title="All 4 branches covered.">        String papel = isSysAdmin ? &quot;SYSADMIN&quot; : isAdmin ? &quot;ADMIN&quot; : &quot;CLIENTE&quot;;</span>
+<span class="fc" id="L32">        String descricao = &quot;Login realizado com sucesso&quot;;</span>
+
+<span class="fc" id="L34">        auditoriaService.registrar(LogAuditoria.builder()</span>
+<span class="fc" id="L35">                .papelAtor(papel)</span>
+<span class="fc" id="L36">                .ator(email)</span>
+<span class="fc" id="L37">                .categoria(&quot;AUTH&quot;)</span>
+<span class="fc" id="L38">                .descricao(descricao)</span>
+<span class="fc" id="L39">                .build());</span>
+<span class="fc" id="L40">    }</span>
+
+    @EventListener
+    public void onLoginFalha(AbstractAuthenticationFailureEvent event) {
+<span class="fc" id="L44">        String email = resolverEmail(event.getAuthentication().getPrincipal());</span>
+<span class="fc" id="L45">        auditoriaService.registrar(LogAuditoria.builder()</span>
+<span class="fc" id="L46">                .papelAtor(&quot;DESCONHECIDO&quot;)</span>
+<span class="fc" id="L47">                .ator(email)</span>
+<span class="fc" id="L48">                .categoria(&quot;AUTH&quot;)</span>
+<span class="fc" id="L49">                .descricao(&quot;Tentativa de login falhou: &quot; + event.getException().getMessage())</span>
+<span class="fc" id="L50">                .falha()</span>
+<span class="fc" id="L51">                .build());</span>
+<span class="fc" id="L52">    }</span>
+
+    private String resolverEmail(Object principal) {
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        if (principal instanceof UserDetails ud) return ud.getUsername();</span>
+<span class="fc bfc" id="L56" title="All 2 branches covered.">        return principal != null ? principal.toString() : &quot;desconhecido&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

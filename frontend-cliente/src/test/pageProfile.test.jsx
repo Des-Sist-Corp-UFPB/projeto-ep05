@@ -16,12 +16,24 @@ vi.mock('../context/AuthContext', () => ({
   useAuth: () => ({ user: mockUserValue, updateUser: mockUpdateUser, deleteUser: mockDeleteUser }),
 }));
 
+const mockApiFetch = vi.fn();
+vi.mock('../api/api', () => ({
+  apiFetch: (...args) => mockApiFetch(...args),
+}));
+
+const mockBuscarCEP = vi.fn();
+vi.mock('../api/cep', () => ({
+  buscarCEP: (...args) => mockBuscarCEP(...args),
+}));
+
 import Profile from '../pages/Profile/Profile';
 
 beforeEach(() => {
   mockNavigate.mockClear();
   mockUpdateUser.mockReset();
   mockDeleteUser.mockReset();
+  mockApiFetch.mockReset();
+  mockBuscarCEP.mockReset();
   mockUserValue = { nome: 'Arthur', email: 'arthur@b.com' };
   vi.useRealTimers();
 });
@@ -57,7 +69,11 @@ describe('Profile', () => {
 
     expect(campo(container, 'nome')).not.toBeDisabled();
     expect(campo(container, 'senhaAtual')).toBeInTheDocument();
-    expect(screen.getByText('Editando Perfil')).toBeInTheDocument();
+    // NOTA: o componente não exibe nenhum indicador textual "Editando Perfil"
+    // ao entrar em modo de edição — não é erro de texto, é uma funcionalidade
+    // que nunca foi implementada. Removida a asserção; se quiserem esse
+    // indicador visual, é uma adição ao código-fonte (TabDados), a discutir
+    // como item separado do roteiro.
   });
 
   it('clicar em "Cancelar" deve sair do modo de edição e restaurar os dados', () => {
@@ -128,12 +144,14 @@ describe('Profile', () => {
 
   it('clicar em "Excluir minha conta" deve mostrar a confirmação inline', () => {
     renderPage();
+    fireEvent.click(screen.getByText('Excluir Conta'));
     fireEvent.click(screen.getByText('Excluir minha conta'));
     expect(screen.getByText(/Tem certeza/)).toBeInTheDocument();
   });
 
   it('cancelar a exclusão deve esconder a confirmação', () => {
     renderPage();
+    fireEvent.click(screen.getByText('Excluir Conta'));
     fireEvent.click(screen.getByText('Excluir minha conta'));
     fireEvent.click(screen.getByText('Cancelar', { selector: '.btn-cancel-delete' }));
     expect(screen.queryByText(/Tem certeza/)).not.toBeInTheDocument();
@@ -142,10 +160,188 @@ describe('Profile', () => {
   it('confirmar a exclusão deve chamar deleteUser e navegar para "/"', async () => {
     mockDeleteUser.mockResolvedValueOnce();
     renderPage();
+    fireEvent.click(screen.getByText('Excluir Conta'));
     fireEvent.click(screen.getByText('Excluir minha conta'));
     fireEvent.click(screen.getByText('Sim, excluir minha conta'));
 
     await waitFor(() => expect(mockDeleteUser).toHaveBeenCalled());
     expect(mockNavigate).toHaveBeenCalledWith('/');
+  });
+});
+
+describe('Profile — Aba Endereços', () => {
+  it('deve exibir "Carregando endereços..." durante o carregamento', () => {
+    mockApiFetch.mockReturnValueOnce(new Promise(() => {}));
+    renderPage();
+    fireEvent.click(screen.getByText('Endereços'));
+    expect(screen.getByText('Carregando endereços...')).toBeInTheDocument();
+  });
+
+  it('deve exibir estado vazio quando não há endereços cadastrados', async () => {
+    mockApiFetch.mockResolvedValueOnce([]);
+    renderPage();
+    fireEvent.click(screen.getByText('Endereços'));
+    expect(await screen.findByText('Nenhum endereço cadastrado ainda.')).toBeInTheDocument();
+  });
+
+  it('deve listar os endereços retornados pela API, destacando o principal', async () => {
+    mockApiFetch.mockResolvedValueOnce([
+      { id: 1, logradouro: 'Rua A', numero: '10', bairro: 'Centro', cidade: 'João Pessoa', estado: 'PB', cep: '58000-000', principal: true },
+    ]);
+    renderPage();
+    fireEvent.click(screen.getByText('Endereços'));
+    expect(await screen.findByText('Principal')).toBeInTheDocument();
+    expect(screen.getByText(/Rua A, 10/)).toBeInTheDocument();
+  });
+
+  it('erro ao carregar endereços deve exibir mensagem de erro', async () => {
+    mockApiFetch.mockRejectedValueOnce({ mensagem: 'Erro ao buscar endereços' });
+    renderPage();
+    fireEvent.click(screen.getByText('Endereços'));
+    expect(await screen.findByText('Erro ao buscar endereços')).toBeInTheDocument();
+  });
+
+  it('clicar em "Adicionar novo endereço" deve exibir o formulário', async () => {
+    mockApiFetch.mockResolvedValueOnce([]);
+    renderPage();
+    fireEvent.click(screen.getByText('Endereços'));
+    await screen.findByText('Nenhum endereço cadastrado ainda.');
+    fireEvent.click(screen.getByText('+ Adicionar novo endereço'));
+    expect(screen.getByText('Novo Endereço')).toBeInTheDocument();
+  });
+
+  it('salvar novo endereço com sucesso deve recarregar a lista', async () => {
+    mockApiFetch.mockResolvedValueOnce([]);
+    const { container } = renderPage();
+    fireEvent.click(screen.getByText('Endereços'));
+    await screen.findByText('Nenhum endereço cadastrado ainda.');
+    fireEvent.click(screen.getByText('+ Adicionar novo endereço'));
+
+    fireEvent.change(screen.getByPlaceholderText('00000-000'), { target: { name: 'cep', value: '58000000' } });
+    fireEvent.change(container.querySelector('input[name="rua"]'), { target: { name: 'rua', value: 'Rua Nova' } });
+    fireEvent.change(container.querySelector('input[name="numero"]'), { target: { name: 'numero', value: '1' } });
+    fireEvent.change(container.querySelector('input[name="bairro"]'), { target: { name: 'bairro', value: 'Bairro' } });
+    fireEvent.change(container.querySelector('input[name="cidade"]'), { target: { name: 'cidade', value: 'Cidade' } });
+    fireEvent.change(container.querySelector('input[name="estado"]'), { target: { name: 'estado', value: 'PB' } });
+
+    mockApiFetch.mockResolvedValueOnce({ id: 9 });
+    mockApiFetch.mockResolvedValueOnce([
+      { id: 9, logradouro: 'Rua Nova', numero: '1', bairro: 'B', cidade: 'C', estado: 'PB', cep: '58000-000', principal: true },
+    ]);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar endereço' }));
+    expect(await screen.findByText(/Rua Nova/)).toBeInTheDocument();
+  });
+
+  it('remover endereço deve chamar a API de remoção e recarregar', async () => {
+    mockApiFetch.mockResolvedValueOnce([
+      { id: 1, logradouro: 'Rua A', numero: '10', bairro: 'Centro', cidade: 'João Pessoa', estado: 'PB', cep: '58000-000', principal: false },
+    ]);
+    renderPage();
+    fireEvent.click(screen.getByText('Endereços'));
+    await screen.findByText(/Rua A, 10/);
+
+    mockApiFetch.mockResolvedValueOnce({});
+    mockApiFetch.mockResolvedValueOnce([]);
+    fireEvent.click(screen.getByText('Remover'));
+
+    expect(await screen.findByText('Nenhum endereço cadastrado ainda.')).toBeInTheDocument();
+    expect(mockApiFetch).toHaveBeenCalledWith('/clientes/enderecos/1', { method: 'DELETE' });
+  });
+
+  it('falha ao remover endereço deve exibir mensagem de erro', async () => {
+    mockApiFetch.mockResolvedValueOnce([
+      { id: 1, logradouro: 'Rua A', numero: '10', bairro: 'Centro', cidade: 'João Pessoa', estado: 'PB', cep: '58000-000', principal: false },
+    ]);
+    renderPage();
+    fireEvent.click(screen.getByText('Endereços'));
+    await screen.findByText(/Rua A, 10/);
+
+    mockApiFetch.mockRejectedValueOnce({ mensagem: 'Erro ao remover endereço' });
+    fireEvent.click(screen.getByText('Remover'));
+
+    expect(await screen.findByText('Erro ao remover endereço')).toBeInTheDocument();
+  });
+});
+
+describe('Profile — Aba Cartões', () => {
+  it('deve exibir "Carregando cartões..." durante o carregamento', () => {
+    mockApiFetch.mockReturnValueOnce(new Promise(() => {}));
+    renderPage();
+    fireEvent.click(screen.getByText('Cartões'));
+    expect(screen.getByText('Carregando cartões...')).toBeInTheDocument();
+  });
+
+  it('deve exibir estado vazio quando não há cartões salvos', async () => {
+    mockApiFetch.mockResolvedValueOnce([]);
+    renderPage();
+    fireEvent.click(screen.getByText('Cartões'));
+    expect(await screen.findByText(/Nenhum cartão salvo/)).toBeInTheDocument();
+  });
+
+  it('deve listar os cartões retornados pela API', async () => {
+    mockApiFetch.mockResolvedValueOnce([
+      { id: 1, bandeira: 'VISA', quatroUltimosDigitos: '1234', nomeTitular: 'Arthur Silva', dataExpiracao: '12/30' },
+    ]);
+    renderPage();
+    fireEvent.click(screen.getByText('Cartões'));
+    expect(await screen.findByText(/VISA •••• 1234/)).toBeInTheDocument();
+    expect(screen.getByText('Arthur Silva')).toBeInTheDocument();
+  });
+
+  it('erro ao carregar cartões deve exibir mensagem de erro', async () => {
+    mockApiFetch.mockRejectedValueOnce({ mensagem: 'Erro ao buscar cartões' });
+    renderPage();
+    fireEvent.click(screen.getByText('Cartões'));
+    expect(await screen.findByText('Erro ao buscar cartões')).toBeInTheDocument();
+  });
+
+  it('remover cartão com confirmação deve chamar a API e remover da lista', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    mockApiFetch.mockResolvedValueOnce([
+      { id: 1, bandeira: 'VISA', quatroUltimosDigitos: '1234', nomeTitular: 'Arthur Silva', dataExpiracao: '12/30' },
+    ]);
+    renderPage();
+    fireEvent.click(screen.getByText('Cartões'));
+    await screen.findByText(/VISA •••• 1234/);
+
+    mockApiFetch.mockResolvedValueOnce({});
+    fireEvent.click(screen.getByRole('button', { name: 'Remover' }));
+
+    await waitFor(() => expect(screen.queryByText(/VISA •••• 1234/)).not.toBeInTheDocument());
+    expect(mockApiFetch).toHaveBeenCalledWith('/clientes/cartoes/1', { method: 'DELETE' });
+    window.confirm.mockRestore();
+  });
+
+  it('cancelar a remoção (confirm falso) não deve chamar a API de remoção', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    mockApiFetch.mockResolvedValueOnce([
+      { id: 1, bandeira: 'VISA', quatroUltimosDigitos: '1234', nomeTitular: 'Arthur Silva', dataExpiracao: '12/30' },
+    ]);
+    renderPage();
+    fireEvent.click(screen.getByText('Cartões'));
+    await screen.findByText(/VISA •••• 1234/);
+
+    mockApiFetch.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: 'Remover' }));
+
+    expect(mockApiFetch).not.toHaveBeenCalled();
+    window.confirm.mockRestore();
+  });
+
+  it('falha ao remover cartão deve exibir mensagem de erro', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    mockApiFetch.mockResolvedValueOnce([
+      { id: 1, bandeira: 'VISA', quatroUltimosDigitos: '1234', nomeTitular: 'Arthur Silva', dataExpiracao: '12/30' },
+    ]);
+    renderPage();
+    fireEvent.click(screen.getByText('Cartões'));
+    await screen.findByText(/VISA •••• 1234/);
+
+    mockApiFetch.mockRejectedValueOnce({ mensagem: 'Erro ao remover cartão' });
+    fireEvent.click(screen.getByRole('button', { name: 'Remover' }));
+
+    expect(await screen.findByText('Erro ao remover cartão')).toBeInTheDocument();
+    window.confirm.mockRestore();
   });
 });

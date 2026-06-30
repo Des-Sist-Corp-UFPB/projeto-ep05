@@ -58,4 +58,31 @@ class LogAuditoriaTest {
 
         assertThat(log.getRecursoId()).isNull();
     }
+
+    @Test
+    @DisplayName("construtor padrão: deve criar instância com campos nulos (uso pelo JPA)")
+    void construtorPadrao_deveCriarInstanciaVazia() {
+        LogAuditoria log = new LogAuditoria();
+
+        assertThat(log.getId()).isNull();
+        assertThat(log.getPapelAtor()).isNull();
+        assertThat(log.getAtor()).isNull();
+        assertThat(log.getCriadoEm()).isNull();
+    }
+
+    @Test
+    @DisplayName("prePersist: deve preencher criadoEm com o instante atual")
+    void prePersist_devePreencherCriadoEm() throws Exception {
+        LogAuditoria log = LogAuditoria.builder()
+                .papelAtor("SYSTEM").ator("SYSTEM")
+                .categoria("SYSTEM").descricao("evento").build();
+        assertThat(log.getCriadoEm()).isNull();
+
+        var metodo = LogAuditoria.class.getDeclaredMethod("prePersist");
+        metodo.setAccessible(true);
+        metodo.invoke(log);
+
+        assertThat(log.getCriadoEm()).isNotNull();
+        assertThat(log.getCriadoEm()).isBeforeOrEqualTo(java.time.Instant.now());
+    }
 }

@@ -26,6 +26,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -182,6 +183,137 @@ class PedidoRestControllerTest {
         ResponseEntity<?> resposta = controller.obterPedido(99L);
 
         assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    // ── listarPedidosDoCliente (com filtro de status) ───────────────────────
+
+    @Test
+    @DisplayName("listarPedidosDoCliente com filtro de status deve repassar o status ao service")
+    void listarPedidosDoCliente_comFiltroStatus_devePassarStatus() {
+        Usuario cliente = usuarioLogado(1L, "ana@teste.com", Papel.CLIENTE);
+        Pageable pageable = Pageable.ofSize(10);
+        Page<Pedido> page = new PageImpl<>(List.of());
+
+        when(pedidoService.listarPorCliente(1L, StatusPedido.PAGO, pageable)).thenReturn(page);
+
+        ResponseEntity<Page<PedidoDTO>> resposta =
+                controller.listarPedidosDoClienteComFiltro(StatusPedido.PAGO, pageable);
+
+        assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.OK);
+        verify(pedidoService).listarPorCliente(1L, StatusPedido.PAGO, pageable);
+    }
+
+    // ── cancelarPedido ───────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("cancelarPedido deve cancelar quando status permite e o pedido pertence ao cliente")
+    void cancelarPedido_statusPermitido_deveCancelar() {
+        Usuario cliente = usuarioLogado(1L, "ana@teste.com", Papel.CLIENTE);
+        Pedido pedido = pedidoDoCliente(5L, cliente);
+        pedido.setStatus(StatusPedido.AGUARDANDO_PAGAMENTO);
+        Pedido cancelado = pedidoDoCliente(5L, cliente);
+        cancelado.setStatus(StatusPedido.CANCELADO);
+        PedidoDTO dto = dtoBasico(5L);
+
+        when(pedidoService.buscarPorId(5L)).thenReturn(pedido);
+        when(pedidoService.atualizarStatus(5L, StatusPedido.CANCELADO, "Mudei de ideia"))
+                .thenReturn(cancelado);
+        when(pedidoService.converterParaDTO(cancelado)).thenReturn(dto);
+
+        ResponseEntity<?> resposta = controller.cancelarPedido(5L, Map.of("motivo", "Mudei de ideia"));
+
+        assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(resposta.getBody()).isEqualTo(dto);
+    }
+
+    @Test
+    @DisplayName("cancelarPedido deve aceitar corpo nulo (motivo opcional)")
+    void cancelarPedido_corpoNulo_deveCancelarSemMotivo() {
+        Usuario cliente = usuarioLogado(1L, "ana@teste.com", Papel.CLIENTE);
+        Pedido pedido = pedidoDoCliente(5L, cliente);
+        pedido.setStatus(StatusPedido.PAGO);
+        Pedido cancelado = pedidoDoCliente(5L, cliente);
+        cancelado.setStatus(StatusPedido.CANCELADO);
+        PedidoDTO dto = dtoBasico(5L);
+
+        when(pedidoService.buscarPorId(5L)).thenReturn(pedido);
+        when(pedidoService.atualizarStatus(5L, StatusPedido.CANCELADO, null)).thenReturn(cancelado);
+        when(pedidoService.converterParaDTO(cancelado)).thenReturn(dto);
+
+        ResponseEntity<?> resposta = controller.cancelarPedido(5L, null);
+
+        assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    @DisplayName("cancelarPedido deve retornar 403 quando o pedido pertence a outro cliente")
+    void cancelarPedido_deOutroCliente_deveRetornar403() {
+        usuarioLogado(1L, "ana@teste.com", Papel.CLIENTE);
+        Usuario dono = new Usuario("Bia", "bia@teste.com", "hash", Papel.CLIENTE);
+        dono.setId(2L);
+        Pedido pedido = pedidoDoCliente(5L, dono);
+        pedido.setStatus(StatusPedido.PAGO);
+        when(pedidoService.buscarPorId(5L)).thenReturn(pedido);
+
+        ResponseEntity<?> resposta = controller.cancelarPedido(5L, null);
+
+        assertThat(resposta.getStatusCode().value()).isEqualTo(403);
+        assertThat(resposta.getBody()).isEqualTo("Você não tem permissão para cancelar este pedido");
+        verify(pedidoService, never()).atualizarStatus(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("cancelarPedido deve retornar 400 quando o pedido já está ENVIADO")
+    void cancelarPedido_statusEnviado_deveRetornar400() {
+        Usuario cliente = usuarioLogado(1L, "ana@teste.com", Papel.CLIENTE);
+        Pedido pedido = pedidoDoCliente(5L, cliente);
+        pedido.setStatus(StatusPedido.ENVIADO);
+        when(pedidoService.buscarPorId(5L)).thenReturn(pedido);
+
+        ResponseEntity<?> resposta = controller.cancelarPedido(5L, null);
+
+        assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(resposta.getBody().toString()).contains("ENVIADO");
+        verify(pedidoService, never()).atualizarStatus(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("cancelarPedido deve retornar 400 quando o pedido já está ENTREGUE")
+    void cancelarPedido_statusEntregue_deveRetornar400() {
+        Usuario cliente = usuarioLogado(1L, "ana@teste.com", Papel.CLIENTE);
+        Pedido pedido = pedidoDoCliente(5L, cliente);
+        pedido.setStatus(StatusPedido.ENTREGUE);
+        when(pedidoService.buscarPorId(5L)).thenReturn(pedido);
+
+        ResponseEntity<?> resposta = controller.cancelarPedido(5L, null);
+
+        assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    @DisplayName("cancelarPedido deve retornar 400 quando o pedido já está CANCELADO")
+    void cancelarPedido_statusJaCancelado_deveRetornar400() {
+        Usuario cliente = usuarioLogado(1L, "ana@teste.com", Papel.CLIENTE);
+        Pedido pedido = pedidoDoCliente(5L, cliente);
+        pedido.setStatus(StatusPedido.CANCELADO);
+        when(pedidoService.buscarPorId(5L)).thenReturn(pedido);
+
+        ResponseEntity<?> resposta = controller.cancelarPedido(5L, null);
+
+        assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    @DisplayName("cancelarPedido deve retornar 400 quando o pedido não existe")
+    void cancelarPedido_inexistente_deveRetornar400() {
+        usuarioLogado(1L, "ana@teste.com", Papel.CLIENTE);
+        when(pedidoService.buscarPorId(99L))
+                .thenThrow(new IllegalArgumentException("Pedido não encontrado com ID: 99"));
+
+        ResponseEntity<?> resposta = controller.cancelarPedido(99L, null);
+
+        assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(resposta.getBody()).isEqualTo("Pedido não encontrado com ID: 99");
     }
 
     // ── validarCupom ─────────────────────────────────────────────────────────

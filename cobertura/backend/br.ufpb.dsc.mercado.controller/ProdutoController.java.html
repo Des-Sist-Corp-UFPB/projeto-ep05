@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProdutoController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mercado</a> &gt; <a href="index.source.html" class="el_package">br.ufpb.dsc.mercado.controller</a> &gt; <span class="el_source">ProdutoController.java</span></div><h1>ProdutoController.java</h1><pre class="source lang-java linenums">package br.ufpb.dsc.mercado.controller;
+
+import br.ufpb.dsc.mercado.audit.AuditoriaService;
+import br.ufpb.dsc.mercado.domain.Produto;
+import br.ufpb.dsc.mercado.domain.ProdutoImagem;
+import br.ufpb.dsc.mercado.dto.ProdutoForm;
+import br.ufpb.dsc.mercado.exception.ProdutoNaoEncontradoException;
+import br.ufpb.dsc.mercado.service.CategoriaService;
+import br.ufpb.dsc.mercado.service.ProdutoService;
+import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.stream.Collectors;
+
+@Controller
+@RequestMapping(&quot;/produtos&quot;)
+public class ProdutoController {
+
+    private static final int TAMANHO_PAGINA = 10;
+    private static final String HEADER_HTMX = &quot;HX-Request&quot;;
+
+    private final ProdutoService produtoService;
+    private final CategoriaService categoriaService;
+    private final AuditoriaService auditoriaService;
+
+    public ProdutoController(ProdutoService produtoService,
+                             CategoriaService categoriaService,
+<span class="fc" id="L36">                             AuditoriaService auditoriaService) {</span>
+<span class="fc" id="L37">        this.produtoService = produtoService;</span>
+<span class="fc" id="L38">        this.categoriaService = categoriaService;</span>
+<span class="fc" id="L39">        this.auditoriaService = auditoriaService;</span>
+<span class="fc" id="L40">    }</span>
+
+    @GetMapping
+    public String listar(
+            @RequestParam(name = &quot;busca&quot;, required = false, defaultValue = &quot;&quot;) String busca,
+            @RequestParam(name = &quot;pagina&quot;, defaultValue = &quot;0&quot;) int pagina,
+            @RequestHeader(value = HEADER_HTMX, required = false) String htmx,
+            Model model) {
+
+<span class="fc" id="L49">        PageRequest pageRequest = PageRequest.of(pagina, TAMANHO_PAGINA, Sort.by(&quot;nome&quot;).ascending());</span>
+<span class="fc" id="L50">        Page&lt;Produto&gt; produtos = produtoService.buscar(busca, pageRequest);</span>
+
+<span class="fc" id="L52">        model.addAttribute(&quot;produtos&quot;, produtos);</span>
+<span class="fc" id="L53">        model.addAttribute(&quot;busca&quot;, busca);</span>
+<span class="fc" id="L54">        model.addAttribute(&quot;paginaAtual&quot;, pagina);</span>
+
+<span class="fc bfc" id="L56" title="All 2 branches covered.">        if (htmx != null) {</span>
+<span class="fc" id="L57">            return &quot;produtos/fragments/tabela :: tabela&quot;;</span>
+        }
+
+<span class="fc" id="L60">        return &quot;produtos/lista&quot;;</span>
+    }
+
+    @GetMapping(&quot;/fragmento-tabela&quot;)
+    public String fragmentoTabela(
+            @RequestParam(name = &quot;busca&quot;, required = false, defaultValue = &quot;&quot;) String busca,
+            @RequestParam(name = &quot;pagina&quot;, defaultValue = &quot;0&quot;) int pagina,
+            Model model) {
+
+<span class="fc" id="L69">        PageRequest pageRequest = PageRequest.of(pagina, TAMANHO_PAGINA, Sort.by(&quot;nome&quot;).ascending());</span>
+<span class="fc" id="L70">        Page&lt;Produto&gt; produtos = produtoService.buscar(busca, pageRequest);</span>
+
+<span class="fc" id="L72">        model.addAttribute(&quot;produtos&quot;, produtos);</span>
+<span class="fc" id="L73">        model.addAttribute(&quot;busca&quot;, busca);</span>
+<span class="fc" id="L74">        model.addAttribute(&quot;paginaAtual&quot;, pagina);</span>
+
+<span class="fc" id="L76">        return &quot;produtos/fragments/tabela :: tabela&quot;;</span>
+    }
+
+    @GetMapping(&quot;/novo&quot;)
+    public String novoForm(Model model) {
+<span class="fc" id="L81">        model.addAttribute(&quot;form&quot;, new ProdutoForm(null, null, null, null, 0, true, null));</span>
+<span class="fc" id="L82">        model.addAttribute(&quot;produto&quot;, null);</span>
+<span class="fc" id="L83">        model.addAttribute(&quot;categorias&quot;, categoriaService.listarTodas());</span>
+<span class="fc" id="L84">        return &quot;produtos/fragments/form :: modal&quot;;</span>
+    }
+
+    @GetMapping(&quot;/{id}/editar&quot;)
+    public String editarForm(@PathVariable Long id, Model model) {
+<span class="fc" id="L89">        Produto produto = produtoService.buscarPorId(id);</span>
+
+<span class="fc" id="L91">        String urls = produto.getImagens().stream()</span>
+<span class="fc" id="L92">                .map(ProdutoImagem::getUrl)</span>
+<span class="fc" id="L93">                .collect(Collectors.joining(&quot;, &quot;));</span>
+
+<span class="fc" id="L95">        ProdutoForm form = new ProdutoForm(</span>
+<span class="fc" id="L96">                produto.getNome(),</span>
+<span class="fc" id="L97">                produto.getDescricao(),</span>
+<span class="fc" id="L98">                produto.getPreco(),</span>
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">                produto.getCategoria() != null ? produto.getCategoria().getId() : null,</span>
+<span class="fc" id="L100">                produto.getEstoque(),</span>
+<span class="fc" id="L101">                produto.getAtivo(),</span>
+                urls
+        );
+
+<span class="fc" id="L105">        model.addAttribute(&quot;form&quot;, form);</span>
+<span class="fc" id="L106">        model.addAttribute(&quot;produto&quot;, produto);</span>
+<span class="fc" id="L107">        model.addAttribute(&quot;categorias&quot;, categoriaService.listarTodas());</span>
+<span class="fc" id="L108">        return &quot;produtos/fragments/form :: modal&quot;;</span>
+    }
+
+    @PostMapping
+    public String criar(
+            @Valid @ModelAttribute(&quot;form&quot;) ProdutoForm form,
+            BindingResult bindingResult,
+            Authentication auth,
+            Model model) {
+
+<span class="fc bfc" id="L118" title="All 2 branches covered.">        if (bindingResult.hasErrors()) {</span>
+<span class="fc" id="L119">            model.addAttribute(&quot;produto&quot;, null);</span>
+<span class="fc" id="L120">            model.addAttribute(&quot;categorias&quot;, categoriaService.listarTodas());</span>
+<span class="fc" id="L121">            return &quot;produtos/fragments/form :: modal&quot;;</span>
+        }
+
+<span class="fc" id="L124">        Produto novoProduto = produtoService.criar(form);</span>
+<span class="fc" id="L125">        registrarProduto(auth, &quot;PRODUTO&quot;, &quot;Criou produto: &quot; + novoProduto.getNome(), novoProduto.getId());</span>
+<span class="fc" id="L126">        model.addAttribute(&quot;produto&quot;, novoProduto);</span>
+
+<span class="fc" id="L128">        return &quot;produtos/fragments/linha :: linha&quot;;</span>
+    }
+
+    @PutMapping(&quot;/{id}&quot;)
+    public String atualizar(
+            @PathVariable Long id,
+            @Valid @ModelAttribute(&quot;form&quot;) ProdutoForm form,
+            BindingResult bindingResult,
+            Authentication auth,
+            Model model) {
+
+<span class="fc bfc" id="L139" title="All 2 branches covered.">        if (bindingResult.hasErrors()) {</span>
+<span class="fc" id="L140">            Produto produto = produtoService.buscarPorId(id);</span>
+<span class="fc" id="L141">            model.addAttribute(&quot;produto&quot;, produto);</span>
+<span class="fc" id="L142">            model.addAttribute(&quot;categorias&quot;, categoriaService.listarTodas());</span>
+<span class="fc" id="L143">            return &quot;produtos/fragments/form :: modal&quot;;</span>
+        }
+
+<span class="fc" id="L146">        Produto produtoAtualizado = produtoService.atualizar(id, form);</span>
+<span class="fc" id="L147">        registrarProduto(auth, &quot;PRODUTO&quot;, &quot;Atualizou produto ID &quot; + id + &quot;: &quot; + produtoAtualizado.getNome(), id);</span>
+<span class="fc" id="L148">        model.addAttribute(&quot;produto&quot;, produtoAtualizado);</span>
+
+<span class="fc" id="L150">        return &quot;produtos/fragments/linha :: linha&quot;;</span>
+    }
+
+    @DeleteMapping(&quot;/{id}&quot;)
+    @ResponseBody
+    public ResponseEntity&lt;Void&gt; excluir(@PathVariable Long id, Authentication auth) {
+        try {
+<span class="fc" id="L157">            Produto produto = produtoService.buscarPorId(id);</span>
+<span class="fc" id="L158">            String nome = produto.getNome();</span>
+<span class="fc" id="L159">            produtoService.excluir(id);</span>
+<span class="fc" id="L160">            registrarProduto(auth, &quot;PRODUTO&quot;, &quot;Excluiu produto: &quot; + nome, id);</span>
+<span class="fc" id="L161">            return ResponseEntity.ok().build();</span>
+<span class="fc" id="L162">        } catch (ProdutoNaoEncontradoException e) {</span>
+<span class="fc" id="L163">            return ResponseEntity.notFound().build();</span>
+        }
+    }
+
+    private String atorEmail(Authentication auth) {
+<span class="pc bpc" id="L168" title="1 of 2 branches missed.">        return (auth != null) ? auth.getName() : &quot;desconhecido&quot;;</span>
+    }
+
+    private boolean isSysAdmin(Authentication auth) {
+<span class="pc bpc" id="L172" title="1 of 2 branches missed.">        if (auth == null) return false;</span>
+<span class="fc" id="L173">        return auth.getAuthorities().stream()</span>
+<span class="fc" id="L174">                .anyMatch(a -&gt; a.getAuthority().equals(&quot;ROLE_SYSADMIN&quot;));</span>
+    }
+
+    private void registrarProduto(Authentication auth, String categoria, String descricao, Long recursoId) {
+<span class="fc" id="L178">        String email = atorEmail(auth);</span>
+<span class="fc bfc" id="L179" title="All 2 branches covered.">        if (isSysAdmin(auth)) {</span>
+<span class="fc" id="L180">            auditoriaService.registrarSysAdmin(email, categoria, descricao, recursoId);</span>
+        } else {
+<span class="fc" id="L182">            auditoriaService.registrarAdmin(email, categoria, descricao, recursoId);</span>
+        }
+<span class="fc" id="L184">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
