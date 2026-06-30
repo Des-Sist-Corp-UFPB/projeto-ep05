@@ -29,6 +29,17 @@ public class MercadoPagoService {
 
     private static final Logger log = LoggerFactory.getLogger(MercadoPagoService.class);
 
+    private final PaymentClient paymentClient;
+
+    public MercadoPagoService() {
+        this.paymentClient = new PaymentClient();
+    }
+
+    /** Construtor usado em testes para injetar um PaymentClient mockado. */
+    MercadoPagoService(PaymentClient paymentClient) {
+        this.paymentClient = paymentClient;
+    }
+
     /**
      * Processa o pagamento usando o token de cartão gerado pelo frontend.
      *
@@ -57,8 +68,7 @@ public class MercadoPagoService {
                     )
                     .build();
 
-            PaymentClient client = new PaymentClient();
-            Payment payment = client.create(paymentRequest);
+            Payment payment = paymentClient.create(paymentRequest);
 
             if (payment == null) {
                 throw new IllegalArgumentException("Mercado Pago não retornou resposta ao processar o pagamento.");

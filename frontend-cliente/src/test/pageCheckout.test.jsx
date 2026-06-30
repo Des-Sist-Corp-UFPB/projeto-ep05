@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
 const mockNavigate = vi.fn();
@@ -43,6 +43,13 @@ function renderPage() {
 /** Avança para o passo de pagamento clicando em "Ir para Pagamento →" */
 async function irParaPagamento() {
   fireEvent.click(screen.getByRole('button', { name: /Ir para Pagamento/i }));
+  // Entrar no passo 1 dispara carregarCartoes() (apiFetch GET /clientes/cartoes),
+  // que decide usarNovoCartao. Sem aguardar essa Promise resolver, o submit
+  // dispara com usarNovoCartao ainda no valor inicial (false), pulando a
+  // validação do formulário inteira.
+  await act(async () => {
+    await Promise.resolve();
+  });
 }
 
 /** Preenche os campos do cartão (só disponíveis no passo 1) */
@@ -53,6 +60,10 @@ async function preencherCartaoValido() {
   fireEvent.change(screen.getByPlaceholderText('MM/AA'), { target: { name: 'expiry', value: '1230' } });
   fireEvent.change(screen.getByPlaceholderText('123'), { target: { name: 'cvv', value: '123' } });
 }
+
+const cartaoSalvo = {
+  id: 77, bandeira: 'VISA', quatroUltimosDigitos: '4242', nomeTitular: 'Arthur Silva', dataExpiracao: '11/29',
+};
 
 describe('Checkout — Passo 0 (Resumo)', () => {
   it('deve exibir os itens do carrinho', () => {
@@ -102,6 +113,17 @@ describe('Checkout — Passo 0 (Resumo)', () => {
     expect(mockApiFetch).not.toHaveBeenCalled();
   });
 
+  it('cupom com tipo desconhecido não deve aplicar desconto ao total', async () => {
+    mockApiFetch.mockResolvedValueOnce({ tipo: 'OUTRO_TIPO', desconto: '99' });
+    renderPage();
+
+    fireEvent.change(screen.getByPlaceholderText('Código do cupom'), { target: { value: 'ESTRANHO' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Aplicar' }));
+
+    expect(await screen.findByText(/Cupom aplicado/)).toBeInTheDocument();
+    expect(screen.getByText('Total: R$ 20.00')).toBeInTheDocument();
+  });
+
   it('carrinho vazio deve desabilitar o botão de avançar', () => {
     mockCartValue = { cart: [], total: 0, clearCart: mockClearCart };
     renderPage();
@@ -135,6 +157,9 @@ describe('Checkout — Passo 1 (Pagamento)', () => {
   it('submeter formulário vazio deve mostrar erros e não chamar a API', async () => {
     renderPage();
     await irParaPagamento();
+    // Limpa a chamada de GET /clientes/cartoes (disparada ao entrar no passo 1)
+    // para isolar a checagem: o que importa é que o SUBMIT vazio não chama a API.
+    mockApiFetch.mockClear();
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar Pedido' }));
 
     expect(await screen.findByText('Nome é obrigatório')).toBeInTheDocument();
@@ -158,7 +183,10 @@ describe('Checkout — Passo 1 (Pagamento)', () => {
   });
 
   it('sem endereço cadastrado deve mostrar mensagem pedindo para cadastrar', async () => {
-    mockApiFetch.mockResolvedValueOnce([]); // GET /clientes/enderecos vazio
+    mockApiFetch
+      .mockResolvedValueOnce([])  // GET /clientes/cartoes (ao entrar no passo 1) — sem cartão salvo
+      .mockResolvedValueOnce([]); // GET /clientes/enderecos vazio
+    renderPage();
     await preencherCartaoValido();
 
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar Pedido' }));
@@ -168,9 +196,17 @@ describe('Checkout — Passo 1 (Pagamento)', () => {
 
   it('fluxo completo de sucesso deve salvar cartão, criar pedido e mostrar confirmação', async () => {
     mockApiFetch
-      .mockResolvedValueOnce([{ id: 5, principal: true }]) // GET enderecos
-      .mockResolvedValueOnce({ id: 99 })                   // POST cartoes
-      .mockResolvedValueOnce({ id: 1000 });                // POST pedidos
+      .mockResolvedValueOnce([])                           // GET /clientes/cartoes (entrar no passo 1)
+      .mockResolvedValueOnce([{ id: 5, principal: true }])  // GET enderecos
+      .mockResolvedValueOnce({ id: 99 })                    // POST cartoes
+      .mockResolvedValueOnce({ id: 1000 });                 // POST pedidos
+
+    // tokenizarCartaoMP() chama fetch() global direto (API do Mercado Pago),
+    // fora da camada apiFetch — precisa de mock próprio.
+    global.fetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ id: 'tok_abc123' }),
+    });
 
     renderPage();
     await preencherCartaoValido();
@@ -188,13 +224,159 @@ describe('Checkout — Passo 1 (Pagamento)', () => {
 
   it('falha ao finalizar o pedido deve exibir o erro da API', async () => {
     mockApiFetch
-      .mockResolvedValueOnce([{ id: 5, principal: true }])
+      .mockResolvedValueOnce([])                          // GET /clientes/cartoes (entrar no passo 1)
+      .mockResolvedValueOnce([{ id: 5, principal: true }]) // GET enderecos
       .mockRejectedValueOnce({ mensagem: 'Cartão recusado' });
+
+    global.fetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ id: 'tok_abc123' }),
+    });
 
     renderPage();
     await preencherCartaoValido();
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar Pedido' }));
 
     expect(await screen.findByText('Cartão recusado')).toBeInTheDocument();
+  });
+
+  it('clicar em "← Voltar" deve retornar ao passo de Resumo', async () => {
+    renderPage();
+    await irParaPagamento();
+    fireEvent.click(screen.getByRole('button', { name: '← Voltar' }));
+    expect(screen.getByText('Brownie')).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText('0000 0000 0000 0000')).not.toBeInTheDocument();
+  });
+
+  it('a tokenização falhando (resposta sem id) deve exibir mensagem de erro e não criar pedido', async () => {
+    mockApiFetch
+      .mockResolvedValueOnce([])                           // GET /clientes/cartoes
+      .mockResolvedValueOnce([{ id: 5, principal: true }]); // GET enderecos
+
+    global.fetch = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      json: async () => ({ message: 'Número de cartão inválido' }),
+    });
+
+    renderPage();
+    await preencherCartaoValido();
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar Pedido' }));
+
+    expect(await screen.findByText('Número de cartão inválido')).toBeInTheDocument();
+    expect(mockApiFetch.mock.calls.find((c) => c[0] === '/pedidos')).toBeUndefined();
+  });
+
+  it('falha de rede ao tokenizar deve usar mensagem de fallback', async () => {
+    mockApiFetch
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ id: 5, principal: true }]);
+
+    global.fetch = vi.fn().mockRejectedValueOnce(new Error());
+
+    renderPage();
+    await preencherCartaoValido();
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar Pedido' }));
+
+    expect(await screen.findByText('Erro ao processar dados do cartão.')).toBeInTheDocument();
+  });
+
+  it('carrinho esvaziado entre o preenchimento e o envio deve bloquear o submit', async () => {
+    const utils = renderPage();
+    await preencherCartaoValido();
+
+    mockCartValue = { cart: [], total: 0, clearCart: mockClearCart };
+    utils.rerender(<MemoryRouter><Checkout /></MemoryRouter>);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar Pedido' }));
+
+    expect(await screen.findByText('Seu carrinho está vazio.')).toBeInTheDocument();
+  });
+});
+
+describe('Checkout — Cartões salvos', () => {
+  it('deve exibir os cartões salvos e pré-selecionar o primeiro', async () => {
+    mockApiFetch.mockResolvedValueOnce([cartaoSalvo]);
+    renderPage();
+    await irParaPagamento();
+
+    expect(screen.getByText('💳 Cartões salvos')).toBeInTheDocument();
+    expect(screen.getByText(/4242/)).toBeInTheDocument();
+    expect(screen.getByText('Arthur Silva')).toBeInTheDocument();
+    expect(screen.getByRole('radio')).toBeChecked();
+  });
+
+  it('selecionar outro cartão salvo deve marcá-lo como ativo', async () => {
+    const cartao2 = { ...cartaoSalvo, id: 78, quatroUltimosDigitos: '1111' };
+    mockApiFetch.mockResolvedValueOnce([cartaoSalvo, cartao2]);
+    renderPage();
+    await irParaPagamento();
+
+    const radios = screen.getAllByRole('radio');
+    fireEvent.click(radios[1]);
+    expect(radios[1]).toBeChecked();
+    expect(radios[0]).not.toBeChecked();
+  });
+
+  it('clicar em "+ Usar outro cartão" deve exibir o formulário de novo cartão', async () => {
+    mockApiFetch.mockResolvedValueOnce([cartaoSalvo]);
+    renderPage();
+    await irParaPagamento();
+
+    fireEvent.click(screen.getByRole('button', { name: '+ Usar outro cartão' }));
+
+    expect(screen.getByPlaceholderText('0000 0000 0000 0000')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '← Usar cartão salvo' })).toBeInTheDocument();
+  });
+
+  it('clicar em "← Usar cartão salvo" deve voltar para a lista de cartões salvos', async () => {
+    mockApiFetch.mockResolvedValueOnce([cartaoSalvo]);
+    renderPage();
+    await irParaPagamento();
+    fireEvent.click(screen.getByRole('button', { name: '+ Usar outro cartão' }));
+
+    fireEvent.click(screen.getByRole('button', { name: '← Usar cartão salvo' }));
+
+    expect(screen.getByText('💳 Cartões salvos')).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText('0000 0000 0000 0000')).not.toBeInTheDocument();
+  });
+
+  it('finalizar pedido com cartão salvo não deve tokenizar nem salvar novo cartão', async () => {
+    mockApiFetch
+      .mockResolvedValueOnce([cartaoSalvo])                 // GET /clientes/cartoes
+      .mockResolvedValueOnce([{ id: 5, principal: true }])  // GET enderecos
+      .mockResolvedValueOnce({ id: 2000 });                 // POST pedidos
+
+    global.fetch = vi.fn();
+
+    renderPage();
+    await irParaPagamento();
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar Pedido' }));
+
+    expect(await screen.findByText('Pedido confirmado!')).toBeInTheDocument();
+    expect(global.fetch).not.toHaveBeenCalled();
+
+    const chamadaPedido = mockApiFetch.mock.calls.find((c) => c[0] === '/pedidos');
+    const corpoPedido = JSON.parse(chamadaPedido[1].body);
+    expect(corpoPedido.cartaoId).toBe(77);
+  });
+
+  it('virar o card ao focar no CVV deve aplicar a classe "virado"', async () => {
+    renderPage();
+    await irParaPagamento();
+    const cvvInput = screen.getByPlaceholderText('123');
+
+    fireEvent.focus(cvvInput);
+    expect(document.querySelector('.card-visual.virado')).toBeInTheDocument();
+
+    fireEvent.blur(cvvInput);
+    expect(document.querySelector('.card-visual.virado')).not.toBeInTheDocument();
+  });
+
+  it('erro ao carregar cartões salvos deve cair no formulário de novo cartão', async () => {
+    mockApiFetch.mockRejectedValueOnce(new Error('falhou'));
+    renderPage();
+    await irParaPagamento();
+
+    expect(screen.getByPlaceholderText('0000 0000 0000 0000')).toBeInTheDocument();
   });
 });

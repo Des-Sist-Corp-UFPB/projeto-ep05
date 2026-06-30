@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CupomService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mercado</a> &gt; <a href="index.source.html" class="el_package">br.ufpb.dsc.mercado.service</a> &gt; <span class="el_source">CupomService.java</span></div><h1>CupomService.java</h1><pre class="source lang-java linenums">package br.ufpb.dsc.mercado.service;
+
+import br.ufpb.dsc.mercado.domain.Cupom;
+import br.ufpb.dsc.mercado.repository.CupomRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
+import java.util.List;
+
+@Service
+@Transactional(readOnly = true)
+public class CupomService {
+
+    private final CupomRepository cupomRepository;
+
+<span class="fc" id="L19">    public CupomService(CupomRepository cupomRepository) {</span>
+<span class="fc" id="L20">        this.cupomRepository = cupomRepository;</span>
+<span class="fc" id="L21">    }</span>
+
+    public List&lt;Cupom&gt; listarTodos() {
+<span class="fc" id="L24">        return cupomRepository.findAll();</span>
+    }
+
+    public Page&lt;Cupom&gt; listar(Pageable pageable) {
+<span class="fc" id="L28">        return cupomRepository.findAll(pageable);</span>
+    }
+
+    public Cupom buscarPorId(Long id) {
+<span class="fc" id="L32">        return cupomRepository.findById(id)</span>
+<span class="fc" id="L33">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Cupom não encontrado com ID: &quot; + id));</span>
+    }
+
+    public Cupom buscarPorCodigo(String codigo) {
+<span class="fc" id="L37">        return cupomRepository.findByCodigoIgnoreCase(codigo)</span>
+<span class="fc" id="L38">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Cupom não encontrado com código: &quot; + codigo));</span>
+    }
+
+    public Cupom validarCupom(String codigo) {
+<span class="fc" id="L42">        Cupom cupom = cupomRepository.findByCodigoIgnoreCaseAndAtivoTrue(codigo)</span>
+<span class="fc" id="L43">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Cupom inválido ou inativo&quot;));</span>
+
+<span class="fc bfc" id="L45" title="All 2 branches covered.">        if (cupom.isExpirado()) {</span>
+<span class="fc" id="L46">            throw new IllegalArgumentException(&quot;Este cupom já está expirado&quot;);</span>
+        }
+
+<span class="fc" id="L49">        return cupom;</span>
+    }
+
+    @Transactional
+    public Cupom criar(Cupom cupom) {
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        if (cupomRepository.existsByCodigoIgnoreCase(cupom.getCodigo())) {</span>
+<span class="fc" id="L55">            throw new IllegalArgumentException(&quot;Já existe um cupom com este código&quot;);</span>
+        }
+<span class="fc" id="L57">        cupom.setAtivo(true);</span>
+<span class="fc" id="L58">        return cupomRepository.save(cupom);</span>
+    }
+
+    @Transactional
+    public Cupom atualizar(Long id, Cupom dados) {
+<span class="fc" id="L63">        Cupom cupom = buscarPorId(id);</span>
+<span class="pc bpc" id="L64" title="1 of 4 branches missed.">        if (!cupom.getCodigo().equalsIgnoreCase(dados.getCodigo()) &amp;&amp; cupomRepository.existsByCodigoIgnoreCase(dados.getCodigo())) {</span>
+<span class="fc" id="L65">            throw new IllegalArgumentException(&quot;Já existe outro cupom com este código&quot;);</span>
+        }
+<span class="fc" id="L67">        cupom.setCodigo(dados.getCodigo());</span>
+<span class="fc" id="L68">        cupom.setDesconto(dados.getDesconto());</span>
+<span class="fc" id="L69">        cupom.setTipo(dados.getTipo());</span>
+<span class="fc" id="L70">        cupom.setDataExpiracao(dados.getDataExpiracao());</span>
+<span class="fc" id="L71">        cupom.setAtivo(dados.getAtivo());</span>
+<span class="fc" id="L72">        return cupomRepository.save(cupom);</span>
+    }
+
+    @Transactional
+    public void alternarAtivo(Long id) {
+<span class="fc" id="L77">        Cupom cupom = buscarPorId(id);</span>
+<span class="pc bpc" id="L78" title="1 of 2 branches missed.">        cupom.setAtivo(!cupom.getAtivo());</span>
+<span class="fc" id="L79">        cupomRepository.save(cupom);</span>
+<span class="fc" id="L80">    }</span>
+
+    @Transactional
+    public void excluir(Long id) {
+<span class="fc bfc" id="L84" title="All 2 branches covered.">        if (!cupomRepository.existsById(id)) {</span>
+<span class="fc" id="L85">            throw new IllegalArgumentException(&quot;Cupom não encontrado com ID: &quot; + id);</span>
+        }
+<span class="fc" id="L87">        cupomRepository.deleteById(id);</span>
+<span class="fc" id="L88">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

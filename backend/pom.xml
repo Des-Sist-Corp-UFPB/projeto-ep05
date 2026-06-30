@@ -131,6 +131,13 @@
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- H2: banco em memória para testes unitários (mvn test sem Docker) -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>junit-jupiter</artifactId>
@@ -149,6 +156,8 @@
             <scope>test</scope>
         </dependency>
 
+
+
         <!-- Mercado Pago SDK -->
         <dependency>
             <groupId>com.mercadopago</groupId>
@@ -162,6 +171,22 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+
+            <!--
+                Surefire: controla quais testes rodam no "mvn test".
+                Por padrão exclui os testes marcados com @Tag("integration"),
+                que precisam de Docker/PostgreSQL.
+                Para rodar SÓ os de integração use o perfil Maven "integration":
+                    mvn test -P integration
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!-- exclui testes de integração; rodam apenas com -P integration -->
+                    <excludedGroups>integration</excludedGroups>
+                </configuration>
             </plugin>
 
             <!-- JaCoCo: cobertura de código -->
@@ -223,6 +248,32 @@
     </build>
 
     <profiles>
+        <profile>
+            <!--
+                Perfil "integration": roda APENAS os testes marcados com @Tag("integration").
+                Usado pelo docker-compose.test.yml via Dockerfile.test (Postgres real do Compose)
+                e também para rodar localmente sem Docker: aqui definimos
+                testcontainers.enabled=false, o que desativa o bean do PostgreSQL via
+                Testcontainers (ver TestcontainersConfiguration) e faz o Spring usar o
+                fallback H2 em memória já configurado em application-test.yml.
+            -->
+            <id>integration</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration combine.self="override">
+                            <groups>integration</groups>
+                            <systemPropertyVariables>
+                                <testcontainers.enabled>false</testcontainers.enabled>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
         <profile>
             <id>security</id>
             <build>

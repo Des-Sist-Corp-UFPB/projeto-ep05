@@ -102,6 +102,19 @@ describe('ErrorState', () => {
     fireEvent.click(screen.getByText('Tentar Novamente'));
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
+
+  it('sem onRetry, deve recarregar a página ao clicar no botão', () => {
+    const reloadMock = vi.fn();
+    const originalLocation = window.location;
+    delete window.location;
+    window.location = { ...originalLocation, reload: reloadMock };
+
+    render(<ErrorState />);
+    fireEvent.click(screen.getByText('Tentar Novamente'));
+
+    expect(reloadMock).toHaveBeenCalledTimes(1);
+    window.location = originalLocation;
+  });
 });
 
 // ── Loading ───────────────────────────────────────────────────────────────────

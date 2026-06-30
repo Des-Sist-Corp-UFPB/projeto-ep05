@@ -1,31 +1,59 @@
+# =============================================================================
+# application-test.yml — Configuração para o perfil "test"
+# =============================================================================
+#
+# Dois modos de uso:
+#
+#  1. mvn test (padrão, sem Docker)
+#     - Usa H2 em memória
+#     - Flyway desabilitado (migrations PostgreSQL não rodam no H2)
+#     - Testes de integração (@Tag("integration")) são EXCLUÍDOS pelo Surefire
+#
+#  2. docker-compose.test.yml  OU  mvn test -P integration (com Docker local)
+#     - As variáveis de ambiente SPRING_DATASOURCE_URL / _USERNAME / _PASSWORD
+#       injetadas pelo Compose (ou pelo desenvolvedor) sobrescrevem os valores
+#       abaixo, apontando para o banco PostgreSQL externo
+#     - Flyway habilitado quando detecta URL PostgreSQL (via env var)
+#     - Testcontainers desabilitado no Compose via -Dtestcontainers.enabled=false
+#
+# =============================================================================
+
 spring:
   datasource:
-    # Quando rodando via docker-compose.test.yml, a URL é sobrescrita pela
-    # variável de ambiente SPRING_DATASOURCE_URL injetada pelo compose.
-    # Este valor é usado apenas como fallback local (mvn test sem compose).
-    url: jdbc:postgresql://localhost:5432/mercado_test
-    username: mercado
-    password: mercado123
-    driver-class-name: org.postgresql.Driver
+    # Fallback H2 para "mvn test" sem Docker.
+    # Quando Docker Compose injeta SPRING_DATASOURCE_URL, essa linha é ignorada
+    # e o Spring usa automaticamente o driver PostgreSQL.
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:mercado_test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH}
+    username: ${SPRING_DATASOURCE_USERNAME:sa}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+    # driver-class-name omitido: Spring auto-detecta H2 ou PostgreSQL pela URL
+
   jpa:
     hibernate:
-      # create-drop: schema criado antes dos testes e apagado ao terminar.
       ddl-auto: create-drop
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
+
   flyway:
-    enabled: true
+    # Flyway habilitado apenas quando a URL PostgreSQL está presente (Docker/Compose).
+    # Com H2 (mvn test), as migrations PostgreSQL não são compatíveis.
+    enabled: ${FLYWAY_ENABLED:false}
     locations: classpath:db/migration
     clean-on-validation-error: true
 
 logging:
   level:
-    br.ufpb.dsc.mercado: DEBUG
-    org.springframework.web: DEBUG
+    br.ufpb.dsc.mercado: INFO
+    org.springframework.web: WARN
 
 app:
   jwt:
     secret: test-secret-key-for-unit-tests-only-not-for-production
     expiration-seconds: 86400
+
+# Token fictício — o MercadoPagoService é mockado nos testes unitários.
+# No Docker Compose, MERCADOPAGO_ACCESS_TOKEN sobrescreve este valor.
+mercadopago:
+  access-token: ${MERCADOPAGO_ACCESS_TOKEN:TEST-00000000-0000-0000-0000-000000000000}

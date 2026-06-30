@@ -213,7 +213,134 @@ class SysAdminControllerTest {
         assertThat(logs).isNotEmpty();
     }
 
+    @Test
+    @WithMockUser(roles = "SYSADMIN")
+    @DisplayName("GET /sysadmin/admins: busca por nome deve filtrar resultados")
+    void listarAdmins_comBusca_deveFiltrar() throws Exception {
+        usuarioRepository.save(new Usuario(
+                "Carlos Busca", "carlos.busca@test.com",
+                passwordEncoder.encode("senha123"), Papel.ADMIN));
+
+        mockMvc.perform(get("/sysadmin/admins").param("busca", "Carlos"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("sysadmin/admins"))
+                .andExpect(model().attribute("busca", "Carlos"));
+    }
+
+    @Test
+    @WithMockUser(roles = "SYSADMIN")
+    @DisplayName("PUT /sysadmin/admins/{id}: dados inválidos (bindingResult) devem retornar form com erros")
+    void editarAdmin_dadosInvalidos_deveRetornarFormComErros() throws Exception {
+        Usuario admin = usuarioRepository.save(new Usuario(
+                "Admin Invalido", "invalido@test.com",
+                passwordEncoder.encode("senha123"), Papel.ADMIN));
+
+        mockMvc.perform(put("/sysadmin/admins/{id}", admin.getId())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .param("nome", "")
+                        .param("email", "naoeemail")
+                        .param("senha", "")
+                        .param("papel", "ADMIN"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("sysadmin/fragments/form_admin :: modal"))
+                .andExpect(model().attribute("adminId", admin.getId()))
+                .andExpect(model().hasErrors());
+    }
+
+    @Test
+    @WithMockUser(roles = "SYSADMIN")
+    @DisplayName("PUT /sysadmin/admins/{id}: senha curta deve retornar erro de validação")
+    void editarAdmin_senhaCurta_deveRetornarErro() throws Exception {
+        Usuario admin = usuarioRepository.save(new Usuario(
+                "Admin Senha Curta", "senhacurta@test.com",
+                passwordEncoder.encode("senha123"), Papel.ADMIN));
+
+        mockMvc.perform(put("/sysadmin/admins/{id}", admin.getId())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .param("nome", "Admin Senha Curta")
+                        .param("email", "senhacurta@test.com")
+                        .param("senha", "123")
+                        .param("papel", "ADMIN"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("sysadmin/fragments/form_admin :: modal"))
+                .andExpect(model().attribute("adminId", admin.getId()))
+                .andExpect(model().hasErrors());
+    }
+
+    @Test
+    @WithMockUser(roles = "SYSADMIN")
+    @DisplayName("PUT /sysadmin/admins/{id}: e-mail duplicado deve retornar form com erro")
+    void editarAdmin_emailDuplicado_deveRetornarFormComErro() throws Exception {
+        usuarioRepository.save(new Usuario(
+                "Admin Um", "admin.um@test.com",
+                passwordEncoder.encode("senha123"), Papel.ADMIN));
+        Usuario admin2 = usuarioRepository.save(new Usuario(
+                "Admin Dois", "admin.dois@test.com",
+                passwordEncoder.encode("senha123"), Papel.ADMIN));
+
+        mockMvc.perform(put("/sysadmin/admins/{id}", admin2.getId())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .param("nome", "Admin Dois")
+                        .param("email", "admin.um@test.com")
+                        .param("senha", "")
+                        .param("papel", "ADMIN"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("sysadmin/fragments/form_admin :: modal"))
+                .andExpect(model().attribute("adminId", admin2.getId()))
+                .andExpect(model().hasErrors());
+    }
+
+    @Test
+    @WithMockUser(username = "sys@test.com", roles = "SYSADMIN")
+    @DisplayName("DELETE /sysadmin/admins/{id}: deve excluir admin e gerar log")
+    void excluirAdmin_deveExcluirELogar() throws Exception {
+        Usuario admin = usuarioRepository.save(new Usuario(
+                "Admin Para Excluir", "excluir@sweetdelights.com",
+                passwordEncoder.encode("senha123"), Papel.ADMIN));
+
+        mockMvc.perform(delete("/sysadmin/admins/{id}", admin.getId())
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(view().name("sysadmin/fragments/tabela_admins :: tabela"));
+
+        assertThat(usuarioRepository.findById(admin.getId())).isEmpty();
+
+        List<LogAuditoria> logs = logRepository.findAll();
+        assertThat(logs).isNotEmpty();
+        assertThat(logs.get(0).getDescricao()).contains("excluir@sweetdelights.com");
+    }
+
     // ── Logs ──────────────────────────────────────────────────────────────────
+
+    @Test
+    @WithMockUser(roles = "SYSADMIN")
+    @DisplayName("GET /sysadmin/logs (HTMX): deve retornar fragmento da tabela de logs")
+    void visualizarLogs_comHtmx_deveRetornarFragmento() throws Exception {
+        mockMvc.perform(get("/sysadmin/logs").header("HX-Request", "true"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("sysadmin/fragments/tabela_logs :: tabela"));
+    }
+
+    @Test
+    @WithMockUser(roles = "SYSADMIN")
+    @DisplayName("GET /sysadmin/logs: filtro por ator e dias deve funcionar")
+    void visualizarLogs_comFiltroAtorEDias_deveRetornarLogs() throws Exception {
+        logRepository.save(LogAuditoria.builder()
+                .papelAtor("ADMIN").ator("ator.filtro@test.com")
+                .categoria("PRODUTO").descricao("Criou produto Y").build());
+
+        mockMvc.perform(get("/sysadmin/logs")
+                        .param("ator", "ator.filtro@test.com")
+                        .param("dias", "7"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("sysadmin/logs"))
+                .andExpect(model().attributeExists("logs"))
+                .andExpect(model().attribute("filtroAtor", "ator.filtro@test.com"))
+                .andExpect(model().attribute("filtroDias", 7));
+    }
 
     @Test
     @WithMockUser(roles = "SYSADMIN")

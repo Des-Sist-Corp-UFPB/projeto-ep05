@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MercadoPagoService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mercado</a> &gt; <a href="index.source.html" class="el_package">br.ufpb.dsc.mercado.service</a> &gt; <span class="el_source">MercadoPagoService.java</span></div><h1>MercadoPagoService.java</h1><pre class="source lang-java linenums">package br.ufpb.dsc.mercado.service;
+
+import com.mercadopago.client.payment.PaymentClient;
+import com.mercadopago.client.payment.PaymentCreateRequest;
+import com.mercadopago.client.payment.PaymentPayerRequest;
+import com.mercadopago.exceptions.MPApiException;
+import com.mercadopago.exceptions.MPException;
+import com.mercadopago.resources.payment.Payment;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+
+/**
+ * Serviço de integração com o Mercado Pago.
+ *
+ * A tokenização do cartão é feita pelo SDK JS do Mercado Pago no FRONTEND.
+ * O backend recebe apenas o token gerado e o usa para cobrar via Payment API.
+ *
+ * Fluxo:
+ *   1. Frontend chama mp.createCardToken(cardData) → recebe token
+ *   2. Frontend envia token + dados mascarados para POST /api/clientes/cartoes
+ *   3. Backend salva o cartão com o token
+ *   4. Na criação do pedido, backend chama cobrarComToken() com o token salvo
+ */
+@Service
+public class MercadoPagoService {
+
+<span class="fc" id="L30">    private static final Logger log = LoggerFactory.getLogger(MercadoPagoService.class);</span>
+
+    private final PaymentClient paymentClient;
+
+<span class="fc" id="L34">    public MercadoPagoService() {</span>
+<span class="fc" id="L35">        this.paymentClient = new PaymentClient();</span>
+<span class="fc" id="L36">    }</span>
+
+    /** Construtor usado em testes para injetar um PaymentClient mockado. */
+<span class="fc" id="L39">    MercadoPagoService(PaymentClient paymentClient) {</span>
+<span class="fc" id="L40">        this.paymentClient = paymentClient;</span>
+<span class="fc" id="L41">    }</span>
+
+    /**
+     * Processa o pagamento usando o token de cartão gerado pelo frontend.
+     *
+     * @param token         token gerado pelo SDK JS do Mercado Pago
+     * @param valor         valor total a cobrar
+     * @param emailPagador  e-mail do cliente (obrigatório pelo Mercado Pago)
+     * @param descricao     descrição do pedido
+     * @param parcelas      número de parcelas (1 = à vista)
+     * @return Payment com o resultado da cobrança
+     * @throws IllegalArgumentException se o Mercado Pago recusar o pagamento
+     */
+    public Payment cobrarComToken(String token, BigDecimal valor,
+                                  String emailPagador, String descricao,
+                                  int parcelas) {
+        try {
+<span class="fc" id="L58">            PaymentCreateRequest paymentRequest = PaymentCreateRequest.builder()</span>
+<span class="fc" id="L59">                    .transactionAmount(valor)</span>
+<span class="fc" id="L60">                    .token(token)</span>
+<span class="fc" id="L61">                    .description(descricao)</span>
+<span class="fc" id="L62">                    .installments(parcelas)</span>
+<span class="fc" id="L63">                    .paymentMethodId(&quot;visa&quot;) // será detectado automaticamente pelo token</span>
+<span class="fc" id="L64">                    .payer(</span>
+<span class="fc" id="L65">                        PaymentPayerRequest.builder()</span>
+<span class="fc" id="L66">                            .email(emailPagador)</span>
+<span class="fc" id="L67">                            .build()</span>
+                    )
+<span class="fc" id="L69">                    .build();</span>
+
+<span class="fc" id="L71">            Payment payment = paymentClient.create(paymentRequest);</span>
+
+<span class="fc bfc" id="L73" title="All 2 branches covered.">            if (payment == null) {</span>
+<span class="fc" id="L74">                throw new IllegalArgumentException(&quot;Mercado Pago não retornou resposta ao processar o pagamento.&quot;);</span>
+            }
+
+<span class="fc" id="L77">            String status = payment.getStatus();</span>
+<span class="fc" id="L78">            log.info(&quot;Pagamento processado. ID: {}, Status: {}, StatusDetail: {}&quot;,</span>
+<span class="fc" id="L79">                    payment.getId(), status, payment.getStatusDetail());</span>
+
+            // approved = aprovado, in_process = em análise (ambos aceitáveis)
+<span class="fc bfc" id="L82" title="All 6 branches covered.">            if (&quot;approved&quot;.equals(status) || &quot;in_process&quot;.equals(status) || &quot;authorized&quot;.equals(status)) {</span>
+<span class="fc" id="L83">                return payment;</span>
+            }
+
+            // rejected ou qualquer outro status
+<span class="fc bfc" id="L87" title="All 2 branches covered.">            String detalhe = payment.getStatusDetail() != null ? payment.getStatusDetail() : status;</span>
+<span class="fc" id="L88">            throw new IllegalArgumentException(&quot;Pagamento recusado pelo Mercado Pago: &quot; + traduzirRejeicao(detalhe));</span>
+
+<span class="fc" id="L90">        } catch (MPApiException e) {</span>
+<span class="fc bfc" id="L91" title="All 2 branches covered.">            String mensagem = e.getApiResponse() != null ? e.getApiResponse().getContent() : e.getMessage();</span>
+<span class="fc" id="L92">            log.warn(&quot;Erro da API do Mercado Pago: {}&quot;, mensagem);</span>
+<span class="fc" id="L93">            throw new IllegalArgumentException(&quot;Erro ao processar pagamento: &quot; + mensagem);</span>
+<span class="fc" id="L94">        } catch (MPException e) {</span>
+<span class="fc" id="L95">            log.error(&quot;Falha na comunicação com o Mercado Pago&quot;, e);</span>
+<span class="fc" id="L96">            throw new IllegalArgumentException(&quot;Não foi possível conectar ao Mercado Pago. Tente novamente.&quot;);</span>
+        }
+    }
+
+    /** Traduz os códigos de rejeição mais comuns para português. */
+    private String traduzirRejeicao(String detalhe) {
+<span class="fc bfc" id="L102" title="All 9 branches covered.">        return switch (detalhe) {</span>
+<span class="fc" id="L103">            case &quot;cc_rejected_insufficient_amount&quot;    -&gt; &quot;saldo insuficiente no cartão&quot;;</span>
+<span class="fc" id="L104">            case &quot;cc_rejected_bad_filled_card_number&quot; -&gt; &quot;número do cartão inválido&quot;;</span>
+<span class="fc" id="L105">            case &quot;cc_rejected_bad_filled_date&quot;        -&gt; &quot;data de validade inválida&quot;;</span>
+<span class="fc" id="L106">            case &quot;cc_rejected_bad_filled_security_code&quot; -&gt; &quot;código de segurança inválido&quot;;</span>
+<span class="fc" id="L107">            case &quot;cc_rejected_blacklist&quot;              -&gt; &quot;cartão bloqueado&quot;;</span>
+<span class="fc" id="L108">            case &quot;cc_rejected_call_for_authorize&quot;     -&gt; &quot;cartão requer autorização da operadora&quot;;</span>
+<span class="fc" id="L109">            case &quot;cc_rejected_duplicated_payment&quot;     -&gt; &quot;pagamento duplicado detectado&quot;;</span>
+<span class="fc" id="L110">            case &quot;cc_rejected_high_risk&quot;              -&gt; &quot;pagamento recusado por segurança&quot;;</span>
+<span class="fc" id="L111">            default -&gt; detalhe;</span>
+        };
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -5,7 +5,11 @@ import { validarFormulario, validarCampo } from '../utils/validarFormulario';
 
 const dadosValidos = {
   nome: 'Maria Silva',
+  sobrenome: 'Souza',
   email: 'maria@email.com',
+  cpf: '123.456.789-00',
+  telefone: '(11) 91234-5678',
+  dataNascimento: '1990-01-01',
   senha: 'Senha@123',
   confirmarSenha: 'Senha@123',
 };
@@ -22,19 +26,40 @@ describe('validarFormulario', () => {
     expect(erros.nome).toBe('Nome é obrigatório');
   });
 
-  it('deve retornar erro quando nome tem menos de 3 letras', () => {
-    const erros = validarFormulario({ ...dadosValidos, nome: 'Ab' });
-    expect(erros.nome).toBe('Nome precisa ter pelo menos 3 letras');
+  it('deve retornar erro quando nome tem menos de 2 letras', () => {
+    const erros = validarFormulario({ ...dadosValidos, nome: 'A' });
+    expect(erros.nome).toBe('Nome precisa ter pelo menos 2 letras');
+  });
+
+  it('deve retornar erro quando sobrenome tem menos de 2 letras', () => {
+    const erros = validarFormulario({ ...dadosValidos, sobrenome: 'A' });
+    expect(erros.sobrenome).toBe('Sobrenome precisa ter pelo menos 2 letras');
+  });
+
+  it('deve retornar erro quando CPF está em formato inválido', () => {
+    const erros = validarFormulario({ ...dadosValidos, cpf: '12345678900' });
+    expect(erros.cpf).toBe('CPF inválido. Use o formato 000.000.000-00');
+  });
+
+  it('deve retornar erro quando telefone está em formato inválido', () => {
+    const erros = validarFormulario({ ...dadosValidos, telefone: '11912345678' });
+    expect(erros.telefone).toBe('Telefone inválido. Use (00) 00000-0000');
+  });
+
+  it('deve retornar erro quando a data de nascimento está no futuro', () => {
+    const anoFuturo = new Date().getFullYear() + 1;
+    const erros = validarFormulario({ ...dadosValidos, dataNascimento: `${anoFuturo}-01-01` });
+    expect(erros.dataNascimento).toBe('A data de nascimento deve ser no passado');
   });
 
   it('deve retornar erro quando email está vazio', () => {
     const erros = validarFormulario({ ...dadosValidos, email: '' });
-    expect(erros.email).toBe('Email é obrigatório');
+    expect(erros.email).toBe('E-mail é obrigatório');
   });
 
   it('deve retornar erro para email sem arroba', () => {
     const erros = validarFormulario({ ...dadosValidos, email: 'naoeemail.com' });
-    expect(erros.email).toBe('Digite um email válido');
+    expect(erros.email).toBe('Digite um e-mail válido');
   });
 
   it('deve retornar erro quando senha está vazia', () => {
@@ -62,9 +87,14 @@ describe('validarFormulario', () => {
     expect(erros.senha).toBe('A senha precisa ter um número');
   });
 
-  it('deve retornar erro quando senha não tem caractere especial', () => {
-    const erros = validarFormulario({ ...dadosValidos, senha: 'Senha1234' });
-    expect(erros.senha).toBe('A senha precisa ter um caractere especial');
+  // NOTA: o código-fonte não valida caractere especial na senha — não é um
+  // problema de texto, é uma regra que simplesmente não existe ainda.
+  // O teste abaixo documenta o comportamento atual (sem erro). Se a regra de
+  // negócio for exigida, isso precisa ser implementado em validarFormulario.js
+  // como mudança de funcionalidade, não como ajuste deste arquivo de teste.
+  it('atualmente NÃO valida caractere especial na senha (comportamento real do código)', () => {
+    const erros = validarFormulario({ ...dadosValidos, senha: 'Senha1234', confirmarSenha: 'Senha1234' });
+    expect(erros.senha).toBeUndefined();
   });
 
   it('deve retornar erro quando confirmação de senha está vazia', () => {

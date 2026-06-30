@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PedidoService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mercado</a> &gt; <a href="index.source.html" class="el_package">br.ufpb.dsc.mercado.service</a> &gt; <span class="el_source">PedidoService.java</span></div><h1>PedidoService.java</h1><pre class="source lang-java linenums">package br.ufpb.dsc.mercado.service;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import java.util.Optional;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import br.ufpb.dsc.mercado.domain.Cartao;
+import br.ufpb.dsc.mercado.domain.Cupom;
+import br.ufpb.dsc.mercado.domain.Endereco;
+import br.ufpb.dsc.mercado.domain.Pedido;
+import br.ufpb.dsc.mercado.domain.PedidoItem;
+import br.ufpb.dsc.mercado.domain.Produto;
+import br.ufpb.dsc.mercado.domain.StatusPedido;
+import br.ufpb.dsc.mercado.domain.TipoCupom;
+import br.ufpb.dsc.mercado.domain.Usuario;
+import br.ufpb.dsc.mercado.dto.CartItemRequest;
+import br.ufpb.dsc.mercado.dto.CartaoDTO;
+import br.ufpb.dsc.mercado.dto.CheckoutRequest;
+import br.ufpb.dsc.mercado.dto.EnderecoDTO;
+import br.ufpb.dsc.mercado.dto.PedidoDTO;
+import br.ufpb.dsc.mercado.dto.PedidoItemDTO;
+import br.ufpb.dsc.mercado.repository.PedidoRepository;
+import br.ufpb.dsc.mercado.repository.ProdutoRepository;
+import com.mercadopago.resources.payment.Payment;
+
+@Service
+@Transactional(readOnly = true)
+public class PedidoService {
+
+    private final PedidoRepository pedidoRepository;
+    private final ProdutoRepository produtoRepository;
+    private final UsuarioService usuarioService;
+    private final CupomService cupomService;
+    private final MercadoPagoService mercadoPagoService;
+
+    @SuppressWarnings(&quot;EI_EXPOSE_REP2&quot;) // Beans Spring sao singletons gerenciados pelo container
+    public PedidoService(PedidoRepository pedidoRepository,
+                         ProdutoRepository produtoRepository,
+                         UsuarioService usuarioService,
+                         CupomService cupomService,
+<span class="fc" id="L49">                         MercadoPagoService mercadoPagoService) {</span>
+<span class="fc" id="L50">        this.pedidoRepository = pedidoRepository;</span>
+<span class="fc" id="L51">        this.produtoRepository = produtoRepository;</span>
+<span class="fc" id="L52">        this.usuarioService = usuarioService;</span>
+<span class="fc" id="L53">        this.cupomService = cupomService;</span>
+<span class="fc" id="L54">        this.mercadoPagoService = mercadoPagoService;</span>
+<span class="fc" id="L55">    }</span>
+
+    public BigDecimal calcularFaturamentoTotal() {
+<span class="fc" id="L58">        return pedidoRepository.somarFaturamentoTotal();</span>
+    }
+
+    public Page&lt;Pedido&gt; listarTodos(Pageable pageable) {
+<span class="fc" id="L62">        return pedidoRepository.findAllByOrderByCriadoEmDesc(pageable);</span>
+    }
+
+    public Page&lt;Pedido&gt; listarTodos(StatusPedido filtroStatus, Pageable pageable) {
+<span class="fc bfc" id="L66" title="All 2 branches covered.">        if (filtroStatus == null) return pedidoRepository.findAllByOrderByCriadoEmDesc(pageable);</span>
+<span class="fc" id="L67">        return pedidoRepository.findByStatusOrderByCriadoEmDesc(filtroStatus, pageable);</span>
+    }
+
+    public Page&lt;Pedido&gt; listarPorCliente(Long clienteId, StatusPedido filtroStatus, Pageable pageable) {
+<span class="fc bfc" id="L71" title="All 2 branches covered.">        if (filtroStatus == null) return pedidoRepository.findByClienteIdOrderByCriadoEmDesc(clienteId, pageable);</span>
+<span class="fc" id="L72">        return pedidoRepository.findByClienteIdAndStatusOrderByCriadoEmDesc(clienteId, filtroStatus, pageable);</span>
+    }
+
+    public long contarPorStatus(StatusPedido status) {
+<span class="fc" id="L76">        return pedidoRepository.countByStatus(status);</span>
+    }
+
+    public Page&lt;Pedido&gt; listarPorCliente(Long clienteId, Pageable pageable) {
+<span class="fc" id="L80">        return pedidoRepository.findByClienteIdOrderByCriadoEmDesc(clienteId, pageable);</span>
+    }
+
+    public Pedido buscarPorId(Long id) {
+<span class="fc" id="L84">        return pedidoRepository.findById(id)</span>
+<span class="fc" id="L85">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Pedido não encontrado com ID: &quot; + id));</span>
+    }
+
+    @Transactional
+    public Pedido criarPedido(Long clienteId, CheckoutRequest request) {
+<span class="fc" id="L90">        Usuario cliente = usuarioService.buscarPorId(clienteId);</span>
+<span class="fc" id="L91">        Endereco endereco = usuarioService.buscarEnderecoPorId(request.enderecoId());</span>
+        
+<span class="fc bfc" id="L93" title="All 2 branches covered.">        if (!endereco.getCliente().getId().equals(clienteId)) {</span>
+<span class="fc" id="L94">            throw new IllegalArgumentException(&quot;O endereço de entrega fornecido não pertence a este cliente&quot;);</span>
+        }
+
+<span class="fc" id="L97">        Cartao cartao = usuarioService.buscarCartaoPorId(request.cartaoId());</span>
+<span class="fc bfc" id="L98" title="All 2 branches covered.">        if (!cartao.getCliente().getId().equals(clienteId)) {</span>
+<span class="fc" id="L99">            throw new IllegalArgumentException(&quot;O cartão de pagamento fornecido não pertence a este cliente&quot;);</span>
+        }
+
+<span class="fc" id="L102">        Pedido pedido = new Pedido();</span>
+<span class="fc" id="L103">        pedido.setCliente(cliente);</span>
+<span class="fc" id="L104">        pedido.setEnderecoEntrega(endereco);</span>
+<span class="fc" id="L105">        pedido.setCartao(cartao);</span>
+        // Status inicial: aguardando confirmacao do pagamento
+<span class="fc" id="L107">        pedido.setStatus(StatusPedido.AGUARDANDO_PAGAMENTO);</span>
+
+<span class="fc" id="L109">        BigDecimal totalProdutos = BigDecimal.ZERO;</span>
+<span class="fc" id="L110">        List&lt;PedidoItem&gt; itens = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L112" title="All 2 branches covered.">        for (CartItemRequest itemReq : request.itens()) {</span>
+<span class="fc" id="L113">            Produto produto = produtoRepository.findById(itemReq.produtoId())</span>
+<span class="fc" id="L114">                    .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Produto não encontrado com ID: &quot; + itemReq.produtoId()));</span>
+
+<span class="fc bfc" id="L116" title="All 2 branches covered.">            if (!produto.getAtivo()) {</span>
+<span class="fc" id="L117">                throw new IllegalArgumentException(&quot;O produto '&quot; + produto.getNome() + &quot;' não está ativo para compra&quot;);</span>
+            }
+
+<span class="fc bfc" id="L120" title="All 2 branches covered.">            if (produto.getEstoque() &lt; itemReq.quantidade()) {</span>
+<span class="fc" id="L121">                throw new IllegalArgumentException(&quot;Estoque insuficiente para o produto '&quot; + produto.getNome() + </span>
+<span class="fc" id="L122">                        &quot;'. Estoque atual: &quot; + produto.getEstoque() + &quot;, solicitado: &quot; + itemReq.quantidade());</span>
+            }
+
+            // Decrementa o estoque
+<span class="fc" id="L126">            produto.setEstoque(produto.getEstoque() - itemReq.quantidade());</span>
+<span class="fc" id="L127">            produtoRepository.save(produto);</span>
+
+<span class="fc" id="L129">            BigDecimal itemTotal = produto.getPreco().multiply(BigDecimal.valueOf(itemReq.quantidade()));</span>
+<span class="fc" id="L130">            totalProdutos = totalProdutos.add(itemTotal);</span>
+
+<span class="fc" id="L132">            PedidoItem item = new PedidoItem(pedido, produto, itemReq.quantidade(), produto.getPreco());</span>
+<span class="fc" id="L133">            itens.add(item);</span>
+<span class="fc" id="L134">        }</span>
+
+<span class="fc" id="L136">        pedido.setItens(itens);</span>
+<span class="fc" id="L137">        pedido.setTotalProdutos(totalProdutos);</span>
+
+        // Aplica o cupom se houver
+<span class="fc" id="L140">        BigDecimal totalDesconto = BigDecimal.ZERO;</span>
+<span class="pc bpc" id="L141" title="1 of 4 branches missed.">        if (request.codigoCupom() != null &amp;&amp; !request.codigoCupom().isBlank()) {</span>
+            try {
+<span class="fc" id="L143">                Cupom cupom = cupomService.validarCupom(request.codigoCupom());</span>
+<span class="fc" id="L144">                pedido.setCupom(cupom);</span>
+
+<span class="fc bfc" id="L146" title="All 2 branches covered.">                if (cupom.getTipo() == TipoCupom.PORCENTAGEM) {</span>
+                    // Desconto percentual
+<span class="fc" id="L148">                    totalDesconto = totalProdutos.multiply(cupom.getDesconto())</span>
+<span class="fc" id="L149">                            .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);</span>
+                } else {
+                    // Desconto fixo
+<span class="fc" id="L152">                    totalDesconto = cupom.getDesconto();</span>
+                }
+
+                // Desconto não pode exceder o valor dos produtos
+<span class="fc bfc" id="L156" title="All 2 branches covered.">                if (totalDesconto.compareTo(totalProdutos) &gt; 0) {</span>
+<span class="fc" id="L157">                    totalDesconto = totalProdutos;</span>
+                }
+<span class="fc" id="L159">            } catch (Exception e) {</span>
+                // Se o cupom for inválido, podemos falhar o checkout ou apenas ignorar o cupom.
+                // Em um e-commerce, é melhor falhar o checkout informando o usuário.
+<span class="fc" id="L162">                throw new IllegalArgumentException(&quot;Erro no cupom: &quot; + e.getMessage());</span>
+<span class="fc" id="L163">            }</span>
+        }
+
+<span class="fc" id="L166">        pedido.setTotalDesconto(totalDesconto);</span>
+<span class="fc" id="L167">        pedido.setTotalGeral(totalProdutos.subtract(totalDesconto));</span>
+
+        // Salva o pedido antes de cobrar para ter o ID disponivel na descricao
+<span class="fc" id="L170">        Pedido pedidoSalvo = pedidoRepository.save(pedido);</span>
+
+        // Realiza a cobranca via Mercado Pago usando o token do cartao salvo
+        try {
+<span class="fc" id="L174">            Payment payment = mercadoPagoService.cobrarComToken(</span>
+<span class="fc" id="L175">                    cartao.getTokenPagamento(),</span>
+<span class="fc" id="L176">                    pedidoSalvo.getTotalGeral(),</span>
+<span class="fc" id="L177">                    cliente.getEmail(),</span>
+<span class="fc" id="L178">                    &quot;Pedido #&quot; + pedidoSalvo.getId(),</span>
+                    1 // a vista
+            );
+<span class="fc" id="L181">            pedidoSalvo.setStatus(StatusPedido.PAGO);</span>
+<span class="pc bpc" id="L182" title="1 of 2 branches missed.">            pedidoSalvo.setCodigoRastreamento(payment.getId() != null ? payment.getId().toString() : null);</span>
+<span class="fc" id="L183">        } catch (IllegalArgumentException e) {</span>
+<span class="pc bpc" id="L184" title="1 of 2 branches missed.">            String msg = e.getMessage() != null ? e.getMessage() : &quot;&quot;;</span>
+            // Se o erro for de credenciais (ambiente de teste sem sandbox habilitado),
+            // aprova o pedido localmente para nao bloquear o fluxo de desenvolvimento
+<span class="pc bpc" id="L187" title="1 of 4 branches missed.">            if (msg.contains(&quot;Unauthorized use of live credentials&quot;) || msg.contains(&quot;unauthorized&quot;)) {</span>
+<span class="fc" id="L188">                pedidoSalvo.setStatus(StatusPedido.PAGO);</span>
+            } else {
+                // Pagamento genuinamente recusado — cancela e devolve estoque
+<span class="fc" id="L191">                pedidoSalvo.setStatus(StatusPedido.CANCELADO);</span>
+<span class="fc bfc" id="L192" title="All 2 branches covered.">                for (PedidoItem item : pedidoSalvo.getItens()) {</span>
+<span class="fc" id="L193">                    Produto produto = item.getProduto();</span>
+<span class="fc" id="L194">                    produto.setEstoque(produto.getEstoque() + item.getQuantidade());</span>
+<span class="fc" id="L195">                    produtoRepository.save(produto);</span>
+<span class="fc" id="L196">                }</span>
+<span class="fc" id="L197">                pedidoRepository.save(pedidoSalvo);</span>
+<span class="fc" id="L198">                throw new IllegalArgumentException(&quot;Pagamento recusado: &quot; + e.getMessage());</span>
+            }
+<span class="fc" id="L200">        }</span>
+
+<span class="fc" id="L202">        return pedidoRepository.save(pedidoSalvo);</span>
+    }
+
+    @Transactional
+    public Pedido atualizarStatus(Long id, StatusPedido novoStatus) {
+<span class="fc" id="L207">        return atualizarStatus(id, novoStatus, null);</span>
+    }
+
+    @Transactional
+    public Pedido atualizarStatus(Long id, StatusPedido novoStatus, String motivo) {
+<span class="fc" id="L212">        Pedido pedido = buscarPorId(id);</span>
+<span class="fc" id="L213">        StatusPedido statusAnterior = pedido.getStatus();</span>
+
+<span class="fc bfc" id="L215" title="All 4 branches covered.">        if (statusAnterior == StatusPedido.CANCELADO || statusAnterior == StatusPedido.ENTREGUE) {</span>
+<span class="fc" id="L216">            throw new IllegalArgumentException(&quot;Não é possível alterar o status de um pedido já &quot; + statusAnterior.name());</span>
+        }
+
+<span class="fc" id="L219">        pedido.setStatus(novoStatus);</span>
+
+<span class="fc bfc" id="L221" title="All 2 branches covered.">        if (novoStatus == StatusPedido.CANCELADO) {</span>
+<span class="fc bfc" id="L222" title="All 4 branches covered.">            pedido.setMotivoCancelamento(motivo != null &amp;&amp; !motivo.isBlank() ? motivo : &quot;Cancelado pelo cliente&quot;);</span>
+            // Devolve os produtos ao estoque
+<span class="fc bfc" id="L224" title="All 2 branches covered.">            for (PedidoItem item : pedido.getItens()) {</span>
+<span class="fc" id="L225">                Produto produto = item.getProduto();</span>
+<span class="fc" id="L226">                produto.setEstoque(produto.getEstoque() + item.getQuantidade());</span>
+<span class="fc" id="L227">                produtoRepository.save(produto);</span>
+<span class="fc" id="L228">            }</span>
+        }
+
+<span class="fc" id="L231">        return pedidoRepository.save(pedido);</span>
+    }
+
+    @Transactional
+    public Pedido atualizarCodigoRastreamento(Long id, String codigoRastreamento) {
+<span class="fc" id="L236">        Pedido pedido = buscarPorId(id);</span>
+<span class="fc" id="L237">        pedido.setCodigoRastreamento(codigoRastreamento);</span>
+        // Atualiza para enviado se ainda for pago
+<span class="fc bfc" id="L239" title="All 2 branches covered.">        if (pedido.getStatus() == StatusPedido.PAGO) {</span>
+<span class="fc" id="L240">            pedido.setStatus(StatusPedido.ENVIADO);</span>
+        }
+<span class="fc" id="L242">        return pedidoRepository.save(pedido);</span>
+    }
+
+    public PedidoDTO converterParaDTO(Pedido pedido) {
+<span class="fc" id="L246">        EnderecoDTO enderecoDTO = new EnderecoDTO(</span>
+<span class="fc" id="L247">                pedido.getEnderecoEntrega().getId(),</span>
+<span class="fc" id="L248">                pedido.getEnderecoEntrega().getLogradouro(),</span>
+<span class="fc" id="L249">                pedido.getEnderecoEntrega().getNumero(),</span>
+<span class="fc" id="L250">                pedido.getEnderecoEntrega().getComplemento(),</span>
+<span class="fc" id="L251">                pedido.getEnderecoEntrega().getBairro(),</span>
+<span class="fc" id="L252">                pedido.getEnderecoEntrega().getCidade(),</span>
+<span class="fc" id="L253">                pedido.getEnderecoEntrega().getEstado(),</span>
+<span class="fc" id="L254">                pedido.getEnderecoEntrega().getCep(),</span>
+<span class="fc" id="L255">                pedido.getEnderecoEntrega().getPrincipal()</span>
+        );
+
+<span class="fc" id="L258">        CartaoDTO cartaoDTO = null;</span>
+<span class="fc bfc" id="L259" title="All 2 branches covered.">        if (pedido.getCartao() != null) {</span>
+<span class="fc" id="L260">            cartaoDTO = new CartaoDTO(</span>
+<span class="fc" id="L261">                    pedido.getCartao().getId(),</span>
+<span class="fc" id="L262">                    pedido.getCartao().getNomeTitular(),</span>
+<span class="fc" id="L263">                    pedido.getCartao().getBandeira(),</span>
+<span class="fc" id="L264">                    pedido.getCartao().getQuatroUltimosDigitos(),</span>
+<span class="fc" id="L265">                    pedido.getCartao().getDataExpiracao()</span>
+            );
+        }
+
+<span class="fc" id="L269">        List&lt;PedidoItemDTO&gt; itensDTO = pedido.getItens().stream()</span>
+<span class="fc" id="L270">                .map(item -&gt; new PedidoItemDTO(</span>
+<span class="fc" id="L271">                        item.getProduto().getId(),</span>
+<span class="fc" id="L272">                        item.getProduto().getNome(),</span>
+<span class="fc" id="L273">                        item.getQuantidade(),</span>
+<span class="fc" id="L274">                        item.getPrecoUnitario(),</span>
+<span class="fc" id="L275">                        item.getPrecoUnitario().multiply(java.math.BigDecimal.valueOf(item.getQuantidade()))</span>
+                ))
+<span class="fc" id="L277">                .collect(Collectors.toList());</span>
+
+<span class="fc" id="L279">        return new PedidoDTO(</span>
+<span class="fc" id="L280">                pedido.getId(),</span>
+<span class="fc" id="L281">                pedido.getCliente().getId(),</span>
+<span class="fc" id="L282">                pedido.getCliente().getNome(),</span>
+<span class="fc" id="L283">                pedido.getCliente().getEmail(),</span>
+                enderecoDTO,
+                cartaoDTO,
+<span class="fc bfc" id="L286" title="All 2 branches covered.">                pedido.getCupom() != null ? pedido.getCupom().getCodigo() : null,</span>
+<span class="fc" id="L287">                pedido.getStatus(),</span>
+<span class="fc" id="L288">                pedido.getTotalProdutos(),</span>
+<span class="fc" id="L289">                pedido.getTotalDesconto(),</span>
+<span class="fc" id="L290">                pedido.getTotalGeral(),</span>
+<span class="fc" id="L291">                pedido.getCodigoRastreamento(),</span>
+<span class="fc" id="L292">                pedido.getMotivoCancelamento(),</span>
+                itensDTO,
+<span class="fc" id="L294">                pedido.getCriadoEm(),</span>
+<span class="fc" id="L295">                pedido.getAtualizadoEm()</span>
+        );
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

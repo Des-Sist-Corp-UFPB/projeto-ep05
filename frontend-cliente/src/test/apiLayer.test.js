@@ -113,6 +113,32 @@ describe('apiFetch', () => {
       .rejects.toEqual({ status: 401, mensagem: 'Unauthorized' });
   });
 
+  it('erro HTTP com corpo JSON sem campo mensagem deve usar "Erro desconhecido"', async () => {
+    const { apiFetch } = await import('../api/api');
+    global.fetch.mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      statusText: 'Internal Server Error',
+      json: async () => ({}),
+    });
+
+    await expect(apiFetch('/algo'))
+      .rejects.toEqual({ status: 500, mensagem: 'Erro desconhecido' });
+  });
+
+  it('erro HTTP sem JSON e sem statusText deve usar "Erro na requisição"', async () => {
+    const { apiFetch } = await import('../api/api');
+    global.fetch.mockResolvedValueOnce({
+      ok: false,
+      status: 0,
+      statusText: '',
+      json: async () => { throw new Error('não é JSON'); },
+    });
+
+    await expect(apiFetch('/algo'))
+      .rejects.toEqual({ status: 0, mensagem: 'Erro na requisição' });
+  });
+
   it('falha de rede (fetch lança) deve virar erro "Sem conexão com o servidor"', async () => {
     const { apiFetch } = await import('../api/api');
     global.fetch.mockRejectedValueOnce(new TypeError('Failed to fetch'));
@@ -264,10 +290,24 @@ describe('productApi', () => {
     expect(lista).toHaveLength(1);
   });
 
+  it('getPromocoes com resposta inesperada deve retornar lista vazia', async () => {
+    mockFetchOnce({ algumaCoisa: 'inesperada' });
+    const { getPromocoes } = await import('../api/productApi');
+    const lista = await getPromocoes();
+    expect(lista).toEqual([]);
+  });
+
   it('getMaisVendidos deve mapear a lista de produtos', async () => {
     mockFetchOnce({ content: [produtoApi] });
     const { getMaisVendidos } = await import('../api/productApi');
     const lista = await getMaisVendidos();
     expect(lista).toHaveLength(1);
+  });
+
+  it('getMaisVendidos com resposta inesperada deve retornar lista vazia', async () => {
+    mockFetchOnce({ algumaCoisa: 'inesperada' });
+    const { getMaisVendidos } = await import('../api/productApi');
+    const lista = await getMaisVendidos();
+    expect(lista).toEqual([]);
   });
 });
