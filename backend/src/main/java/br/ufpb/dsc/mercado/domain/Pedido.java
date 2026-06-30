@@ -54,6 +54,9 @@ public class Pedido {
     @Column(name = "codigo_rastreamento", length = 100)
     private String codigoRastreamento;
 
+    @Column(name = "motivo_cancelamento", length = 500)
+    private String motivoCancelamento;
+
     @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PedidoItem> itens = new ArrayList<>();
 
@@ -164,6 +167,14 @@ public class Pedido {
 
     public void setCodigoRastreamento(String codigoRastreamento) {
         this.codigoRastreamento = codigoRastreamento;
+    }
+
+    public String getMotivoCancelamento() {
+        return motivoCancelamento;
+    }
+
+    public void setMotivoCancelamento(String motivoCancelamento) {
+        this.motivoCancelamento = motivoCancelamento;
     }
 
     public List<PedidoItem> getItens() {

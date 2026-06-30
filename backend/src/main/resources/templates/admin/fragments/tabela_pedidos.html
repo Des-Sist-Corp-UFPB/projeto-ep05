@@ -17,7 +17,7 @@
             <tr th:if="${pedidos == null or pedidos.isEmpty()}">
                 <td colspan="6" class="text-center text-muted py-4">Nenhum pedido encontrado.</td>
             </tr>
-            <tr th:fragment="linha" th:each="pedido : ${pedidos}" th:id="'pedido-' + ${pedido.id}">
+            <tr th:each="pedido : ${pedidos}" th:id="'pedido-' + ${pedido.id}">
                 <td th:text="${pedido.id}"></td>
                 <td th:text="${pedido.cliente.nome}"></td>
                 <td th:text="${'R$ ' + #numbers.formatDecimal(pedido.totalGeral, 1, 'POINT', 2, 'COMMA')}"></td>
@@ -33,9 +33,7 @@
                 <td th:text="${#temporals.format(pedido.criadoEm, 'dd/MM/yyyy HH:mm', #locale)}"></td>
                 <td class="text-end">
                     <button class="btn btn-sm btn-outline-primary"
-                            th:hx-get="@{/admin/pedidos/{id}(id=${pedido.id})}"
-                            hx-target="#modal-container"
-                            hx-swap="innerHTML">
+                            th:onclick="'abrirDetalhesPedido(' + ${pedido.id} + ')'">
                         Detalhes
                     </button>
                 </td>

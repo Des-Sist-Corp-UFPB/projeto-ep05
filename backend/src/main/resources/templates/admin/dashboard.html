@@ -40,7 +40,16 @@
                     <div class="text-muted small mb-2">Faturamento Total</div>
                     <div class="h2 fw-bold mb-1" style="color:#7c3aed;"
                          th:text="${'R$ ' + #numbers.formatDecimal(faturamentoTotal, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</div>
-                    <span class="small text-muted">Todos os pedidos</span>
+                    <span class="small text-muted">Pedidos não cancelados</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-4">
+            <div class="card h-100" style="border-left: 4px solid #dc3545;">
+                <div class="card-body">
+                    <div class="text-muted small mb-2">Pedidos Cancelados</div>
+                    <div class="h2 fw-bold text-danger mb-1" th:text="${totalPedidosCancelados}">0</div>
+                    <a th:href="@{/admin/pedidos(status='CANCELADO')}" class="small text-decoration-none text-muted">Ver cancelados →</a>
                 </div>
             </div>
         </div>

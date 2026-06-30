@@ -13,6 +13,7 @@ import Promotion from "../pages/Promotion/Promotion";
 import Profile from "../pages/Profile/Profile";
 import Categories from "../pages/Categories/Categories";
 import Loja from "../pages/Loja/Loja";
+import MeusPedidos from "../pages/MeusPedidos/MeusPedidos";
 
 import LayoutPage from "../components/LayoutPage/LayoutPage";
 import PrivateRoute from "../components/PrivateRoute/PrivateRoute";
@@ -52,6 +53,9 @@ const AppRoutes = () => (
             {/* Privadas (requerem login) */}
             <Route path="/perfil" element={
               <PrivateRoute><Profile /></PrivateRoute>
+            } />
+            <Route path="/meus-pedidos" element={
+              <PrivateRoute><MeusPedidos /></PrivateRoute>
             } />
             <Route path="/checkout" element={
               <PrivateRoute><Checkout /></PrivateRoute>

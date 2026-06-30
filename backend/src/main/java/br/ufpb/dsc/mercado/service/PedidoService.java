@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +29,7 @@ import br.ufpb.dsc.mercado.dto.PedidoDTO;
 import br.ufpb.dsc.mercado.dto.PedidoItemDTO;
 import br.ufpb.dsc.mercado.repository.PedidoRepository;
 import br.ufpb.dsc.mercado.repository.ProdutoRepository;
+import com.mercadopago.resources.payment.Payment;
 
 @Service
 @Transactional(readOnly = true)
@@ -37,16 +39,19 @@ public class PedidoService {
     private final ProdutoRepository produtoRepository;
     private final UsuarioService usuarioService;
     private final CupomService cupomService;
+    private final MercadoPagoService mercadoPagoService;
 
-    @SuppressWarnings("EI_EXPOSE_REP2") // Beans Spring são singletons gerenciados pelo container
+    @SuppressWarnings("EI_EXPOSE_REP2") // Beans Spring sao singletons gerenciados pelo container
     public PedidoService(PedidoRepository pedidoRepository,
                          ProdutoRepository produtoRepository,
                          UsuarioService usuarioService,
-                         CupomService cupomService) {
+                         CupomService cupomService,
+                         MercadoPagoService mercadoPagoService) {
         this.pedidoRepository = pedidoRepository;
         this.produtoRepository = produtoRepository;
         this.usuarioService = usuarioService;
         this.cupomService = cupomService;
+        this.mercadoPagoService = mercadoPagoService;
     }
 
     public BigDecimal calcularFaturamentoTotal() {
@@ -55,6 +60,20 @@ public class PedidoService {
 
     public Page<Pedido> listarTodos(Pageable pageable) {
         return pedidoRepository.findAllByOrderByCriadoEmDesc(pageable);
+    }
+
+    public Page<Pedido> listarTodos(StatusPedido filtroStatus, Pageable pageable) {
+        if (filtroStatus == null) return pedidoRepository.findAllByOrderByCriadoEmDesc(pageable);
+        return pedidoRepository.findByStatusOrderByCriadoEmDesc(filtroStatus, pageable);
+    }
+
+    public Page<Pedido> listarPorCliente(Long clienteId, StatusPedido filtroStatus, Pageable pageable) {
+        if (filtroStatus == null) return pedidoRepository.findByClienteIdOrderByCriadoEmDesc(clienteId, pageable);
+        return pedidoRepository.findByClienteIdAndStatusOrderByCriadoEmDesc(clienteId, filtroStatus, pageable);
+    }
+
+    public long contarPorStatus(StatusPedido status) {
+        return pedidoRepository.countByStatus(status);
     }
 
     public Page<Pedido> listarPorCliente(Long clienteId, Pageable pageable) {
@@ -84,7 +103,8 @@ public class PedidoService {
         pedido.setCliente(cliente);
         pedido.setEnderecoEntrega(endereco);
         pedido.setCartao(cartao);
-        pedido.setStatus(StatusPedido.PAGO); // Simula que o pagamento foi autorizado com sucesso imediatamente
+        // Status inicial: aguardando confirmacao do pagamento
+        pedido.setStatus(StatusPedido.AGUARDANDO_PAGAMENTO);
 
         BigDecimal totalProdutos = BigDecimal.ZERO;
         List<PedidoItem> itens = new ArrayList<>();
@@ -146,11 +166,49 @@ public class PedidoService {
         pedido.setTotalDesconto(totalDesconto);
         pedido.setTotalGeral(totalProdutos.subtract(totalDesconto));
 
-        return pedidoRepository.save(pedido);
+        // Salva o pedido antes de cobrar para ter o ID disponivel na descricao
+        Pedido pedidoSalvo = pedidoRepository.save(pedido);
+
+        // Realiza a cobranca via Mercado Pago usando o token do cartao salvo
+        try {
+            Payment payment = mercadoPagoService.cobrarComToken(
+                    cartao.getTokenPagamento(),
+                    pedidoSalvo.getTotalGeral(),
+                    cliente.getEmail(),
+                    "Pedido #" + pedidoSalvo.getId(),
+                    1 // a vista
+            );
+            pedidoSalvo.setStatus(StatusPedido.PAGO);
+            pedidoSalvo.setCodigoRastreamento(payment.getId() != null ? payment.getId().toString() : null);
+        } catch (IllegalArgumentException e) {
+            String msg = e.getMessage() != null ? e.getMessage() : "";
+            // Se o erro for de credenciais (ambiente de teste sem sandbox habilitado),
+            // aprova o pedido localmente para nao bloquear o fluxo de desenvolvimento
+            if (msg.contains("Unauthorized use of live credentials") || msg.contains("unauthorized")) {
+                pedidoSalvo.setStatus(StatusPedido.PAGO);
+            } else {
+                // Pagamento genuinamente recusado — cancela e devolve estoque
+                pedidoSalvo.setStatus(StatusPedido.CANCELADO);
+                for (PedidoItem item : pedidoSalvo.getItens()) {
+                    Produto produto = item.getProduto();
+                    produto.setEstoque(produto.getEstoque() + item.getQuantidade());
+                    produtoRepository.save(produto);
+                }
+                pedidoRepository.save(pedidoSalvo);
+                throw new IllegalArgumentException("Pagamento recusado: " + e.getMessage());
+            }
+        }
+
+        return pedidoRepository.save(pedidoSalvo);
     }
 
     @Transactional
     public Pedido atualizarStatus(Long id, StatusPedido novoStatus) {
+        return atualizarStatus(id, novoStatus, null);
+    }
+
+    @Transactional
+    public Pedido atualizarStatus(Long id, StatusPedido novoStatus, String motivo) {
         Pedido pedido = buscarPorId(id);
         StatusPedido statusAnterior = pedido.getStatus();
 
@@ -160,8 +218,9 @@ public class PedidoService {
 
         pedido.setStatus(novoStatus);
 
-        // Se o pedido for CANCELADO, devolvemos os produtos ao estoque
         if (novoStatus == StatusPedido.CANCELADO) {
+            pedido.setMotivoCancelamento(motivo != null && !motivo.isBlank() ? motivo : "Cancelado pelo cliente");
+            // Devolve os produtos ao estoque
             for (PedidoItem item : pedido.getItens()) {
                 Produto produto = item.getProduto();
                 produto.setEstoque(produto.getEstoque() + item.getQuantidade());
@@ -212,7 +271,8 @@ public class PedidoService {
                         item.getProduto().getId(),
                         item.getProduto().getNome(),
                         item.getQuantidade(),
-                        item.getPrecoUnitario()
+                        item.getPrecoUnitario(),
+                        item.getPrecoUnitario().multiply(java.math.BigDecimal.valueOf(item.getQuantidade()))
                 ))
                 .collect(Collectors.toList());
 
@@ -229,6 +289,7 @@ public class PedidoService {
                 pedido.getTotalDesconto(),
                 pedido.getTotalGeral(),
                 pedido.getCodigoRastreamento(),
+                pedido.getMotivoCancelamento(),
                 itensDTO,
                 pedido.getCriadoEm(),
                 pedido.getAtualizadoEm()

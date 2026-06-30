@@ -25,5 +25,6 @@ RUN mvn dependency:go-offline -B
 
 EXPOSE 8080
 
-# Spring DevTools requer o argumento -Dspring-boot.run.fork=false para funcionar em container
-CMD ["mvn", "spring-boot:run", "-Dspring-boot.run.jvmArguments=-Dspring.profiles.active=dev"]
+# O perfil "dev" já vem de SPRING_PROFILES_ACTIVE definido no docker-compose.
+# Não repetir via jvmArguments evita conflito e mantém uma única fonte de verdade.
+CMD ["mvn", "spring-boot:run"]

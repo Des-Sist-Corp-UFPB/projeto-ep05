@@ -64,6 +64,13 @@ const LayoutPage = () => {
                         | {totalItems} Itens
                     </Button>
                     {isAuthenticated ? (
+                        <Link to="/meus-pedidos" className="profile-icon-link" title="Meus Pedidos">
+                            <div className="profile-icon-container">
+                                📦
+                            </div>
+                        </Link>
+                    ) : null}
+                    {isAuthenticated ? (
                         <Link to="/perfil" className="profile-icon-link">
                             <div className="profile-icon-container">
                                 <FaUserCircle />

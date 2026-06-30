@@ -13,11 +13,8 @@ import BackButton from "../../components/BackButton/BackButton";
 function CartProduct() {
     const navigate = useNavigate()
 
-
-
     const { cart, removeFromCart, updateQuantity, total, clearCart } = useCart()
     const stock = 10;
-
 
     return (
 

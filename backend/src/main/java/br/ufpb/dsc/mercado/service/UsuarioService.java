@@ -46,15 +46,18 @@ public class UsuarioService {
     private final EnderecoRepository enderecoRepository;
     private final CartaoRepository cartaoRepository;
     private final PasswordEncoder passwordEncoder;
+    private final MercadoPagoService mercadoPagoService;
 
     public UsuarioService(UsuarioRepository usuarioRepository,
                           EnderecoRepository enderecoRepository,
                           CartaoRepository cartaoRepository,
-                          PasswordEncoder passwordEncoder) {
+                          PasswordEncoder passwordEncoder,
+                          MercadoPagoService mercadoPagoService) {
         this.usuarioRepository = usuarioRepository;
         this.enderecoRepository = enderecoRepository;
         this.cartaoRepository = cartaoRepository;
         this.passwordEncoder = passwordEncoder;
+        this.mercadoPagoService = mercadoPagoService;
     }
 
     // ── Consultas básicas ─────────────────────────────────────────────────────
@@ -273,14 +276,14 @@ public class UsuarioService {
     public Cartao cadastrarCartao(Long clienteId, CartaoSalvarDTO dto) {
         Usuario cliente = buscarPorId(clienteId);
 
+        // O token foi gerado pelo SDK JS do Mercado Pago no frontend.
+        // O backend nunca recebe o numero completo nem o CVV — apenas o token seguro.
         Cartao cartao = new Cartao();
         cartao.setCliente(cliente);
         cartao.setNomeTitular(dto.nomeTitular());
         cartao.setBandeira(dto.bandeira());
-
-        String numStr = dto.numeroCartao().replaceAll("\\s+", "");
-        cartao.setQuatroUltimosDigitos(numStr.substring(numStr.length() - 4));
-        cartao.setTokenPagamento("TOK_" + UUID.randomUUID().toString().replace("-", "").toUpperCase());
+        cartao.setQuatroUltimosDigitos(dto.quatroUltimosDigitos());
+        cartao.setTokenPagamento(dto.tokenMercadoPago());
         cartao.setDataExpiracao(dto.dataExpiracao());
 
         return cartaoRepository.save(cartao);

@@ -30,12 +30,13 @@ class UsuarioServiceTest {
     @Mock EnderecoRepository enderecoRepository;
     @Mock CartaoRepository cartaoRepository;
     @Mock PasswordEncoder passwordEncoder;
+    @Mock MercadoPagoService mercadoPagoService;
 
     private UsuarioService service;
 
     @BeforeEach
     void setUp() {
-        service = new UsuarioService(usuarioRepository, enderecoRepository, cartaoRepository, passwordEncoder);
+        service = new UsuarioService(usuarioRepository, enderecoRepository, cartaoRepository, passwordEncoder, mercadoPagoService);
     }
 
     private Usuario criarUsuario(Long id, String email, Papel papel) {

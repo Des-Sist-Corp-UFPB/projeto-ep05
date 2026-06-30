@@ -49,6 +49,7 @@ public class AdminController {
     public String dashboard(Model model) {
         model.addAttribute("faturamentoTotal", pedidoService.calcularFaturamentoTotal());
         model.addAttribute("totalPedidos", pedidoRepository.count());
+        model.addAttribute("totalPedidosCancelados", pedidoService.contarPorStatus(br.ufpb.dsc.mercado.domain.StatusPedido.CANCELADO));
         model.addAttribute("totalClientes", usuarioService.listarTodosPorPapel(Papel.CLIENTE).size());
         return "admin/dashboard";
     }
@@ -244,11 +245,19 @@ public class AdminController {
     @GetMapping("/pedidos")
     public String listarPedidos(
             @RequestParam(defaultValue = "0") int pagina,
+            @RequestParam(required = false) String status,
             @RequestHeader(value = HEADER_HTMX, required = false) String htmx,
             Model model) {
         PageRequest pr = PageRequest.of(pagina, 10);
-        model.addAttribute("pedidos", pedidoService.listarTodos(pr));
+        br.ufpb.dsc.mercado.domain.StatusPedido filtroStatus = null;
+        if (status != null && !status.isBlank()) {
+            try { filtroStatus = br.ufpb.dsc.mercado.domain.StatusPedido.valueOf(status.toUpperCase()); }
+            catch (IllegalArgumentException ignored) {}
+        }
+        model.addAttribute("pedidos", pedidoService.listarTodos(filtroStatus, pr));
         model.addAttribute("paginaAtual", pagina);
+        model.addAttribute("statusSelecionado", status);
+        model.addAttribute("statusOpcoes", br.ufpb.dsc.mercado.domain.StatusPedido.values());
         return htmx != null ? "admin/fragments/tabela_pedidos :: tabela" : "admin/pedidos";
     }
 
@@ -257,6 +266,17 @@ public class AdminController {
         model.addAttribute("pedido", pedidoService.buscarPorId(id));
         model.addAttribute("statusList", StatusPedido.values());
         return "admin/fragments/modal_pedido :: modal";
+    }
+
+    /** JSON para o modal JS (usa sessao do admin, nao JWT). */
+    @GetMapping("/pedidos/{id}/json")
+    @ResponseBody
+    public ResponseEntity<?> obterPedidoJson(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(pedidoService.converterParaDTO(pedidoService.buscarPorId(id)));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @PostMapping("/pedidos/{id}/status")
