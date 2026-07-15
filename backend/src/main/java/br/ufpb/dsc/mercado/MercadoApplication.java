@@ -18,7 +18,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * </ul>
  *
  * <p><strong>Disciplina:</strong> Desenvolvimento de Sistemas Corporativos (DSC)<br>
- * <strong>Professor:</strong> Rodrigo Rebouças — UFPB Campus IV
+ * <strong>Professor:</strong> Rodrigo Rebouças — UFPB Campus  IV
  *
  * @author DSC - UFPB Campus IV
  * @version 0.0.1-SNAPSHOT
