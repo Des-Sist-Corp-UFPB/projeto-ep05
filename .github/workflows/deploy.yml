@@ -19,6 +19,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Limpar cache de builds antigos (evita "no space left on device")
+        run: docker system prune -af --filter "until=48h"
+
       - name: Prepara nome da imagem do backend (lowercase)
         run: |
           IMAGE="ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]'):latest"
@@ -52,6 +55,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Limpar cache de builds antigos (evita "no space left on device")
+        run: docker system prune -af --filter "until=48h"
+
       - name: Prepara nome da imagem do frontend (lowercase)
         run: |
           IMAGE="ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')-frontend:latest"
@@ -84,6 +90,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Limpar cache de builds antigos (evita "no space left on device")
+        run: docker system prune -af --filter "until=48h"
 
       - name: Prepara nome da imagem do nginx (lowercase)
         run: |
