@@ -11,7 +11,7 @@ jobs:
   # ===========================================================================
   build-backend:
     name: Backend — build e push
-    runs-on: [self-hosted, dsc-selfhosted]
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
@@ -47,7 +47,7 @@ jobs:
   # ===========================================================================
   build-frontend:
     name: Frontend — build e push
-    runs-on: [self-hosted, dsc-selfhosted]
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
@@ -83,7 +83,7 @@ jobs:
   # ===========================================================================
   build-nginx:
     name: Nginx — build e push
-    runs-on: [self-hosted, dsc-selfhosted]
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
@@ -119,7 +119,7 @@ jobs:
   # ===========================================================================
   deploy:
     name: Deploy no servidor
-    runs-on: [self-hosted, dsc-selfhosted]
+    runs-on: ubuntu-latest
     needs: [build-backend, build-frontend, build-nginx]
 
     steps:
