@@ -40,9 +40,36 @@
         <dependency-check-maven.version>11.1.1</dependency-check-maven.version>
         <versions-maven-plugin.version>2.18.0</versions-maven-plugin.version>
         <jacoco-maven-plugin.version>0.8.13</jacoco-maven-plugin.version>
+        <spring-ai.version>1.1.4</spring-ai.version>
     </properties>
 
+    <!-- === SPRING-IA === -->
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-bom</artifactId>
+                <version>${spring-ai.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+                </dependency>
+            </dependencies>
+        </dependencyManagement>
+
+
+        
+        
+
+
+
     <dependencies>
+
+        <!-- === SPRING-IA === -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-mcp-server-webmvc</artifactId>
+        </dependency>
+
         <!-- === WEB === -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
