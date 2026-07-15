@@ -22,3 +22,5 @@ class MercadoApplicationTests {
         // Se chegar aqui sem lançar exceção, o contexto carregou com sucesso
     }
 }
+
+
