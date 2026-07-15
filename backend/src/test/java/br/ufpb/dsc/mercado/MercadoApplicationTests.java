@@ -14,7 +14,7 @@ import org.springframework.context.annotation.Import;
 @Tag("integration")
 @Import(TestcontainersConfiguration.class)
 @SpringBootTest
-@ActiveProfiles("test")
+@ActiveProfiles("test" )
 class MercadoApplicationTests {
 
     @Test
