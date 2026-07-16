@@ -4,6 +4,12 @@ spring:
   profiles:
     active: dev
 
+  ai:
+    mcp:
+      server:
+          name: pedidos-mcp
+          version: 0.0.1
+
 # Actuator - monitoramento da aplicação
 # Acesse: http://localhost:8080/actuator/health
 management:
