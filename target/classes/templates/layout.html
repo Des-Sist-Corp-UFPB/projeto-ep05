@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="pt-BR"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:fragment="layout(content)">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="${titulo != null ? titulo + ' — Sweet Delights Manager' : 'Sweet Delights Manager'}">Sweet Delights Manager</title>
+
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --cor-fundo:             #F9DDE5;
+            --cor-secundaria:        #833320;
+            --cor-detalhe:           #FFF8EB;
+            --cor-detalhe-2:         #EE90AF;
+            --cor-texto:             #000000;
+            --cor-texto-2:           #FFFFFF;
+            --cor-texto-3:           #803225;
+            --cor-backgroundDetails: #E15477;
+            --cor-botao:             #D96A88;
+            --cor-botao-secundario:  #028643;
+            --cor-botao-terciario:   #FFF8EB;
+        }
+
+        /* ── BASE ── */
+        body {
+            background-color: var(--cor-fundo);
+            color: var(--cor-texto);
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── NAVBAR ── */
+        .navbar {
+            background: linear-gradient(135deg, var(--cor-secundaria) 0%, var(--cor-backgroundDetails) 100%);
+            box-shadow: 0 4px 12px rgba(131, 51, 32, 0.25);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: var(--cor-texto-2) !important;
+        }
+
+        .nav-link {
+            font-weight: 500;
+            color: rgba(255,255,255,0.88) !important;
+            transition: all 0.2s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--cor-detalhe) !important;
+            transform: translateY(-1px);
+        }
+
+        .navbar-toggler {
+            border-color: rgba(255,255,255,0.4);
+        }
+
+        .navbar-toggler-icon {
+            filter: brightness(10);
+        }
+
+        /* dropdown do usuário */
+        .dropdown-menu {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(131,51,32,0.15);
+        }
+
+        .dropdown-item:hover {
+            background-color: var(--cor-fundo);
+        }
+
+        /* ── CARDS ── */
+        .card {
+            background-color: var(--cor-detalhe);
+            border: 1px solid var(--cor-detalhe-2);
+            border-radius: 14px;
+            box-shadow: 0 1px 4px rgba(225, 84, 119, 0.08);
+            transition: box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 8px 24px rgba(225, 84, 119, 0.14);
+        }
+
+        .card-header {
+            background-color: var(--cor-detalhe-2);
+            border-bottom: 1px solid var(--cor-detalhe-2);
+            border-radius: 13px 13px 0 0 !important;
+            color: var(--cor-texto-3);
+            font-weight: 600;
+        }
+
+        /* ── BOTÕES ── */
+        .btn-primary {
+            background-color: var(--cor-botao);
+            border-color: var(--cor-botao);
+            color: var(--cor-texto-2);
+            font-weight: 600;
+            border-radius: 8px;
+            padding: 0.45rem 1.2rem;
+            transition: all 0.2s;
+        }
+        .btn-primary:hover, .btn-primary:focus {
+            background-color: var(--cor-backgroundDetails);
+            border-color: var(--cor-backgroundDetails);
+            color: var(--cor-texto-2);
+        }
+
+        .btn-success {
+            background-color: var(--cor-botao-secundario);
+            border-color: var(--cor-botao-secundario);
+            font-weight: 600;
+            border-radius: 8px;
+        }
+        .btn-success:hover {
+            background-color: #026b35;
+            border-color: #026b35;
+        }
+
+        .btn-outline-primary {
+            color: var(--cor-botao);
+            border-color: var(--cor-botao);
+        }
+        .btn-outline-primary:hover {
+            background-color: var(--cor-botao);
+            border-color: var(--cor-botao);
+            color: var(--cor-texto-2);
+        }
+
+        .btn-outline-secondary {
+            color: var(--cor-texto-3);
+            border-color: var(--cor-detalhe-2);
+        }
+        .btn-outline-secondary:hover {
+            background-color: var(--cor-detalhe-2);
+            border-color: var(--cor-detalhe-2);
+            color: var(--cor-texto-3);
+        }
+
+        .btn-outline-danger {
+            color: var(--cor-secundaria);
+            border-color: var(--cor-secundaria);
+        }
+        .btn-outline-danger:hover {
+            background-color: var(--cor-secundaria);
+            border-color: var(--cor-secundaria);
+            color: var(--cor-texto-2);
+        }
+
+        .btn-outline-warning {
+            color: #92600a;
+            border-color: #e6a817;
+        }
+        .btn-outline-warning:hover {
+            background-color: #e6a817;
+            border-color: #e6a817;
+            color: #fff;
+        }
+
+        .btn-outline-success {
+            color: var(--cor-botao-secundario);
+            border-color: var(--cor-botao-secundario);
+        }
+        .btn-outline-success:hover {
+            background-color: var(--cor-botao-secundario);
+            color: #fff;
+        }
+
+        .btn-outline-info {
+            color: #0c6e8a;
+            border-color: #0c9abf;
+        }
+        .btn-outline-info:hover {
+            background-color: #0c9abf;
+            color: #fff;
+        }
+
+        /* ── TABELAS ── */
+        .table {
+            color: var(--cor-texto);
+        }
+
+        .table thead th {
+            background-color: var(--cor-detalhe-2);
+            color: var(--cor-texto-3);
+            border-bottom: none;
+            font-weight: 600;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: rgba(238, 144, 175, 0.12);
+        }
+
+        .table-light th {
+            background-color: var(--cor-detalhe-2) !important;
+            color: var(--cor-texto-3);
+        }
+
+        /* ── FORMULÁRIOS ── */
+        .form-control, .form-select {
+            border-color: var(--cor-detalhe-2);
+            border-radius: 8px;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--cor-botao);
+            box-shadow: 0 0 0 3px rgba(217, 106, 136, 0.2);
+        }
+
+        .input-group-text {
+            background-color: var(--cor-detalhe-2);
+            border-color: var(--cor-detalhe-2);
+            color: var(--cor-texto-3);
+        }
+
+        /* ── BADGES ── */
+        .badge.bg-primary   { background-color: var(--cor-botao) !important; }
+        .badge.bg-warning   { background-color: #e6a817 !important; color: #fff !important; }
+        .badge.bg-success   { background-color: var(--cor-botao-secundario) !important; }
+        .badge.bg-danger    { background-color: var(--cor-secundaria) !important; }
+        .badge.bg-secondary { background-color: #8a7070 !important; }
+        .badge.bg-info      { background-color: #0c9abf !important; color: #fff !important; }
+
+        /* ── PAGINAÇÃO ── */
+        .page-link {
+            color: var(--cor-botao);
+            border-color: var(--cor-detalhe-2);
+        }
+        .page-item.active .page-link {
+            background-color: var(--cor-botao);
+            border-color: var(--cor-botao);
+            color: #fff;
+        }
+        .page-link:hover {
+            color: var(--cor-backgroundDetails);
+            background-color: var(--cor-fundo);
+        }
+
+        /* ── ALERTAS ── */
+        .alert-danger {
+            background-color: rgba(131,51,32,0.1);
+            border-color: var(--cor-secundaria);
+            color: var(--cor-secundaria);
+        }
+        .alert-success {
+            background-color: rgba(2,134,67,0.1);
+            border-color: var(--cor-botao-secundario);
+            color: var(--cor-botao-secundario);
+        }
+
+        /* ── MODAIS ── */
+        .modal-content {
+            border: none;
+            border-radius: 16px;
+            background-color: var(--cor-detalhe);
+        }
+
+        .modal-header {
+            border-bottom-color: var(--cor-detalhe-2);
+        }
+
+        /* ── HTMX indicator ── */
+        .htmx-indicator { display: none; }
+        .htmx-request .htmx-indicator { display: inline-block; }
+        .htmx-request.htmx-indicator { display: inline-block; }
+
+        /* ── FOOTER ── */
+        footer {
+            margin-top: auto;
+            background-color: var(--cor-detalhe);
+            border-top: 1px solid var(--cor-detalhe-2);
+        }
+
+        footer .text-muted {
+            color: var(--cor-texto-3) !important;
+        }
+
+        /* ── HEADINGS ── */
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--cor-texto-3);
+        }
+
+        p.text-muted, .text-muted {
+            color: #a06060 !important;
+        }
+
+        /* card de métricas — borda colorida */
+        .metric-card-rosa   { border-left: 4px solid var(--cor-botao) !important; }
+        .metric-card-vinho  { border-left: 4px solid var(--cor-secundaria) !important; }
+        .metric-card-verde  { border-left: 4px solid var(--cor-botao-secundario) !important; }
+        .metric-card-detalhe{ border-left: 4px solid var(--cor-backgroundDetails) !important; }
+    </style>
+</head>
+<body>
+
+<!-- ═══════════════ NAVBAR ═══════════════ -->
+<nav class="navbar navbar-expand-lg navbar-dark mb-4">
+    <div class="container">
+        <a class="navbar-brand d-flex align-items-center" th:href="@{/}">
+            <!-- ícone de bolo / cupcake -->
+            <img th:src="@{/assets/logo.png}" class="me-2" width="35" height="35" style="vertical-align: middle;"/>
+            Sweet Delights Manager
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarMain">
+            <ul class="navbar-nav me-auto" sec:authorize="isAuthenticated()">
+
+                <!-- SYSADMIN -->
+                <th:block sec:authorize="hasRole('SYSADMIN')">
+                    <li class="nav-item"><a class="nav-link" th:href="@{/sysadmin/dashboard}">Painel</a></li>
+                    <li class="nav-item"><a class="nav-link" th:href="@{/sysadmin/admins}">Administradores</a></li>
+                    <li class="nav-item"><a class="nav-link" th:href="@{/sysadmin/logs}">Logs &amp; Auditoria</a></li>
+                    <li class="nav-item"><a class="nav-link" th:href="@{/sysadmin/configuracoes}">Configurações</a></li>
+                </th:block>
+
+                <!-- ADMIN -->
+                <th:block sec:authorize="hasRole('ADMIN')">
+                    <li class="nav-item"><a class="nav-link" th:href="@{/admin/dashboard}">Painel</a></li>
+                    <li class="nav-item"><a class="nav-link" th:href="@{/produtos}">Produtos</a></li>
+                    <li class="nav-item"><a class="nav-link" th:href="@{/admin/categorias}">Categorias</a></li>
+                    <li class="nav-item"><a class="nav-link" th:href="@{/admin/cupons}">Cupons</a></li>
+                    <li class="nav-item"><a class="nav-link" th:href="@{/admin/pedidos}">Pedidos</a></li>
+                    <li class="nav-item"><a class="nav-link" th:href="@{/admin/clientes}">Clientes</a></li>
+                </th:block>
+            </ul>
+
+            <!-- Usuário logado -->
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
+                    <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" data-bs-toggle="dropdown">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                             fill="currentColor" class="bi bi-person-circle me-1" viewBox="0 0 16 16">
+                            <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
+                            <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
+                        </svg>
+                        <span sec:authentication="name" class="me-1">Usuário</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <form th:action="@{/logout}" method="post" class="d-inline">
+                                <button type="submit" class="dropdown-item text-danger d-flex align-items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                         fill="currentColor" class="bi bi-box-arrow-right me-2" viewBox="0 0 16 16">
+                                        <path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0z"/>
+                                        <path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708z"/>
+                                    </svg>
+                                    Sair
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- ═══════════════ CONTEÚDO ═══════════════ -->
+<main class="container pb-4">
+    <th:block th:replace="${content}"></th:block>
+</main>
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<footer class="py-4 mt-4">
+    <div class="container text-center small">
+        <p class="mb-0">
+            🍰 Sweet Delights Manager &copy; 2026 &nbsp;|&nbsp; Desenvolvimento de Sistemas Corporativos &nbsp;|&nbsp; UFPB Campus IV
+        </p>
+    </div>
+</footer>
+
+<!-- SCRIPTS -->
+<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/webjars/htmx.org/dist/htmx.min.js}"></script>
+
+<div id="modal-container"></div>
+
+<script>
+    document.body.addEventListener('htmx:afterSwap', function(evt) {
+        if (evt.detail.target.id === 'modal-container') {
+            const modalEl = document.querySelector('.modal');
+            if (modalEl) new bootstrap.Modal(modalEl).show();
+        }
+    });
+
+    document.body.addEventListener('htmx:beforeSwap', function(evt) {
+        if (evt.detail.target.id !== 'modal-container' &&
+            (evt.detail.xhr.status === 200 || evt.detail.xhr.status === 201)) {
+            const modalEl = document.querySelector('.modal.show');
+            if (modalEl) {
+                const m = bootstrap.Modal.getInstance(modalEl);
+                if (m) m.hide();
+            }
+        }
+    });
+</script>
+
+</body>
+</html>

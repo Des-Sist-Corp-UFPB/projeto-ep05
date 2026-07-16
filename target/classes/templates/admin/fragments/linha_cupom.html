@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<body>
+<tr th:fragment="linha">
+    <td class="fw-semibold" th:text="${cupom.codigo}"></td>
+    <td>
+        <span class="badge"
+              th:classappend="${cupom.tipo.name() == 'PERCENTUAL'} ? 'bg-info text-dark' : 'bg-secondary'"
+              th:text="${cupom.tipo.name() == 'PERCENTUAL' ? 'Percentual' : 'Valor fixo'}">
+        </span>
+    </td>
+    <td th:text="${cupom.tipo.name() == 'PERCENTUAL'
+        ? cupom.desconto + '%'
+        : 'R$ ' + #numbers.formatDecimal(cupom.desconto, 1, 'POINT', 2, 'COMMA')}">
+    </td>
+    <td th:text="${#temporals.format(cupom.dataExpiracao, 'dd/MM/yyyy', #locale)}">—</td>
+    <td>
+        <span th:if="${cupom.ativo and !cupom.expirado}" class="badge bg-success">Ativo</span>
+        <span th:if="${cupom.expirado}" class="badge bg-secondary">Expirado</span>
+        <span th:if="${!cupom.ativo and !cupom.expirado}" class="badge bg-danger">Inativo</span>
+    </td>
+    <td class="text-end">
+        <button class="btn btn-sm btn-outline-warning me-1"
+                th:hx-post="@{/admin/cupons/{id}/alternar(id=${cupom.id})}"
+                hx-target="#tabela-cupons"
+                hx-swap="outerHTML"
+                th:text="${cupom.ativo} ? 'Desativar' : 'Ativar'">
+        </button>
+        <button class="btn btn-sm btn-outline-danger"
+                th:hx-delete="@{/admin/cupons/{id}(id=${cupom.id})}"
+                hx-confirm="Excluir este cupom?"
+                hx-target="#tabela-cupons"
+                hx-swap="outerHTML">
+            Excluir
+        </button>
+    </td>
+</tr>
+</body>
+</html>

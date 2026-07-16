@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="modal" class="modal fade" id="pedidoModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">
+                    Pedido #<span th:text="${pedido.id}"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+
+                <!-- Info do cliente -->
+                <div class="mb-3">
+                    <p class="mb-1"><strong>Cliente:</strong> <span th:text="${pedido.cliente.nome}"></span></p>
+                    <p class="mb-1"><strong>E-mail:</strong> <span th:text="${pedido.cliente.email}"></span></p>
+                    <p class="mb-0"><strong>Endereço:</strong>
+                        <span th:text="${pedido.enderecoEntrega.logradouro + ', ' +
+                            pedido.enderecoEntrega.numero + ' — ' +
+                            pedido.enderecoEntrega.cidade + '/' +
+                            pedido.enderecoEntrega.estado}"></span>
+                    </p>
+                </div>
+
+                <hr/>
+
+                <!-- Itens -->
+                <h6 class="fw-semibold mb-2">Itens do pedido</h6>
+                <table class="table table-sm mb-3">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Produto</th>
+                            <th class="text-center">Qtd</th>
+                            <th class="text-end">Preço unit.</th>
+                            <th class="text-end">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="item : ${pedido.itens}">
+                            <td th:text="${item.produto.nome}"></td>
+                            <td class="text-center" th:text="${item.quantidade}"></td>
+                            <td class="text-end" th:text="${'R$ ' + #numbers.formatDecimal(item.precoUnitario, 1, 'POINT', 2, 'COMMA')}"></td>
+                            <td class="text-end" th:text="${'R$ ' + #numbers.formatDecimal(item.subtotal, 1, 'POINT', 2, 'COMMA')}"></td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr th:if="${pedido.totalDesconto.compareTo(java.math.BigDecimal.ZERO) > 0}">
+                            <td colspan="3" class="text-end text-muted">Desconto (cupom)</td>
+                            <td class="text-end text-danger" th:text="${'- R$ ' + #numbers.formatDecimal(pedido.totalDesconto, 1, 'POINT', 2, 'COMMA')}"></td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" class="text-end fw-bold">Total</td>
+                            <td class="text-end fw-bold" th:text="${'R$ ' + #numbers.formatDecimal(pedido.totalGeral, 1, 'POINT', 2, 'COMMA')}"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+
+                <hr/>
+
+                <!-- Atualizar status -->
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <h6 class="fw-semibold mb-2">Atualizar status</h6>
+                        <form th:hx-post="@{/admin/pedidos/{id}/status(id=${pedido.id})}"
+                              hx-target="#tabela-pedidos"
+                              hx-swap="outerHTML"
+                              hx-on::after-request="bootstrap.Modal.getInstance(document.getElementById('pedidoModal'))?.hide()">
+                            <div class="d-flex gap-2">
+                                <select name="status" class="form-select form-select-sm">
+                                    <option th:each="s : ${statusList}"
+                                            th:value="${s}"
+                                            th:text="${s.name().replace('_', ' ')}"
+                                            th:selected="${s == pedido.status}">
+                                    </option>
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-primary text-nowrap">Salvar</button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="fw-semibold mb-2">Código de rastreamento</h6>
+                        <form th:hx-post="@{/admin/pedidos/{id}/rastreamento(id=${pedido.id})}"
+                              hx-target="#tabela-pedidos"
+                              hx-swap="outerHTML"
+                              hx-on::after-request="bootstrap.Modal.getInstance(document.getElementById('pedidoModal'))?.hide()">
+                            <div class="d-flex gap-2">
+                                <input type="text" name="codigoRastreamento" class="form-control form-control-sm"
+                                       th:value="${pedido.codigoRastreamento}"
+                                       placeholder="Ex.: BR123456789BR"/>
+                                <button type="submit" class="btn btn-sm btn-outline-primary text-nowrap">Salvar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
