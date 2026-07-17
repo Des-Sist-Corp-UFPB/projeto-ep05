@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<body>
+<tr th:fragment="linha" th:id="'pedido-' + ${pedido.id}">
+    <td th:text="${pedido.id}"></td>
+    <td th:text="${pedido.cliente.nome}"></td>
+    <td th:text="${'R$ ' + #numbers.formatDecimal(pedido.totalGeral, 1, 'POINT', 2, 'COMMA')}"></td>
+    <td>
+        <span class="badge"
+              th:classappend="${pedido.status.name() == 'ENTREGUE'} ? 'bg-success' :
+                              (${pedido.status.name() == 'CANCELADO'} ? 'bg-danger' :
+                              (${pedido.status.name() == 'ENVIADO'} ? 'bg-primary' :
+                              (${pedido.status.name() == 'PAGO'} ? 'bg-info text-dark' : 'bg-warning text-dark')))"
+              th:text="${pedido.status.name().replace('_', ' ')}">
+        </span>
+    </td>
+    <td th:text="${#temporals.format(pedido.criadoEm, 'dd/MM/yyyy HH:mm', #locale)}"></td>
+    <td class="text-end">
+        <button class="btn btn-sm btn-outline-primary"
+                th:hx-get="@{/admin/pedidos/{id}(id=${pedido.id})}"
+                hx-target="#modal-container"
+                hx-swap="innerHTML">
+            Detalhes
+        </button>
+    </td>
+</tr>
+</body>
+</html>

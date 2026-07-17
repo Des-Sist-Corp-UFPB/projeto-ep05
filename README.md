@@ -144,6 +144,52 @@ O sistema audita as principais ações realizadas pelos perfis **SYSADMIN**, **A
 
 > Observação: o PostgreSQL usado pelo projeto é infraestrutura básica da disciplina e não é considerado integração externa para fins desta avaliação.
 
+
+---
+
+## Assistentes de IA — Servidor MCP (`pedidos-mcp`)
+
+O backend expõe um **servidor MCP** (Model Context Protocol) que permite a qualquer
+assistente de IA compatível (Claude Desktop, Cursor, etc.) consultar o catálogo e
+operar pedidos da loja em nome de um cliente, via linguagem natural.
+
+**O que é exposto (tools)**
+- `catalogo(busca)` — lista/pesquisa os produtos ativos do cardápio.
+- `rastrearPedido(clienteEmail, pedidoId)` — consulta status, itens e totais de um
+  pedido, confirmando antes que o pedido pertence ao e-mail informado.
+- `montarPedido(clienteEmail, itens, enderecoId, cartaoId, codigoCupom)` — cria e
+  finaliza um novo pedido, usando um endereço e um cartão **já cadastrados** pelo
+  cliente na loja (a tool não coleta nem manipula dados de cartão diretamente).
+
+**Como foi implementado**
+- Camada fina de tools (`@Tool`) que apenas chama os *services* de negócio já
+  existentes (`ProdutoService`, `PedidoService`, `UsuarioService`) — nenhuma regra
+  de negócio nova foi escrita para o MCP.
+- Toda tool que lê ou altera um pedido identifica o cliente pelo e-mail e confere
+  que o recurso pertence a ele antes de agir (não há sessão/cookie no transporte MCP).
+- Toda tool de escrita (`montarPedido`) registra um evento no **log de auditoria**
+  (`AuditoriaService.registrarCliente`, categoria `PEDIDO`), da mesma forma que as
+  ações equivalentes feitas pela API/telas normais.
+- Servidor iniciado automaticamente pelo `spring-ai-starter-mcp-server-webmvc`,
+  configurado em `application.yml` (`spring.ai.mcp.server.name=pedidos-mcp`) e
+  disponível em `/mcp` (e `/sse`, transporte HTTP/SSE).
+
+**Classes/arquivos envolvidos**
+- `backend/src/main/java/br/ufpb/dsc/mercado/mcp/PedidosTools.java` — as tools.
+- `backend/src/main/java/br/ufpb/dsc/mercado/mcp/McpConfig.java` — registra as tools no servidor MCP.
+- `backend/src/main/resources/application.yml` — configuração do servidor MCP.
+- `backend/src/main/java/br/ufpb/dsc/mercado/config/SecurityConfig.java` — libera `/mcp` e `/sse`.
+- Testes: `backend/src/test/java/br/ufpb/dsc/mercado/mcp/PedidosToolsTest.java`.
+
+**Limitação conhecida / próximos passos:** o endpoint `/mcp` hoje é público
+(`permitAll`), pensado para uso local/demonstração (ex.: Claude Desktop via stdio
+ou um ambiente de teste). Antes de expor esse servidor publicamente em produção,
+o recomendado é acrescentar uma camada de autenticação no transporte MCP (ex.:
+API key ou token por requisição), já que hoje qualquer chamador pode invocar
+`montarPedido` para qualquer e-mail de cliente cadastrado.
+
+
+
 ---
 
 ## Perfis de usuário

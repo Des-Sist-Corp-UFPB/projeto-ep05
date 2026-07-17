@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<th:block th:fragment="modal">
+
+    <!-- Modal Bootstrap -->
+    <div class="modal fade" id="produtoModal" tabindex="-1"
+         aria-labelledby="produtoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+
+                <!-- Cabeçalho do modal -->
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="produtoModalLabel">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
+                             class="bi me-2" viewBox="0 0 16 16"
+                             th:classappend="${produto == null} ? 'bi-plus-circle' : 'bi-pencil-square'">
+                            <path th:if="${produto == null}"
+                                  d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+                            <path th:if="${produto == null}"
+                                  d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4"/>
+                        </svg>
+                        <span th:text="${produto == null} ? 'Novo Produto' : 'Editar Produto'">
+                            Produto
+                        </span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white"
+                            data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+
+                <form th:object="${form}"
+                      th:attr="
+                        hx-post=${produto == null ? '/produtos' : null},
+                        hx-put=${produto != null ? '/produtos/' + produto.id : null},
+                        hx-target=${produto == null ? '#cards-produtos' : '#produto-' + produto.id},
+                        hx-swap=${produto == null ? 'beforeend' : 'outerHTML'}"
+                    hx-on--after-request="if(event.detail.successful) { bootstrap.Modal.getInstance(document.getElementById('produtoModal')).hide(); }">
+
+                    <div class="modal-body">
+
+                        <!-- Alertas de erro de validação global -->
+                        <div class="alert alert-danger" th:if="${#fields.hasAnyErrors()}">
+                            <ul class="mb-0">
+                                <li th:each="err : ${#fields.allErrors()}" th:text="${err}">Erro</li>
+                            </ul>
+                        </div>
+
+                        <!-- Campo Nome -->
+                        <div class="mb-3">
+                            <label for="nome" class="form-label fw-semibold">
+                                Nome <span class="text-danger">*</span>
+                            </label>
+                            <input type="text"
+                                   th:field="*{nome}"
+                                   class="form-control"
+                                   th:classappend="${#fields.hasErrors('nome')} ? 'is-invalid'"
+                                   placeholder="Ex.: Smartphone Galaxy S24"
+                                   maxlength="120"
+                                   required/>
+                            <div class="invalid-feedback"
+                                 th:if="${#fields.hasErrors('nome')}"
+                                 th:errors="*{nome}">
+                                Erro no nome
+                            </div>
+                        </div>
+
+                        <!-- Campo Categoria e Estoque (lado a lado) -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="categoriaId" class="form-label fw-semibold">Categoria</label>
+                                <select th:field="*{categoriaId}" class="form-select">
+                                    <option value="">Selecione uma categoria...</option>
+                                    <option th:each="cat : ${categorias}"
+                                            th:value="${cat.id}"
+                                            th:text="${cat.nome}">Categoria</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="estoque" class="form-label fw-semibold">Estoque <span class="text-danger">*</span></label>
+                                <input type="number"
+                                       th:field="*{estoque}"
+                                       class="form-control"
+                                       th:classappend="${#fields.hasErrors('estoque')} ? 'is-invalid'"
+                                       min="0"
+                                       required/>
+                                <div class="invalid-feedback"
+                                     th:if="${#fields.hasErrors('estoque')}"
+                                     th:errors="*{estoque}">
+                                    Erro no estoque
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Campo Preço e Status Ativo -->
+                        <div class="row mb-3 align-items-center">
+                            <div class="col-md-6">
+                                <label for="preco" class="form-label fw-semibold">
+                                    Preço (R$) <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">R$</span>
+                                    <input type="number"
+                                           th:field="*{preco}"
+                                           class="form-control"
+                                           th:classappend="${#fields.hasErrors('preco')} ? 'is-invalid'"
+                                           placeholder="0,00"
+                                           step="0.01"
+                                           min="0"
+                                           required/>
+                                    <div class="invalid-feedback"
+                                         th:if="${#fields.hasErrors('preco')}"
+                                         th:errors="*{preco}">
+                                        Erro no preço
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 pt-4">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" role="switch" id="ativo" th:field="*{ativo}">
+                                    <label class="form-check-input-label fw-semibold" for="ativo">Produto ativo para venda</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Campo Descrição -->
+                        <div class="mb-3">
+                            <label for="descricao" class="form-label fw-semibold">Descrição</label>
+                            <textarea th:field="*{descricao}"
+                                      class="form-control"
+                                      th:classappend="${#fields.hasErrors('descricao')} ? 'is-invalid'"
+                                      rows="2"
+                                      placeholder="Descrição opcional do produto..."
+                                      maxlength="2000"></textarea>
+                            <div class="invalid-feedback"
+                                 th:if="${#fields.hasErrors('descricao')}"
+                                 th:errors="*{descricao}">
+                                Erro na descrição
+                            </div>
+                        </div>
+
+                        <!-- Campo Imagens -->
+                        <div class="mb-3">
+                            <label for="imagensUrls" class="form-label fw-semibold">URLs das Imagens</label>
+                            <textarea th:field="*{imagensUrls}"
+                                      class="form-control"
+                                      rows="2"
+                                      placeholder="Insira as URLs das imagens separadas por vírgula ou por linha..."></textarea>
+                            <div class="form-text">Forneça links de imagens válidos (ex: Unsplash, Imgur, etc.).</div>
+                        </div>
+
+                        <div th:if="${produto != null}" class="alert alert-light border small py-2 mb-0">
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <strong>Criado em:</strong>
+                                    <span th:text="${#temporals.format(produto.criadoEm.atZone(T(java.time.ZoneId).systemDefault()).toLocalDateTime(), 'dd/MM/yyyy HH:mm')}">
+                                        00/00/0000
+                                    </span>
+                                </div>
+                                <div class="col-sm-6">
+                                    <strong>Atualizado em:</strong>
+                                    <span th:text="${#temporals.format(produto.atualizadoEm.atZone(T(java.time.ZoneId).systemDefault()).toLocalDateTime(), 'dd/MM/yyyy HH:mm')}">
+                                        00/00/0000
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div><!-- /modal-body -->
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary d-flex align-items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-lg me-1" viewBox="0 0 16 16">
+                                <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"/>
+                            </svg>
+                            <span th:text="${produto == null} ? 'Salvar Produto' : 'Atualizar Produto'">Salvar</span>
+                            <span class="spinner-border spinner-border-sm htmx-indicator ms-1" role="status"></span>
+                        </button>
+                    </div>
+
+                </form>
+
+            </div><!-- /modal-content -->
+        </div><!-- /modal-dialog -->
+    </div><!-- /modal -->
+
+</th:block>
+
+</body>
+</html>
