@@ -19,7 +19,7 @@
     <description>Projeto base DSC - UFPB Campus IV</description>
 
     <properties>
-        <java.version>25</java.version>
+        <java.version>21</java.version>
         <!-- Flags para Mockito inline no Java 16+.
              O JaCoCo injeta o agente via @{argLine}, que é concatenado aqui. -->
         <argLine>
@@ -55,12 +55,6 @@
                 </dependency>
             </dependencies>
         </dependencyManagement>
-
-
-        
-        
-
-
 
     <dependencies>
         <!-- === SPRING-IA === -->
