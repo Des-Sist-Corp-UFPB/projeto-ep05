@@ -114,7 +114,7 @@ services:
     image: ${NGINX_IMAGE}
     container_name: mercado-nginx-prod
     ports:
-      - "80:80"
+      - "127.0.0.1:8105:80"
     depends_on:
       app:
         condition: service_healthy
