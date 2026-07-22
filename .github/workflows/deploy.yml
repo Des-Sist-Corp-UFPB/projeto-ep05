@@ -77,6 +77,8 @@ jobs:
           file: ./frontend-cliente/docker/Dockerfile
           push: true
           tags: ${{ env.IMAGE_FRONTEND }}
+          build-args: |
+            VITE_MP_PUBLIC_KEY=${{ secrets.VITE_MP_PUBLIC_KEY }}
 
   # ===========================================================================
   # Job 3 — Build e push do Nginx central (proxy reverso)
@@ -130,5 +132,30 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
 
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
-            "${{ secrets.SSH_USERNAME }}@dsc.rodrigor.com" \
-            "${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}"
+            "${{ secrets.SSH_USERNAME }}@dsc.rodrigor.com" bash -s <<'REMOTE_SCRIPT'
+          set -e
+
+          DEPLOY_PATH_HINT="${{ secrets.DEPLOY_PATH }}"
+
+          if [ -n "$DEPLOY_PATH_HINT" ] && [ -f "$DEPLOY_PATH_HINT/docker/docker-compose.prod.yml" ]; then
+            PROJECT_DIR="$DEPLOY_PATH_HINT"
+            echo "Usando DEPLOY_PATH configurado: $PROJECT_DIR"
+          else
+            echo "DEPLOY_PATH não definido ou inválido — procurando o projeto em \$HOME..."
+            FOUND=$(find "$HOME" -maxdepth 6 -type f -path "*/docker/docker-compose.prod.yml" 2>/dev/null | head -n 1)
+            if [ -z "$FOUND" ]; then
+              echo "ERRO: não encontrei docker-compose.prod.yml em nenhum lugar dentro de $HOME"
+              echo "Conteúdo de \$HOME:"
+              ls -la "$HOME"
+              exit 1
+            fi
+            PROJECT_DIR=$(dirname "$(dirname "$FOUND")")
+            echo "Projeto encontrado automaticamente em: $PROJECT_DIR"
+          fi
+
+          cd "$PROJECT_DIR"
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker compose -f docker/docker-compose.prod.yml --env-file .env pull
+          docker compose -f docker/docker-compose.prod.yml --env-file .env up -d
+          docker image prune -f
+          REMOTE_SCRIPT

@@ -72,13 +72,14 @@ docker run --rm aquasec/trivy image mercado:latest
 ```
 
 ### Produção
-```bash
-# Build imagem de produção
-docker build -f docker/Dockerfile -t mercado:latest .
-
-# Subir produção (requer .env.dev configurado)
-docker compose -f docker/docker-compose.prod.yml up -d
-```
+> ⚠️ O compose de produção (backend + frontend + nginx) **não fica mais aqui**.
+> Ele é único para o monorepo inteiro e vive em `docker/docker-compose.prod.yml`,
+> na raiz do projeto — rode a partir de lá, nunca de dentro de `backend/`:
+> ```bash
+> cd ../..   # raiz do monorepo
+> docker compose -f docker/docker-compose.prod.yml --env-file .env up -d
+> ```
+> Ver `README.md` na raiz para a arquitetura completa e variáveis de ambiente.
 
 ## Acesso Local
 - **App**: http://localhost:8080

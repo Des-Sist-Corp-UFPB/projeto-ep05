@@ -4,17 +4,21 @@ Este repositório contém dois projetos que juntos formam a plataforma **Sweet D
 
 ```
 projeto-ep05/
-├── docker/                  # Orquestração da stack completa
+├── .env.example              # Variáveis da stack de produção completa
+├── docker/                   # Orquestração da stack completa
 │   ├── docker-compose.dev.yml   ← ambiente de desenvolvimento
-│   └── docker-compose.prod.yml  ← ambiente de produção
-├── backend/                 # API + painéis admin/sysadmin (Spring Boot + Thymeleaf)
-│   └── docker/
+│   ├── docker-compose.single.yml ← alternativa: tudo em 1 container
+│   └── docker-compose.prod.yml  ← ambiente de produção (ÚNICA fonte de verdade)
+├── backend/                  # API + painéis admin/sysadmin (Spring Boot + Thymeleaf)
+│   └── docker/                  # usados só em dev/test local do backend isolado
 │       ├── Dockerfile
 │       ├── Dockerfile.dev
 │       ├── Dockerfile.test
+│       ├── docker-compose.dev.yml   ← backend sozinho (sem frontend/nginx)
 │       └── docker-compose.test.yml  ← testes isolados do backend
-├── frontend-cliente/        # Loja do cliente (React + Vite)
-├── TESTING.md               # Documentação centralizada de testes
+├── frontend-cliente/         # Loja do cliente (React + Vite)
+├── nginx/                    # Proxy reverso central (produção e dev)
+├── TESTING.md                # Documentação centralizada de testes
 └── README.md
 ```
 
@@ -37,6 +41,36 @@ cp backend/.env.example backend/.env
 # Subir a stack completa de desenvolvimento (backend + banco + adminer)
 docker compose -f docker/docker-compose.dev.yml up
 ```
+
+---
+
+## Produção
+
+A stack de produção (Postgres + backend + frontend + nginx) é orquestrada por
+**um único arquivo, na raiz**: `docker/docker-compose.prod.yml`. Não existe
+(nem deve existir) outra cópia desse compose em `backend/docker/` — rode
+sempre a partir da raiz do monorepo:
+
+```bash
+cp .env.example .env   # preencha os valores reais, nunca comite o .env
+docker compose -f docker/docker-compose.prod.yml --env-file .env pull
+docker compose -f docker/docker-compose.prod.yml --env-file .env up -d
+```
+
+O nginx é o único serviço com porta publicada ao host. No servidor da
+disciplina (`dsc.rodrigor.com`), o proxy central da turma encaminha o domínio
+do grupo para uma porta fixa em `127.0.0.1` — por isso `docker/docker-compose.prod.yml`
+publica o nginx numa porta fixa (não configurável por `.env`), combinada
+previamente com o responsável pelo servidor. Backend e frontend nunca
+publicam porta para o host: todo o tráfego externo passa pelo nginx, que
+roteia por caminho (`/api`, `/admin`, `/sysadmin` → backend; o resto → React).
+
+O deploy automático (GitHub Actions, `.github/workflows/deploy.yml`) builda e
+publica as 3 imagens no GHCR e depois conecta via SSH no servidor para rodar
+`pull` + `up -d` com esse mesmo compose. Segredos necessários no repositório
+(Settings → Secrets and variables → Actions): `SSH_DEPLOY_KEY`,
+`SSH_USERNAME`, `DEPLOY_PATH` (caminho da raiz do monorepo no servidor) e
+`VITE_MP_PUBLIC_KEY`.
 
 ---
 

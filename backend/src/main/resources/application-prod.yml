@@ -1,3 +1,6 @@
+server:
+  forward-headers-strategy: framework
+
 spring:
   datasource:
     # Em produção, as credenciais vêm de variáveis de ambiente — NUNCA hardcode!
