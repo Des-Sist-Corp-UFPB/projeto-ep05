@@ -61,9 +61,4 @@ jobs:
 
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
             "${{ secrets.SSH_USERNAME }}@dsc.rodrigor.com" \
-            "cd '${{ secrets.DEPLOY_PATH }}' && \
-             echo '${{ secrets.GITHUB_TOKEN }}' | docker login ghcr.io -u '${{ github.actor }}' --password-stdin && \
-             docker compose -f docker/compose/prod.yml --env-file .env down --remove-orphans || true && \
-             docker compose -f docker/compose/single.yml --env-file .env pull && \
-             docker compose -f docker/compose/single.yml --env-file .env up -d && \
-             docker image prune -f"
+            "${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}"
