@@ -10,7 +10,7 @@
 #     - Spring Boot: roda internamente em 127.0.0.1:8080 (não exposto ao host)
 #
 # Como usar (a partir da pasta raiz do projeto):
-#   docker compose -f docker/docker-compose.single.yml --env-file .env up -d --build
+#   docker compose -f docker/compose/single.yml --env-file .env up -d --build
 #
 # VARIÁVEIS DE AMBIENTE — arquivo .env na raiz do projeto (ou no servidor):
 #   APP_IMAGE=ghcr.io/usuario/repo-app:latest

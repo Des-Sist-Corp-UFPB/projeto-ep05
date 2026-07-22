@@ -10,8 +10,8 @@
 #   - Volume NÃO persistido — cada rodada começa com banco limpo
 #
 # Como usar:
-#   docker compose -f docker/docker-compose.test.yml up --build --abort-on-container-exit
-#   docker compose -f docker/docker-compose.test.yml down -v   # limpa tudo após rodar
+#   docker compose -f docker/compose/test.yml up --build --abort-on-container-exit
+#   docker compose -f docker/compose/test.yml down -v   # limpa tudo após rodar
 #
 # O --abort-on-container-exit encerra todos os serviços quando o container
 # de testes terminar (com sucesso ou falha), evitando containers órfãos.

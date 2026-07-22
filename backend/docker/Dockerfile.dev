@@ -5,7 +5,7 @@
 # O código-fonte é montado como volume — alterações em .java relançam a app.
 #
 # Como usar:
-#   docker compose -f docker/docker-compose.dev.yml up
+#   docker compose -f docker/compose/dev.yml up
 #
 # ATENÇÃO: Esta imagem contém o JDK completo e ferramentas de build.
 #          NUNCA use em produção.

@@ -9,7 +9,7 @@
 #   - adminer:    Gerenciador de banco (http://localhost:8888)
 #
 # Como usar (a partir da raiz do projeto):
-#   docker compose -f docker/docker-compose.dev.yml --env-file backend/.env.dev --env-file frontend-cliente/.env up --build
+#   docker compose -f docker/compose/dev.yml --env-file backend/.env.dev --env-file frontend-cliente/.env up --build
 #
 # Acessos:
 #   http://localhost        → aplicação completa via Nginx
@@ -64,7 +64,7 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - ../backend/src:/app/src
+      - ../../backend/src:/app/src
       - maven-cache:/root/.m2
     depends_on:
       postgres:

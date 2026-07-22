@@ -6,6 +6,13 @@ Os `Dockerfile`s de cada serviço continuam dentro da própria pasta do serviço
 "receitas" de orquestração (compose) e os artefatos exclusivos do modo
 single-container.
 
+> **Nota:** existiam cópias duplicadas destes arquivos em `docker/docker-compose.*.yml`
+> (raiz) e em `backend/docker/docker-compose.*.yml`, com os mesmos nomes de
+> container/portas/rede — o que causava conflito ao subir mais de uma cópia
+> por engano. Elas foram removidas; **`docker/compose/*.yml` é a única fonte
+> de verdade** para orquestração. `backend/docker/`, `frontend-cliente/docker/`
+> e `nginx/` guardam apenas os `Dockerfile`s de cada serviço, não compose files.
+
 ## Estrutura
 
 ```

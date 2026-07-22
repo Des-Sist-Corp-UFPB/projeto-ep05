@@ -8,8 +8,8 @@
 #     /* → frontend:80
 #
 # Como usar (a partir da pasta raiz do projeto):
-#   docker compose -f docker/docker-compose.prod.yml --env-file .env up -d
-#   docker compose -f docker/docker-compose.prod.yml --env-file .env up -d --build
+#   docker compose -f docker/compose/prod.yml --env-file .env up -d
+#   docker compose -f docker/compose/prod.yml --env-file .env up -d --build
 #
 # VARIÁVEIS DE AMBIENTE — arquivo .env na raiz do projeto (ou no servidor):
 #   APP_IMAGE=ghcr.io/usuario/repo:latest
