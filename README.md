@@ -8,8 +8,8 @@ projeto-ep05/
 ├── docker/                   # Orquestração da stack completa (ver docker/README.md)
 │   ├── compose/
 │   │   ├── dev.yml              ← ambiente de desenvolvimento
-│   │   ├── prod.yml             ← ambiente de produção (ÚNICA fonte de verdade)
-│   │   ├── single.yml           ← alternativa: tudo em 1 container
+│   │   ├── single.yml           ← produção (imagem única, usado pelo deploy automático)
+│   │   ├── prod.yml             ← alternativa: 4 containers separados
 │   │   └── test.yml             ← testes isolados do backend
 │   └── single/                  # Dockerfile + configs usados só pelo modo single
 ├── backend/                  # API + painéis admin/sysadmin (Spring Boot + Thymeleaf)
@@ -47,31 +47,38 @@ docker compose -f docker/compose/dev.yml up
 
 ## Produção
 
-A stack de produção (Postgres + backend + frontend + nginx) é orquestrada por
-**um único arquivo, na raiz**: `docker/compose/prod.yml`. Não existe
-(nem deve existir) outra cópia desse compose em `backend/docker/` — rode
-sempre a partir da raiz do monorepo:
+A stack de produção (Postgres + app) é orquestrada por **um único arquivo, na
+raiz**: `docker/compose/single.yml`. O serviço `app` é **uma única imagem**
+(gerada por `docker/single/Dockerfile`) que contém o React já buildado, o
+Spring Boot e um Nginx interno, todos rodando no mesmo container via
+`supervisord` — é o modo pensado para servidores onde só se consegue publicar
+um container por grupo/projeto (ex.: PaaS, ou o servidor da disciplina).
 
 ```bash
 cp .env.example .env   # preencha os valores reais, nunca comite o .env
-docker compose -f docker/compose/prod.yml --env-file .env pull
-docker compose -f docker/compose/prod.yml --env-file .env up -d
+docker compose -f docker/compose/single.yml --env-file .env pull
+docker compose -f docker/compose/single.yml --env-file .env up -d
 ```
 
-O nginx é o único serviço com porta publicada ao host. No servidor da
-disciplina (`dsc.rodrigor.com`), o proxy central da turma encaminha o domínio
-do grupo para uma porta fixa em `127.0.0.1` — por isso `docker/compose/prod.yml`
-publica o nginx numa porta fixa (não configurável por `.env`), combinada
-previamente com o responsável pelo servidor. Backend e frontend nunca
-publicam porta para o host: todo o tráfego externo passa pelo nginx, que
-roteia por caminho (`/api`, `/admin`, `/sysadmin` → backend; o resto → React).
+Dentro do container, o Nginx interno escuta na porta 80 e roteia por caminho
+(`/api`, `/admin`, `/sysadmin`, `/produtos`, `/logout`, `/actuator`,
+`/webjars`, `/images`, `/css`, `/js` → Spring Boot local; o resto → React). O
+compose publica só essa porta 80 do container para o host, numa porta fixa do
+host (`127.0.0.1:8105`) combinada previamente com o responsável pelo servidor
+da disciplina (`dsc.rodrigor.com`) — o proxy central da turma encaminha o
+domínio do grupo para essa porta.
 
 O deploy automático (GitHub Actions, `.github/workflows/deploy.yml`) builda e
-publica as 3 imagens no GHCR e depois conecta via SSH no servidor para rodar
-`pull` + `up -d` com esse mesmo compose. Segredos necessários no repositório
-(Settings → Secrets and variables → Actions): `SSH_DEPLOY_KEY`,
-`SSH_USERNAME`, `DEPLOY_PATH` (caminho da raiz do monorepo no servidor) e
-`VITE_MP_PUBLIC_KEY`.
+publica a imagem única no GHCR e depois conecta via SSH no servidor para
+rodar `pull` + `up -d` com esse mesmo compose. Segredos necessários no
+repositório (Settings → Secrets and variables → Actions): `SSH_DEPLOY_KEY`,
+`SSH_USERNAME`, `DEPLOY_PATH` (caminho da raiz do monorepo no servidor,
+contendo o `.env` já preenchido) e `VITE_MP_PUBLIC_KEY`.
+
+> Arquitetura anterior (4 containers separados: postgres, backend, frontend,
+> nginx) ainda existe em `docker/compose/prod.yml`, caso um dia seja preciso
+> escalar frontend e backend de forma independente — mas não é mais o que o
+> deploy automático usa.
 
 ---
 

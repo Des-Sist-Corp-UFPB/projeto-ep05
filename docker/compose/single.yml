@@ -13,7 +13,7 @@
 #   docker compose -f docker/compose/single.yml --env-file .env up -d --build
 #
 # VARIÁVEIS DE AMBIENTE — arquivo .env na raiz do projeto (ou no servidor):
-#   APP_IMAGE=ghcr.io/usuario/repo-app:latest
+#   APP_IMAGE=ghcr.io/usuario/repo:latest
 #   DATABASE_URL=jdbc:postgresql://postgres:5432/mercado_prod
 #   DATABASE_USERNAME=mercado
 #   DATABASE_PASSWORD=<senha-forte>
@@ -62,7 +62,7 @@ services:
       APP_SEED_ADMIN_PASSWORD: ${APP_SEED_ADMIN_PASSWORD}
       MERCADOPAGO_ACCESS_TOKEN: ${MERCADOPAGO_ACCESS_TOKEN}
     ports:
-      - "80:80"
+      - "127.0.0.1:8105:80"
     depends_on:
       postgres:
         condition: service_healthy
@@ -75,6 +75,10 @@ services:
     restart: unless-stopped
     networks:
       - mercado-net
+    # NOTA: 8105 é a porta fixa combinada com o responsável pelo servidor da
+    # disciplina (dsc.rodrigor.com) — o proxy central da turma encaminha o
+    # domínio do grupo para 127.0.0.1:8105. Não é configurável por .env porque
+    # não varia por ambiente (é a mesma porta que docker/compose/prod.yml usava).
 
 volumes:
   postgres-data:

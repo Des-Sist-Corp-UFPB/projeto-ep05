@@ -7,10 +7,10 @@ on:
 
 jobs:
   # ===========================================================================
-  # Job 1 — Build e push do Backend (Spring Boot)
+  # Job 1 — Build e push da imagem ÚNICA (React + Spring Boot + Nginx)
   # ===========================================================================
-  build-backend:
-    name: Backend — build e push
+  build:
+    name: Build e push (imagem única)
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -22,10 +22,10 @@ jobs:
       - name: Limpar cache de builds antigos (evita "no space left on device")
         run: docker system prune -af --filter "until=48h"
 
-      - name: Prepara nome da imagem do backend (lowercase)
+      - name: Prepara nome da imagem (lowercase)
         run: |
           IMAGE="ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]'):latest"
-          echo "IMAGE_BACKEND=$IMAGE" >> $GITHUB_ENV
+          echo "IMAGE_APP=$IMAGE" >> $GITHUB_ENV
 
       - name: Login no GitHub Container Registry
         uses: docker/login-action@v3
@@ -34,95 +34,23 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build e push da imagem do backend
+      - name: Build e push da imagem única (frontend + backend + nginx)
         uses: docker/build-push-action@v5
         with:
-          context: ./backend
-          file: ./backend/docker/Dockerfile
+          context: .
+          file: docker/single/Dockerfile
           push: true
-          tags: ${{ env.IMAGE_BACKEND }}
-
-  # ===========================================================================
-  # Job 2 — Build e push do Frontend (React + Nginx interno)
-  # ===========================================================================
-  build-frontend:
-    name: Frontend — build e push
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Limpar cache de builds antigos (evita "no space left on device")
-        run: docker system prune -af --filter "until=48h"
-
-      - name: Prepara nome da imagem do frontend (lowercase)
-        run: |
-          IMAGE="ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')-frontend:latest"
-          echo "IMAGE_FRONTEND=$IMAGE" >> $GITHUB_ENV
-
-      - name: Login no GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build e push da imagem do frontend
-        uses: docker/build-push-action@v5
-        with:
-          context: ./frontend-cliente
-          file: ./frontend-cliente/docker/Dockerfile
-          push: true
-          tags: ${{ env.IMAGE_FRONTEND }}
+          tags: ${{ env.IMAGE_APP }}
           build-args: |
             VITE_MP_PUBLIC_KEY=${{ secrets.VITE_MP_PUBLIC_KEY }}
 
   # ===========================================================================
-  # Job 3 — Build e push do Nginx central (proxy reverso)
-  # ===========================================================================
-  build-nginx:
-    name: Nginx — build e push
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Limpar cache de builds antigos (evita "no space left on device")
-        run: docker system prune -af --filter "until=48h"
-
-      - name: Prepara nome da imagem do nginx (lowercase)
-        run: |
-          IMAGE="ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')-nginx:latest"
-          echo "IMAGE_NGINX=$IMAGE" >> $GITHUB_ENV
-
-      - name: Login no GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build e push da imagem do nginx
-        uses: docker/build-push-action@v5
-        with:
-          context: ./nginx
-          file: ./nginx/Dockerfile.prod
-          push: true
-          tags: ${{ env.IMAGE_NGINX }}
-
-  # ===========================================================================
-  # Job 4 — Deploy no servidor (roda após todos os builds)
+  # Job 2 — Deploy no servidor (roda após o build)
   # ===========================================================================
   deploy:
     name: Deploy no servidor
     runs-on: ubuntu-latest
-    needs: [build-backend, build-frontend, build-nginx]
+    needs: [build]
 
     steps:
       - name: Deploy via SSH
@@ -133,4 +61,9 @@ jobs:
 
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
             "${{ secrets.SSH_USERNAME }}@dsc.rodrigor.com" \
-            "${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}"
+            "cd '${{ secrets.DEPLOY_PATH }}' && \
+             echo '${{ secrets.GITHUB_TOKEN }}' | docker login ghcr.io -u '${{ github.actor }}' --password-stdin && \
+             docker compose -f docker/compose/prod.yml --env-file .env down --remove-orphans || true && \
+             docker compose -f docker/compose/single.yml --env-file .env pull && \
+             docker compose -f docker/compose/single.yml --env-file .env up -d && \
+             docker image prune -f"

@@ -35,8 +35,8 @@ docker/
 | Arquivo | Quando usar |
 |---|---|
 | `compose/dev.yml` | Ambiente local completo (postgres + app + frontend + nginx + adminer), com hot-reload. É o que um dev roda no dia a dia. |
-| `compose/prod.yml` | 4 containers separados (postgres, app, frontend, nginx) — é o que roda em produção hoje via CI/CD (`.github/workflows/deploy.yml`). |
-| `compose/single.yml` | Tudo (frontend + backend + nginx) numa única imagem/container, via `docker/single/Dockerfile` + supervisord. Útil para deploy simplificado tipo PaaS, onde só se pode rodar um container de app. |
+| `compose/single.yml` | **Produção — é o que roda hoje via CI/CD (`.github/workflows/deploy.yml`)**. Tudo (frontend + backend + nginx) numa única imagem/container, via `docker/single/Dockerfile` + supervisord. Escolhido porque o servidor da disciplina só permite publicar um container/porta por grupo. |
+| `compose/prod.yml` | Alternativa com 4 containers separados (postgres, app, frontend, nginx). Não é mais usado pelo deploy automático, mas fica disponível caso um dia seja necessário escalar frontend e backend de forma independente. |
 | `compose/test.yml` | Sobe um Postgres descartável + a aplicação em modo `test`, para rodar a suíte de integração isolada (nunca mistura com dados de dev/prod). |
 
 Todos os comandos abaixo são executados a partir da **raiz do projeto**:
@@ -45,11 +45,11 @@ Todos os comandos abaixo são executados a partir da **raiz do projeto**:
 # desenvolvimento
 docker compose -f docker/compose/dev.yml --env-file backend/.env.dev --env-file frontend-cliente/.env up --build
 
-# produção
-docker compose -f docker/compose/prod.yml --env-file .env up -d --build
-
-# single-container
+# produção (imagem única, o que o deploy automático usa)
 docker compose -f docker/compose/single.yml --env-file .env up -d --build
+
+# alternativa: 4 containers separados
+docker compose -f docker/compose/prod.yml --env-file .env up -d --build
 
 # testes de integração
 docker compose -f docker/compose/test.yml up --build --abort-on-container-exit
