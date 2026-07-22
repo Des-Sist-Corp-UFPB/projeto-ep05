@@ -1,0 +1,132 @@
+# =============================================================================
+# Docker Compose — PRODUÇÃO
+# Serviços: PostgreSQL · Backend Spring Boot · Frontend React · Nginx (proxy)
+#
+# ARQUITETURA:
+#   Nginx (porta 80) → roteia por caminho:
+#     /api/*, /admin/*, /sysadmin/*, /produtos/*, /login, /cadastro → app:8080
+#     /* → frontend:80
+#
+# Como usar (a partir da pasta raiz do projeto):
+#   docker compose -f docker/docker-compose.prod.yml --env-file .env up -d
+#   docker compose -f docker/docker-compose.prod.yml --env-file .env up -d --build
+#
+# VARIÁVEIS DE AMBIENTE — arquivo .env na raiz do projeto (ou no servidor):
+#   APP_IMAGE=ghcr.io/usuario/repo:latest
+#   FRONTEND_IMAGE=ghcr.io/usuario/repo-frontend:latest
+#   NGINX_IMAGE=ghcr.io/usuario/repo-nginx:latest
+#   DATABASE_URL=jdbc:postgresql://postgres:5432/mercado_prod
+#   DATABASE_USERNAME=mercado
+#   DATABASE_PASSWORD=<senha-forte>
+#   APP_JWT_SECRET=<segredo-jwt>
+#   APP_SEED_ADMIN_PASSWORD=<senha-admin>
+#   MERCADOPAGO_ACCESS_TOKEN=<chave-live-APP_USR-...>
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # Banco de dados PostgreSQL
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: mercado-postgres-prod
+    environment:
+      POSTGRES_DB: mercado_prod
+      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+    volumes:
+      - postgres-prod-data:/var/lib/postgresql/data
+    expose:
+      - "5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME} -d mercado_prod"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - mercado-net
+
+  # ---------------------------------------------------------------------------
+  # Backend Spring Boot — interno, sem porta exposta ao host
+  # ---------------------------------------------------------------------------
+  app:
+    build:
+      context: ../../backend
+      dockerfile: docker/Dockerfile
+    image: ${APP_IMAGE}
+    container_name: mercado-app-prod
+    environment:
+      SPRING_DATASOURCE_URL: ${DATABASE_URL:-jdbc:postgresql://postgres:5432/mercado_prod}
+      SPRING_DATASOURCE_USERNAME: ${DATABASE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DATABASE_PASSWORD}
+      APP_JWT_SECRET: ${APP_JWT_SECRET}
+      APP_SEED_ADMIN_PASSWORD: ${APP_SEED_ADMIN_PASSWORD}
+      MERCADOPAGO_ACCESS_TOKEN: ${MERCADOPAGO_ACCESS_TOKEN}
+    expose:
+      - "8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - mercado-net
+
+  # ---------------------------------------------------------------------------
+  # Frontend React — interno, sem porta exposta ao host
+  # ---------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ../../frontend-cliente
+      dockerfile: docker/Dockerfile
+    image: ${FRONTEND_IMAGE}
+    container_name: mercado-frontend-prod
+    expose:
+      - "80"
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:80/index.html || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+    networks:
+      - mercado-net
+
+  # ---------------------------------------------------------------------------
+  # Nginx — proxy reverso central, única porta exposta (80)
+  # ---------------------------------------------------------------------------
+  nginx:
+    build:
+      context: ../../nginx
+      dockerfile: Dockerfile.prod
+    image: ${NGINX_IMAGE}
+    container_name: mercado-nginx-prod
+    ports:
+      - "127.0.0.1:8105:80"
+    depends_on:
+      app:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - mercado-net
+
+volumes:
+  postgres-prod-data:
+
+networks:
+  mercado-net:
+    driver: bridge

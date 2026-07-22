@@ -108,7 +108,7 @@ Você tem duas opções. **Recomendamos a Opção A para a primeira execução.*
 Um único comando sobe o banco, a aplicação e o Adminer (interface web do banco):
 
 ```bash
-docker compose -f docker/docker-compose.dev.yml up --build
+docker compose -f docker/compose/dev.yml up --build
 ```
 
 Aguarde as mensagens de inicialização. Quando aparecer algo como:
@@ -123,7 +123,7 @@ Esta opção permite editar o código e ver as mudanças mais rápido:
 
 ```bash
 # Terminal 1 — sobe o banco de dados
-docker compose -f docker/docker-compose.dev.yml up postgres adminer
+docker compose -f docker/compose/dev.yml up postgres adminer
 
 # Terminal 2 — roda a aplicação (em outro terminal, na mesma pasta)
 mvn spring-boot:run
@@ -148,7 +148,7 @@ mvn spring-boot:run
 # Parar a aplicação: Ctrl+C no terminal onde está rodando
 
 # Parar os containers Docker:
-docker compose -f docker/docker-compose.dev.yml down
+docker compose -f docker/compose/dev.yml down
 ```
 
 ---
@@ -173,7 +173,7 @@ O Docker Desktop não está em execução. Abra o aplicativo Docker Desktop e ag
 ### "Connection refused" ao banco de dados
 O container do PostgreSQL ainda não subiu. Aguarde alguns segundos e tente novamente. Você pode verificar com:
 ```bash
-docker compose -f docker/docker-compose.dev.yml ps
+docker compose -f docker/compose/dev.yml ps
 # O container "mercado-postgres-dev" deve estar com status "healthy"
 ```
 
@@ -188,8 +188,8 @@ Se mostrar outra versão, configure a variável `JAVA_HOME` apontando para o Jav
 ### Flyway: "Found non-empty schema(s) with no schema history table"
 O banco existe mas foi criado sem as migrations. Apague os dados e recomece:
 ```bash
-docker compose -f docker/docker-compose.dev.yml down -v
-docker compose -f docker/docker-compose.dev.yml up postgres
+docker compose -f docker/compose/dev.yml down -v
+docker compose -f docker/compose/dev.yml up postgres
 ```
 
 ---
@@ -214,7 +214,7 @@ mvn verify
 mvn verify -Psecurity
 
 # Trivy: scan de vulnerabilidades no filesystem
-docker compose -f docker/docker-compose.dev.yml --profile scan up trivy
+docker compose -f docker/compose/dev.yml --profile scan up trivy
 
 # Verificar dependências desatualizadas
 mvn versions:display-dependency-updates -Pversions

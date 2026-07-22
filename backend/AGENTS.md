@@ -22,7 +22,7 @@ Boilerplate Spring Boot para disciplina universitária. Java 21, Spring Boot 3.4
 mvn spring-boot:run                    # rodar local
 mvn test                               # testes (requer Docker)
 mvn verify -Psecurity                  # SAST + CVE check
-docker compose -f docker/docker-compose.dev.yml up  # ambiente completo
+docker compose -f docker/compose/dev.yml up  # ambiente completo
 ```
 
 Leia `docs/ARCHITECTURE.md` para detalhes arquiteturais.

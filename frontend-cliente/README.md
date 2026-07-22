@@ -40,7 +40,7 @@ npm run build      # gera dist/
 npm run preview    # visualiza o build localmente
 ```
 
-A imagem Docker de produção está em `frontend-cliente/docker/Dockerfile` e é orquestrada pelo `docker/docker-compose.prod.yml` na raiz do monorepo.
+A imagem Docker de produção está em `frontend-cliente/docker/Dockerfile` e é orquestrada pelo `docker/compose/prod.yml` na raiz do monorepo.
 
 ---
 

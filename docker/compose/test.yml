@@ -1,0 +1,70 @@
+# =============================================================================
+# Docker Compose — TEST
+# =============================================================================
+# Sobe um ambiente isolado para rodar os testes automatizados (JUnit + Spring).
+#
+# Características:
+#   - Banco separado (mercado_test) — nunca mistura com dados de dev ou prod
+#   - ddl-auto: create-drop — schema criado antes dos testes e apagado ao fim
+#   - Sem Adminer, sem hot-reload, sem Trivy — ambiente mínimo e rápido
+#   - Volume NÃO persistido — cada rodada começa com banco limpo
+#
+# Como usar:
+#   docker compose -f docker/docker-compose.test.yml up --build --abort-on-container-exit
+#   docker compose -f docker/docker-compose.test.yml down -v   # limpa tudo após rodar
+#
+# O --abort-on-container-exit encerra todos os serviços quando o container
+# de testes terminar (com sucesso ou falha), evitando containers órfãos.
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # Banco de dados PostgreSQL — banco exclusivo de testes
+  # ---------------------------------------------------------------------------
+  postgres-test:
+    image: postgres:16-alpine
+    container_name: mercado-postgres-test
+    environment:
+      POSTGRES_DB: mercado_test
+      POSTGRES_USER: mercado
+      POSTGRES_PASSWORD: mercado123
+    ports:
+      - "5433:5432"   # porta diferente para não conflitar com o dev (5432)
+    # SEM volume persistido — banco descartável, começa limpo a cada rodada
+    tmpfs:
+      - /var/lib/postgresql/data   # armazena dados na RAM: mais rápido e auto-limpo
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mercado -d mercado_test"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - mercado-test-net
+
+  # ---------------------------------------------------------------------------
+  # Aplicação Spring Boot rodando os testes
+  # ---------------------------------------------------------------------------
+  app-test:
+    build:
+      context: ../../backend
+      dockerfile: docker/Dockerfile.test
+    container_name: mercado-app-test
+    environment:
+      SPRING_PROFILES_ACTIVE: test
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-test:5432/mercado_test
+      SPRING_DATASOURCE_USERNAME: mercado
+      SPRING_DATASOURCE_PASSWORD: mercado123
+      FLYWAY_ENABLED: "true"
+      # Chave de sandbox — usada apenas para o contexto Spring subir nos testes;
+      # cadastrarCartao é mockado nos testes unitários, então nunca chama a API de verdade.
+      MERCADOPAGO_ACCESS_TOKEN: TEST-000000000000000-000000-00000000000000000000000000000000-000000000
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+    networks:
+      - mercado-test-net
+
+networks:
+  mercado-test-net:
+    driver: bridge

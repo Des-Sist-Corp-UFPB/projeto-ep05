@@ -37,10 +37,10 @@ br.ufpb.dsc.mercado
 ### Desenvolvimento
 ```bash
 # Subir ambiente completo (banco + app + adminer)
-docker compose -f docker/docker-compose.dev.yml up
+docker compose -f docker/compose/dev.yml up
 
 # Só o banco (para rodar a app localmente com mvn)
-docker compose -f docker/docker-compose.dev.yml up postgres adminer
+docker compose -f docker/compose/dev.yml up postgres adminer
 
 # Rodar aplicação local (perfil dev)
 mvn spring-boot:run
@@ -64,20 +64,20 @@ mvn verify -Psecurity
 mvn versions:display-dependency-updates -Pversions
 
 # Trivy local (scan filesystem)
-docker compose -f docker/docker-compose.dev.yml --profile scan up trivy
+docker compose -f docker/compose/dev.yml --profile scan up trivy
 
 # Trivy scan da imagem (depois de fazer o build)
-docker build -f docker/Dockerfile -t mercado:latest .
+docker build -f docker/single/Dockerfile -t mercado:latest .
 docker run --rm aquasec/trivy image mercado:latest
 ```
 
 ### Produção
 > ⚠️ O compose de produção (backend + frontend + nginx) **não fica mais aqui**.
-> Ele é único para o monorepo inteiro e vive em `docker/docker-compose.prod.yml`,
+> Ele é único para o monorepo inteiro e vive em `docker/compose/prod.yml`,
 > na raiz do projeto — rode a partir de lá, nunca de dentro de `backend/`:
 > ```bash
 > cd ../..   # raiz do monorepo
-> docker compose -f docker/docker-compose.prod.yml --env-file .env up -d
+> docker compose -f docker/compose/prod.yml --env-file .env up -d
 > ```
 > Ver `README.md` na raiz para a arquitetura completa e variáveis de ambiente.
 

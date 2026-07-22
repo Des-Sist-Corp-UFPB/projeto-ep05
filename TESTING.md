@@ -35,8 +35,8 @@ mvn verify
 
 # Ambiente de testes isolado via Docker Compose
 # (banco mercado_test separado, dados descartados ao final)
-docker compose -f docker/docker-compose.test.yml up --build --abort-on-container-exit
-docker compose -f docker/docker-compose.test.yml down -v  # limpa após rodar
+docker compose -f docker/compose/test.yml up --build --abort-on-container-exit
+docker compose -f docker/compose/test.yml down -v  # limpa após rodar
 ```
 
 ### O que é testado
@@ -70,7 +70,7 @@ docker compose -f docker/docker-compose.test.yml down -v  # limpa após rodar
 mvn verify -Psecurity
 
 # Trivy — scan de vulnerabilidades no filesystem
-docker compose -f docker/docker-compose.dev.yml --profile scan up trivy
+docker compose -f docker/compose/dev.yml --profile scan up trivy
 
 # Dependências desatualizadas
 mvn versions:display-dependency-updates -Pversions
@@ -149,9 +149,10 @@ O build falha automaticamente se qualquer métrica ficar abaixo de **85%**:
 
 ```
 projeto-ep05/
+├── docker/
+│   └── compose/
+│       └── test.yml                    ← ambiente Docker isolado para testes
 ├── backend/
-│   ├── docker/
-│   │   └── docker-compose.test.yml     ← ambiente Docker isolado para testes
 │   └── src/
 │       └── test/
 │           └── java/br/ufpb/dsc/mercado/

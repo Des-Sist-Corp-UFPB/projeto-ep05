@@ -37,10 +37,10 @@ semgrep --config=p/java src/ --severity WARNING
 
 ```bash
 # Scan do filesystem (dependências, segredos vazados)
-docker compose -f docker/docker-compose.dev.yml --profile scan up trivy
+docker compose -f docker/compose/dev.yml --profile scan up trivy
 
 # Scan da imagem Docker de produção
-docker build -f docker/Dockerfile -t mercado:latest .
+docker build -f docker/single/Dockerfile -t mercado:latest .
 docker run --rm aquasec/trivy image mercado:latest --severity HIGH,CRITICAL
 ```
 
