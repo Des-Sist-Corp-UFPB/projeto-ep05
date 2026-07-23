@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AdminController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mercado</a> &gt; <a href="index.source.html" class="el_package">br.ufpb.dsc.mercado.controller</a> &gt; <span class="el_source">AdminController.java</span></div><h1>AdminController.java</h1><pre class="source lang-java linenums">package br.ufpb.dsc.mercado.controller;
+
+import br.ufpb.dsc.mercado.audit.AuditoriaService;
+import br.ufpb.dsc.mercado.domain.*;
+import br.ufpb.dsc.mercado.dto.CategoriaDTO;
+import br.ufpb.dsc.mercado.repository.PedidoRepository;
+import br.ufpb.dsc.mercado.service.*;
+import jakarta.validation.Valid;
+import org.springframework.data.domain.*;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.*;
+
+@Controller
+@RequestMapping(&quot;/admin&quot;)
+public class AdminController {
+
+    private static final String HEADER_HTMX = &quot;HX-Request&quot;;
+
+    private final CategoriaService categoriaService;
+    private final CupomService cupomService;
+    private final UsuarioService usuarioService;
+    private final PedidoService pedidoService;
+    private final PedidoRepository pedidoRepository;
+    private final AuditoriaService auditoriaService;
+
+    @SuppressWarnings(&quot;EI_EXPOSE_REP2&quot;)
+    public AdminController(CategoriaService categoriaService,
+                           CupomService cupomService,
+                           UsuarioService usuarioService,
+                           PedidoService pedidoService,
+                           PedidoRepository pedidoRepository,
+<span class="fc" id="L36">                           AuditoriaService auditoriaService) {</span>
+<span class="fc" id="L37">        this.categoriaService = categoriaService;</span>
+<span class="fc" id="L38">        this.cupomService = cupomService;</span>
+<span class="fc" id="L39">        this.usuarioService = usuarioService;</span>
+<span class="fc" id="L40">        this.pedidoService = pedidoService;</span>
+<span class="fc" id="L41">        this.pedidoRepository = pedidoRepository;</span>
+<span class="fc" id="L42">        this.auditoriaService = auditoriaService;</span>
+<span class="fc" id="L43">    }</span>
+
+    @GetMapping({&quot;&quot;, &quot;/&quot;})
+<span class="fc" id="L46">    public String raiz() { return &quot;redirect:/admin/dashboard&quot;; }</span>
+
+    @GetMapping(&quot;/dashboard&quot;)
+    public String dashboard(Model model) {
+<span class="fc" id="L50">        model.addAttribute(&quot;faturamentoTotal&quot;, pedidoService.calcularFaturamentoTotal());</span>
+<span class="fc" id="L51">        model.addAttribute(&quot;totalPedidos&quot;, pedidoRepository.count());</span>
+<span class="fc" id="L52">        model.addAttribute(&quot;totalPedidosCancelados&quot;, pedidoService.contarPorStatus(br.ufpb.dsc.mercado.domain.StatusPedido.CANCELADO));</span>
+<span class="fc" id="L53">        model.addAttribute(&quot;totalClientes&quot;, usuarioService.listarTodosPorPapel(Papel.CLIENTE).size());</span>
+<span class="fc" id="L54">        return &quot;admin/dashboard&quot;;</span>
+    }
+
+    // === CATEGORIAS ===
+
+    @GetMapping(&quot;/categorias&quot;)
+    public String listarCategorias(
+            @RequestParam(defaultValue = &quot;0&quot;) int pagina,
+            @RequestHeader(value = HEADER_HTMX, required = false) String htmx,
+            Model model) {
+<span class="fc" id="L64">        PageRequest pr = PageRequest.of(pagina, 10, Sort.by(&quot;nome&quot;).ascending());</span>
+<span class="fc" id="L65">        model.addAttribute(&quot;categorias&quot;, categoriaService.listar(pr));</span>
+<span class="fc" id="L66">        model.addAttribute(&quot;paginaAtual&quot;, pagina);</span>
+<span class="fc bfc" id="L67" title="All 2 branches covered.">        return htmx != null ? &quot;admin/fragments/tabela_categorias :: tabela&quot; : &quot;admin/categorias&quot;;</span>
+    }
+
+    @GetMapping(&quot;/categorias/nova&quot;)
+    public String novaCategoriaForm(Model model) {
+<span class="fc" id="L72">        model.addAttribute(&quot;form&quot;, new CategoriaDTO(null, null, null));</span>
+<span class="fc" id="L73">        model.addAttribute(&quot;categoria&quot;, null);</span>
+<span class="fc" id="L74">        return &quot;admin/fragments/form_categoria :: modal&quot;;</span>
+    }
+
+    @GetMapping(&quot;/categorias/{id}/editar&quot;)
+    public String editarCategoriaForm(@PathVariable Long id, Model model) {
+<span class="fc" id="L79">        Categoria c = categoriaService.buscarPorId(id);</span>
+<span class="fc" id="L80">        model.addAttribute(&quot;form&quot;, new CategoriaDTO(c.getId(), c.getNome(), c.getDescricao()));</span>
+<span class="fc" id="L81">        model.addAttribute(&quot;categoria&quot;, c);</span>
+<span class="fc" id="L82">        return &quot;admin/fragments/form_categoria :: modal&quot;;</span>
+    }
+
+    @PostMapping(&quot;/categorias&quot;)
+    public String criarCategoria(
+            @Valid @ModelAttribute(&quot;form&quot;) CategoriaDTO form,
+            BindingResult bindingResult,
+            Authentication auth,
+            Model model) {
+<span class="fc bfc" id="L91" title="All 2 branches covered.">        if (bindingResult.hasErrors()) {</span>
+<span class="fc" id="L92">            model.addAttribute(&quot;categoria&quot;, null);</span>
+<span class="fc" id="L93">            return &quot;admin/fragments/form_categoria :: modal&quot;;</span>
+        }
+        try {
+<span class="fc" id="L96">            Categoria c = categoriaService.criar(form);</span>
+<span class="fc" id="L97">            auditoriaService.registrarAdmin(atorEmail(auth), &quot;PRODUTO&quot;,</span>
+<span class="fc" id="L98">                    &quot;Criou categoria: &quot; + c.getNome(), c.getId());</span>
+<span class="fc" id="L99">            model.addAttribute(&quot;categoria&quot;, c);</span>
+<span class="fc" id="L100">            return &quot;admin/fragments/linha_categoria :: linha&quot;;</span>
+<span class="fc" id="L101">        } catch (IllegalArgumentException e) {</span>
+<span class="fc" id="L102">            bindingResult.rejectValue(&quot;nome&quot;, &quot;error.form&quot;, e.getMessage());</span>
+<span class="fc" id="L103">            model.addAttribute(&quot;categoria&quot;, null);</span>
+<span class="fc" id="L104">            return &quot;admin/fragments/form_categoria :: modal&quot;;</span>
+        }
+    }
+
+    @PutMapping(&quot;/categorias/{id}&quot;)
+    public String atualizarCategoria(
+            @PathVariable Long id,
+            @Valid @ModelAttribute(&quot;form&quot;) CategoriaDTO form,
+            BindingResult bindingResult,
+            Authentication auth,
+            Model model) {
+<span class="fc bfc" id="L115" title="All 2 branches covered.">        if (bindingResult.hasErrors()) {</span>
+<span class="fc" id="L116">            model.addAttribute(&quot;categoria&quot;, categoriaService.buscarPorId(id));</span>
+<span class="fc" id="L117">            return &quot;admin/fragments/form_categoria :: modal&quot;;</span>
+        }
+        try {
+<span class="fc" id="L120">            Categoria c = categoriaService.atualizar(id, form);</span>
+<span class="fc" id="L121">            auditoriaService.registrarAdmin(atorEmail(auth), &quot;PRODUTO&quot;,</span>
+<span class="fc" id="L122">                    &quot;Atualizou categoria ID &quot; + id + &quot;: &quot; + c.getNome(), id);</span>
+<span class="fc" id="L123">            model.addAttribute(&quot;categoria&quot;, c);</span>
+<span class="fc" id="L124">            return &quot;admin/fragments/linha_categoria :: linha&quot;;</span>
+<span class="fc" id="L125">        } catch (IllegalArgumentException e) {</span>
+<span class="fc" id="L126">            bindingResult.rejectValue(&quot;nome&quot;, &quot;error.form&quot;, e.getMessage());</span>
+<span class="fc" id="L127">            model.addAttribute(&quot;categoria&quot;, categoriaService.buscarPorId(id));</span>
+<span class="fc" id="L128">            return &quot;admin/fragments/form_categoria :: modal&quot;;</span>
+        }
+    }
+
+    @DeleteMapping(&quot;/categorias/{id}&quot;)
+    @ResponseBody
+    public ResponseEntity&lt;Void&gt; excluirCategoria(@PathVariable Long id, Authentication auth) {
+        try {
+<span class="fc" id="L136">            categoriaService.excluir(id);</span>
+<span class="fc" id="L137">            auditoriaService.registrarAdmin(atorEmail(auth), &quot;PRODUTO&quot;,</span>
+                    &quot;Excluiu categoria ID &quot; + id, id);
+<span class="fc" id="L139">            return ResponseEntity.ok().build();</span>
+<span class="fc" id="L140">        } catch (IllegalArgumentException e) {</span>
+<span class="fc" id="L141">            return ResponseEntity.notFound().build();</span>
+        }
+    }
+
+    // === CUPONS ===
+
+    @GetMapping(&quot;/cupons&quot;)
+    public String listarCupons(
+            @RequestParam(defaultValue = &quot;0&quot;) int pagina,
+            @RequestHeader(value = HEADER_HTMX, required = false) String htmx,
+            Model model) {
+<span class="fc" id="L152">        PageRequest pr = PageRequest.of(pagina, 10, Sort.by(&quot;codigo&quot;).ascending());</span>
+<span class="fc" id="L153">        model.addAttribute(&quot;cupons&quot;, cupomService.listar(pr));</span>
+<span class="fc" id="L154">        model.addAttribute(&quot;paginaAtual&quot;, pagina);</span>
+<span class="fc bfc" id="L155" title="All 2 branches covered.">        return htmx != null ? &quot;admin/fragments/tabela_cupons :: tabela&quot; : &quot;admin/cupons&quot;;</span>
+    }
+
+    @GetMapping(&quot;/cupons/novo&quot;)
+    public String novoCupomForm(Model model) {
+<span class="fc" id="L160">        model.addAttribute(&quot;cupom&quot;, new Cupom());</span>
+<span class="fc" id="L161">        model.addAttribute(&quot;tipos&quot;, TipoCupom.values());</span>
+<span class="fc" id="L162">        return &quot;admin/fragments/form_cupom :: modal&quot;;</span>
+    }
+
+    @PostMapping(&quot;/cupons&quot;)
+    public String criarCupom(
+            @Valid @ModelAttribute(&quot;cupom&quot;) Cupom cupom,
+            BindingResult bindingResult,
+            Authentication auth,
+            Model model) {
+<span class="fc bfc" id="L171" title="All 2 branches covered.">        if (bindingResult.hasErrors()) {</span>
+<span class="fc" id="L172">            model.addAttribute(&quot;tipos&quot;, TipoCupom.values());</span>
+<span class="fc" id="L173">            return &quot;admin/fragments/form_cupom :: modal&quot;;</span>
+        }
+        try {
+<span class="fc" id="L176">            Cupom c = cupomService.criar(cupom);</span>
+<span class="fc" id="L177">            auditoriaService.registrarAdmin(atorEmail(auth), &quot;PRODUTO&quot;,</span>
+<span class="fc" id="L178">                    &quot;Criou cupom: &quot; + c.getCodigo(), c.getId());</span>
+<span class="fc" id="L179">            model.addAttribute(&quot;cupom&quot;, c);</span>
+<span class="fc" id="L180">            return &quot;admin/fragments/linha_cupom :: linha&quot;;</span>
+<span class="fc" id="L181">        } catch (IllegalArgumentException e) {</span>
+<span class="fc" id="L182">            bindingResult.rejectValue(&quot;codigo&quot;, &quot;error.form&quot;, e.getMessage());</span>
+<span class="fc" id="L183">            model.addAttribute(&quot;tipos&quot;, TipoCupom.values());</span>
+<span class="fc" id="L184">            return &quot;admin/fragments/form_cupom :: modal&quot;;</span>
+        }
+    }
+
+    @PostMapping(&quot;/cupons/{id}/alternar&quot;)
+    @ResponseBody
+    public ResponseEntity&lt;?&gt; alternarCupom(@PathVariable Long id, Authentication auth) {
+        try {
+<span class="fc" id="L192">            cupomService.alternarAtivo(id);</span>
+<span class="fc" id="L193">            auditoriaService.registrarAdmin(atorEmail(auth), &quot;PRODUTO&quot;,</span>
+                    &quot;Alternou status do cupom ID &quot; + id, id);
+<span class="fc" id="L195">            return ResponseEntity.ok().build();</span>
+<span class="fc" id="L196">        } catch (Exception e) {</span>
+<span class="fc" id="L197">            return ResponseEntity.badRequest().body(e.getMessage());</span>
+        }
+    }
+
+    @DeleteMapping(&quot;/cupons/{id}&quot;)
+    @ResponseBody
+    public ResponseEntity&lt;Void&gt; excluirCupom(@PathVariable Long id, Authentication auth) {
+        try {
+<span class="fc" id="L205">            cupomService.excluir(id);</span>
+<span class="fc" id="L206">            auditoriaService.registrarAdmin(atorEmail(auth), &quot;PRODUTO&quot;,</span>
+                    &quot;Excluiu cupom ID &quot; + id, id);
+<span class="fc" id="L208">            return ResponseEntity.ok().build();</span>
+<span class="fc" id="L209">        } catch (Exception e) {</span>
+<span class="fc" id="L210">            return ResponseEntity.notFound().build();</span>
+        }
+    }
+
+    // === CLIENTES ===
+
+    @GetMapping(&quot;/clientes&quot;)
+    public String listarClientes(
+            @RequestParam(required = false, defaultValue = &quot;&quot;) String busca,
+            @RequestParam(defaultValue = &quot;0&quot;) int pagina,
+            @RequestHeader(value = HEADER_HTMX, required = false) String htmx,
+            Model model) {
+<span class="fc" id="L222">        PageRequest pr = PageRequest.of(pagina, 10, Sort.by(&quot;nome&quot;).ascending());</span>
+<span class="fc" id="L223">        model.addAttribute(&quot;clientes&quot;, usuarioService.listarPorPapel(Papel.CLIENTE, busca, pr));</span>
+<span class="fc" id="L224">        model.addAttribute(&quot;busca&quot;, busca);</span>
+<span class="fc" id="L225">        model.addAttribute(&quot;paginaAtual&quot;, pagina);</span>
+<span class="fc bfc" id="L226" title="All 2 branches covered.">        return htmx != null ? &quot;admin/fragments/tabela_clientes :: tabela&quot; : &quot;admin/clientes&quot;;</span>
+    }
+
+    @PostMapping(&quot;/clientes/{id}/bloquear&quot;)
+    @ResponseBody
+    public ResponseEntity&lt;?&gt; bloquearCliente(@PathVariable Long id, Authentication auth) {
+        try {
+<span class="fc" id="L233">            Usuario alvo = usuarioService.buscarPorId(id);</span>
+<span class="fc" id="L234">            StatusUsuario novoStatus = usuarioService.alternarStatus(id);</span>
+<span class="fc" id="L235">            auditoriaService.registrarAdmin(atorEmail(auth), &quot;USER_MGMT&quot;,</span>
+<span class="fc" id="L236">                    &quot;Alterou status do cliente &quot; + alvo.getEmail() + &quot; → &quot; + novoStatus.name(), id);</span>
+<span class="fc" id="L237">            return ResponseEntity.ok().build();</span>
+<span class="fc" id="L238">        } catch (IllegalArgumentException e) {</span>
+<span class="fc" id="L239">            return ResponseEntity.badRequest().body(e.getMessage());</span>
+        }
+    }
+
+    // === PEDIDOS ===
+
+    @GetMapping(&quot;/pedidos&quot;)
+    public String listarPedidos(
+            @RequestParam(defaultValue = &quot;0&quot;) int pagina,
+            @RequestParam(required = false) String status,
+            @RequestHeader(value = HEADER_HTMX, required = false) String htmx,
+            Model model) {
+<span class="fc" id="L251">        PageRequest pr = PageRequest.of(pagina, 10);</span>
+<span class="fc" id="L252">        br.ufpb.dsc.mercado.domain.StatusPedido filtroStatus = null;</span>
+<span class="fc bfc" id="L253" title="All 4 branches covered.">        if (status != null &amp;&amp; !status.isBlank()) {</span>
+<span class="fc" id="L254">            try { filtroStatus = br.ufpb.dsc.mercado.domain.StatusPedido.valueOf(status.toUpperCase()); }</span>
+<span class="fc" id="L255">            catch (IllegalArgumentException ignored) {}</span>
+        }
+<span class="fc" id="L257">        model.addAttribute(&quot;pedidos&quot;, pedidoService.listarTodos(filtroStatus, pr));</span>
+<span class="fc" id="L258">        model.addAttribute(&quot;paginaAtual&quot;, pagina);</span>
+<span class="fc" id="L259">        model.addAttribute(&quot;statusSelecionado&quot;, status);</span>
+<span class="fc" id="L260">        model.addAttribute(&quot;statusOpcoes&quot;, br.ufpb.dsc.mercado.domain.StatusPedido.values());</span>
+<span class="fc bfc" id="L261" title="All 2 branches covered.">        return htmx != null ? &quot;admin/fragments/tabela_pedidos :: tabela&quot; : &quot;admin/pedidos&quot;;</span>
+    }
+
+    @GetMapping(&quot;/pedidos/{id}&quot;)
+    public String obterPedido(@PathVariable Long id, Model model) {
+<span class="fc" id="L266">        model.addAttribute(&quot;pedido&quot;, pedidoService.buscarPorId(id));</span>
+<span class="fc" id="L267">        model.addAttribute(&quot;statusList&quot;, StatusPedido.values());</span>
+<span class="fc" id="L268">        return &quot;admin/fragments/modal_pedido :: modal&quot;;</span>
+    }
+
+    /** JSON para o modal JS (usa sessao do admin, nao JWT). */
+    @GetMapping(&quot;/pedidos/{id}/json&quot;)
+    @ResponseBody
+    public ResponseEntity&lt;?&gt; obterPedidoJson(@PathVariable Long id) {
+        try {
+<span class="fc" id="L276">            return ResponseEntity.ok(pedidoService.converterParaDTO(pedidoService.buscarPorId(id)));</span>
+<span class="fc" id="L277">        } catch (IllegalArgumentException e) {</span>
+<span class="fc" id="L278">            return ResponseEntity.notFound().build();</span>
+        }
+    }
+
+    @PostMapping(&quot;/pedidos/{id}/status&quot;)
+    public String atualizarStatusPedido(
+            @PathVariable Long id,
+            @RequestParam StatusPedido status,
+            Authentication auth,
+            Model model) {
+<span class="fc" id="L288">        Pedido pedido = pedidoService.atualizarStatus(id, status);</span>
+<span class="fc" id="L289">        auditoriaService.registrarAdmin(atorEmail(auth), &quot;PEDIDO&quot;,</span>
+                &quot;Atualizou status do pedido #&quot; + id + &quot; → &quot; + status, id);
+<span class="fc" id="L291">        model.addAttribute(&quot;pedido&quot;, pedido);</span>
+<span class="fc" id="L292">        return &quot;admin/fragments/linha_pedido :: linha&quot;;</span>
+    }
+
+    @PostMapping(&quot;/pedidos/{id}/rastreamento&quot;)
+    public String atualizarRastreamento(
+            @PathVariable Long id,
+            @RequestParam String codigoRastreamento,
+            Authentication auth,
+            Model model) {
+<span class="fc" id="L301">        Pedido pedido = pedidoService.atualizarCodigoRastreamento(id, codigoRastreamento);</span>
+<span class="fc" id="L302">        auditoriaService.registrarAdmin(atorEmail(auth), &quot;PEDIDO&quot;,</span>
+                &quot;Adicionou rastreamento ao pedido #&quot; + id + &quot;: &quot; + codigoRastreamento, id);
+<span class="fc" id="L304">        model.addAttribute(&quot;pedido&quot;, pedido);</span>
+<span class="fc" id="L305">        return &quot;admin/fragments/linha_pedido :: linha&quot;;</span>
+    }
+
+    // ── Util ──────────────────────────────────────────────────────────────────
+
+    private String atorEmail(Authentication auth) {
+<span class="pc bpc" id="L311" title="1 of 2 branches missed.">        return (auth != null) ? auth.getName() : &quot;desconhecido&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

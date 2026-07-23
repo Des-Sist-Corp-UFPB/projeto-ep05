@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LogAuditoria.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mercado</a> &gt; <a href="index.source.html" class="el_package">br.ufpb.dsc.mercado.audit</a> &gt; <span class="el_source">LogAuditoria.java</span></div><h1>LogAuditoria.java</h1><pre class="source lang-java linenums">package br.ufpb.dsc.mercado.audit;
+
+import jakarta.persistence.*;
+import java.time.Instant;
+
+/**
+ * Registro de auditoria persistido no banco.
+ *
+ * Cada ação relevante de ADMIN ou CLIENTE gera uma entrada aqui,
+ * visível na tela /sysadmin/logs com filtros de papel e data.
+ */
+@Entity
+@Table(name = &quot;log_auditoria&quot;, indexes = {
+        @Index(name = &quot;idx_log_papel&quot;, columnList = &quot;papel_ator&quot;),
+        @Index(name = &quot;idx_log_criado&quot;, columnList = &quot;criado_em&quot;)
+})
+public class LogAuditoria {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    /** Papel do usuário que realizou a ação: SYSADMIN, ADMIN, CLIENTE, SYSTEM */
+    @Column(name = &quot;papel_ator&quot;, nullable = false, length = 20)
+    private String papelAtor;
+
+    /** E-mail (ou identificador) do ator. &quot;SYSTEM&quot; para eventos automáticos. */
+    @Column(name = &quot;ator&quot;, nullable = false, length = 150)
+    private String ator;
+
+    /** Categoria da ação: USER_MGMT, PRODUTO, PEDIDO, AUTH, SYSTEM */
+    @Column(nullable = false, length = 50)
+    private String categoria;
+
+    /** Descrição legível da ação realizada. */
+    @Column(nullable = false, length = 500)
+    private String descricao;
+
+    /** ID do recurso afetado (opcional). Ex: id do pedido, produto, usuário. */
+    @Column(name = &quot;recurso_id&quot;)
+    private Long recursoId;
+
+    /** Resultado: SUCCESS ou FAILURE */
+    @Column(nullable = false, length = 20)
+    private String resultado;
+
+    @Column(name = &quot;criado_em&quot;, nullable = false, updatable = false)
+    private Instant criadoEm;
+
+    @PrePersist
+    protected void prePersist() {
+<span class="fc" id="L52">        this.criadoEm = Instant.now();</span>
+<span class="fc" id="L53">    }</span>
+
+<span class="fc" id="L55">    public LogAuditoria() {}</span>
+
+<span class="fc" id="L57">    private LogAuditoria(Builder b) {</span>
+<span class="fc" id="L58">        this.papelAtor = b.papelAtor;</span>
+<span class="fc" id="L59">        this.ator = b.ator;</span>
+<span class="fc" id="L60">        this.categoria = b.categoria;</span>
+<span class="fc" id="L61">        this.descricao = b.descricao;</span>
+<span class="fc" id="L62">        this.recursoId = b.recursoId;</span>
+<span class="fc" id="L63">        this.resultado = b.resultado;</span>
+<span class="fc" id="L64">    }</span>
+
+    // ── Builder ───────────────────────────────────────────────────────────────
+
+<span class="fc" id="L68">    public static Builder builder() { return new Builder(); }</span>
+
+<span class="fc" id="L70">    public static final class Builder {</span>
+        private String papelAtor;
+        private String ator;
+        private String categoria;
+        private String descricao;
+        private Long recursoId;
+<span class="fc" id="L76">        private String resultado = &quot;SUCCESS&quot;;</span>
+
+<span class="fc" id="L78">        public Builder papelAtor(String v)  { this.papelAtor = v; return this; }</span>
+<span class="fc" id="L79">        public Builder ator(String v)        { this.ator = v; return this; }</span>
+<span class="fc" id="L80">        public Builder categoria(String v)   { this.categoria = v; return this; }</span>
+<span class="fc" id="L81">        public Builder descricao(String v)   { this.descricao = v; return this; }</span>
+<span class="fc" id="L82">        public Builder recursoId(Long v)     { this.recursoId = v; return this; }</span>
+<span class="fc" id="L83">        public Builder falha()               { this.resultado = &quot;FAILURE&quot;; return this; }</span>
+<span class="fc" id="L84">        public LogAuditoria build()          { return new LogAuditoria(this); }</span>
+    }
+
+    // ── Getters ───────────────────────────────────────────────────────────────
+
+<span class="fc" id="L89">    public Long getId()           { return id; }</span>
+<span class="fc" id="L90">    public String getPapelAtor()  { return papelAtor; }</span>
+<span class="fc" id="L91">    public String getAtor()       { return ator; }</span>
+<span class="fc" id="L92">    public String getCategoria()  { return categoria; }</span>
+<span class="fc" id="L93">    public String getDescricao()  { return descricao; }</span>
+<span class="fc" id="L94">    public Long getRecursoId()    { return recursoId; }</span>
+<span class="fc" id="L95">    public String getResultado()  { return resultado; }</span>
+<span class="fc" id="L96">    public Instant getCriadoEm() { return criadoEm; }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

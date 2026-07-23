@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR"
+      xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout(~{::main})}">
+<head><title>Logs &amp; Auditoria</title></head>
+<body>
+<main>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1 fw-bold">Logs &amp; Auditoria</h1>
+            <p class="text-muted mb-0">Histórico de ações de Admins e Clientes</p>
+        </div>
+        <span class="badge bg-secondary px-3 py-2">Somente leitura</span>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <form method="get" action="/sysadmin/logs" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Papel</label>
+                    <select name="papel" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="SYSADMIN" th:selected="${filtroPapel == 'SYSADMIN'}">SYSADMIN</option>
+                        <option value="ADMIN"    th:selected="${filtroPapel == 'ADMIN'}">ADMIN</option>
+                        <option value="CLIENTE"  th:selected="${filtroPapel == 'CLIENTE'}">CLIENTE</option>
+                        <option value="SYSTEM"   th:selected="${filtroPapel == 'SYSTEM'}">SYSTEM</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Ator (e-mail)</label>
+                    <input type="text" name="ator" class="form-control"
+                           placeholder="ex: admin@email.com"
+                           th:value="${filtroAtor}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">Período</label>
+                    <select name="dias" class="form-select">
+                        <option value="">Todo período</option>
+                        <option value="1"  th:selected="${filtroDias == 1}">Último dia</option>
+                        <option value="7"  th:selected="${filtroDias == 7}">Últimos 7 dias</option>
+                        <option value="30" th:selected="${filtroDias == 30}">Últimos 30 dias</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+                    <a href="/sysadmin/logs" class="btn btn-outline-secondary w-100">Limpar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabela de logs -->
+    <div id="tabela-logs">
+        <div th:replace="~{sysadmin/fragments/tabela_logs :: tabela}"></div>
+    </div>
+
+</main>
+</body>
+</html>

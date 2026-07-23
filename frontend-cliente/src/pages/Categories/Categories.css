@@ -1,0 +1,116 @@
+/* Categories.css */
+
+.categorias-page {
+    padding: var(--esp-xl);
+    background-color: var(--cor-fundo);
+    /* Trocado para 100dvh para evitar scroll infinito no mobile */
+    min-height: 100dvh; 
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* Adicionado para garantir que o conteúdo não cole nas bordas */
+    box-sizing: border-box; 
+}
+
+.categorias-page h1 {
+    color: var(--cor-secundaria);
+    font-size: var(--font-xxl);
+    margin: var(--esp-lg) 0;
+    font-weight: var(--peso-bold);
+    text-align: center;
+}
+
+/* Grid que organiza os cards */
+.categorias-grid {
+    display: grid;
+    /* Ajustado o minmax para 140px para caber melhor em telas médias como 540px */
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: var(--esp-md);
+    width: 100%;
+    max-width: 1000px;
+    padding: var(--esp-md);
+    box-sizing: border-box;
+}
+
+/* O Card da Categoria */
+.categoria-card {
+    background-color: var(--cor-detalhe); 
+    border-radius: var(--radius-lg);
+    padding: var(--esp-md);
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid var(--cor-detalhe-2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    /* Garante que o card mantenha uma proporção agradável */
+    aspect-ratio: 1 / 1.1; 
+}
+
+.categoria-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--cor-botao); 
+}
+
+.categoria-card img {
+    width: 100%; /* Agora a imagem se adapta ao card */
+    max-width: 100px;
+    height: auto;
+    aspect-ratio: 1/1;
+    object-fit: contain;
+    margin-bottom: var(--esp-sm);
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+.categoria-card p {
+    color: var(--cor-texto-3);
+    font-weight: var(--peso-semi);
+    font-size: var(--font-md);
+    text-transform: capitalize;
+    margin: 0;
+}
+
+/* --- AJUSTE PARA TELAS MÉDIAS (COMO 540px) --- */
+@media (max-width: 600px) {
+    .categorias-page {
+        padding: var(--esp-md);
+    }
+
+    .categorias-grid {
+        /* Força 2 colunas para evitar que fiquem muito pequenas ou uma só gigante */
+        grid-template-columns: repeat(2, 1fr); 
+        gap: var(--esp-md);
+    }
+
+    .categoria-card img {
+        max-width: 80px;
+    }
+}
+
+/* --- AJUSTE PARA CELULARES MUITO PEQUENOS --- */
+@media (max-width: 380px) {
+    .categorias-grid {
+        gap: var(--esp-sm);
+    }
+    
+    .categoria-card {
+        padding: var(--esp-sm);
+    }
+
+    .categoria-card p {
+        font-size: var(--font-sm);
+    }
+}
+/* FIX #3: fallback visual quando categoria não tem imagem */
+.categoria-emoji {
+  font-size: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 80px;
+}

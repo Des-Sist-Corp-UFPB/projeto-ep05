@@ -1,0 +1,58 @@
+/* Promotion.css */
+
+.promocoes-page {
+  padding: var(--esp-xl);
+  background-color: var(--cor-fundo); 
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+ 
+}
+
+.promocoes-page h1 {
+  color: var(--cor-secundaria); 
+  font-size: 3rem;
+  margin-bottom: var(--esp-xl);
+  font-weight: var(--peso-bold);
+  text-align: center;
+  
+  /* Um efeito de "brilho" suave para o emoji de fogo */
+  text-shadow: 0 0 10px rgba(255, 69, 0, 0.2);
+}
+
+/* Grid de Produtos específico para promoções */
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--esp-xl);
+  width: 100%;
+  max-width: 1200px;
+  padding: var(--esp-md);
+  justify-items: center;
+}
+
+/* Adicionando um selo de "Oferta" nos cards através do pai se necessário */
+.promocoes-page .product-card {
+  position: relative;
+  border: 2px solid var(--cor-botao); /* Destaca com a cor rosa */
+}
+
+/* Estilo para quando a lista está vazia */
+.no-promotions {
+  margin-top: var(--esp-xxl);
+  color: var(--cor-texto-3);
+  font-size: var(--font-lg);
+  text-align: center;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .promocoes-page h1 {
+    font-size: 2rem;
+  }
+  
+  .products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: var(--esp-sm);
+  }
+}

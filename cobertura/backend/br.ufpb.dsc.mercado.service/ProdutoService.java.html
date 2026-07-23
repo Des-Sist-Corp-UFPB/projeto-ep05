@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProdutoService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mercado</a> &gt; <a href="index.source.html" class="el_package">br.ufpb.dsc.mercado.service</a> &gt; <span class="el_source">ProdutoService.java</span></div><h1>ProdutoService.java</h1><pre class="source lang-java linenums">package br.ufpb.dsc.mercado.service;
+
+import br.ufpb.dsc.mercado.domain.Categoria;
+import br.ufpb.dsc.mercado.domain.Produto;
+import br.ufpb.dsc.mercado.domain.ProdutoImagem;
+import br.ufpb.dsc.mercado.dto.ProdutoDTO;
+import br.ufpb.dsc.mercado.dto.ProdutoForm;
+import br.ufpb.dsc.mercado.exception.ProdutoNaoEncontradoException;
+import br.ufpb.dsc.mercado.repository.CategoriaRepository;
+import br.ufpb.dsc.mercado.repository.ProdutoRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@Transactional(readOnly = true)
+public class ProdutoService {
+
+    private final ProdutoRepository produtoRepository;
+    private final CategoriaRepository categoriaRepository;
+
+<span class="fc" id="L28">    public ProdutoService(ProdutoRepository produtoRepository, CategoriaRepository categoriaRepository) {</span>
+<span class="fc" id="L29">        this.produtoRepository = produtoRepository;</span>
+<span class="fc" id="L30">        this.categoriaRepository = categoriaRepository;</span>
+<span class="fc" id="L31">    }</span>
+
+    public Page&lt;Produto&gt; listar(Pageable pageable) {
+<span class="fc" id="L34">        return produtoRepository.findAll(pageable);</span>
+    }
+
+    public Page&lt;Produto&gt; buscar(String busca, Pageable pageable) {
+<span class="fc bfc" id="L38" title="All 2 branches covered.">        if (!StringUtils.hasText(busca)) {</span>
+<span class="fc" id="L39">            return produtoRepository.findAll(pageable);</span>
+        }
+<span class="fc" id="L41">        return produtoRepository.findByNomeContainingIgnoreCase(busca.trim(), pageable);</span>
+    }
+
+    public Page&lt;Produto&gt; buscarAtivos(String busca, Pageable pageable) {
+<span class="fc bfc" id="L45" title="All 2 branches covered.">        if (!StringUtils.hasText(busca)) {</span>
+<span class="fc" id="L46">            return produtoRepository.findByAtivoTrue(pageable);</span>
+        }
+<span class="fc" id="L48">        return produtoRepository.findByAtivoTrueAndNomeContainingIgnoreCase(busca.trim(), pageable);</span>
+    }
+
+    public Page&lt;Produto&gt; buscarPorCategoriaEAtivos(Long categoriaId, Pageable pageable) {
+<span class="fc" id="L52">        return produtoRepository.findByCategoriaIdAndAtivoTrue(categoriaId, pageable);</span>
+    }
+
+    public Page&lt;Produto&gt; buscarMaisVendidos(Pageable pageable) {
+<span class="fc" id="L56">        return produtoRepository.findMaisVendidos(pageable);</span>
+    }
+
+    public Page&lt;Produto&gt; buscarPorCategoria(Long categoriaId, Pageable pageable) {
+<span class="fc" id="L60">        return produtoRepository.findByCategoriaId(categoriaId, pageable);</span>
+    }
+
+    public Produto buscarPorId(Long id) {
+<span class="fc" id="L64">        return produtoRepository.findById(id)</span>
+<span class="fc" id="L65">                .orElseThrow(() -&gt; new ProdutoNaoEncontradoException(id));</span>
+    }
+
+    @Transactional
+    public Produto criar(ProdutoForm form) {
+<span class="fc" id="L70">        Categoria categoria = null;</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">        if (form.categoriaId() != null) {</span>
+<span class="fc" id="L72">            categoria = categoriaRepository.findById(form.categoriaId())</span>
+<span class="fc" id="L73">                    .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Categoria não encontrada com ID: &quot; + form.categoriaId()));</span>
+        }
+
+<span class="fc" id="L76">        Produto produto = new Produto(</span>
+<span class="fc" id="L77">                form.nome(),</span>
+<span class="fc" id="L78">                form.descricao(),</span>
+<span class="fc" id="L79">                form.preco(),</span>
+                categoria,
+<span class="fc" id="L81">                form.estoque()</span>
+        );
+
+<span class="fc bfc" id="L84" title="All 2 branches covered.">        if (form.ativo() != null) {</span>
+<span class="fc" id="L85">            produto.setAtivo(form.ativo());</span>
+        }
+
+<span class="fc" id="L88">        atualizarImagens(produto, form.imagensUrls());</span>
+
+<span class="fc" id="L90">        return produtoRepository.save(produto);</span>
+    }
+
+    @Transactional
+    public Produto atualizar(Long id, ProdutoForm form) {
+<span class="fc" id="L95">        Produto produto = buscarPorId(id);</span>
+
+<span class="fc" id="L97">        Categoria categoria = null;</span>
+<span class="fc bfc" id="L98" title="All 2 branches covered.">        if (form.categoriaId() != null) {</span>
+<span class="fc" id="L99">            categoria = categoriaRepository.findById(form.categoriaId())</span>
+<span class="fc" id="L100">                    .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Categoria não encontrada com ID: &quot; + form.categoriaId()));</span>
+        }
+
+<span class="fc" id="L103">        produto.setNome(form.nome());</span>
+<span class="fc" id="L104">        produto.setDescricao(form.descricao());</span>
+<span class="fc" id="L105">        produto.setPreco(form.preco());</span>
+<span class="fc" id="L106">        produto.setCategoria(categoria);</span>
+<span class="fc" id="L107">        produto.setEstoque(form.estoque());</span>
+
+<span class="pc bpc" id="L109" title="1 of 2 branches missed.">        if (form.ativo() != null) {</span>
+<span class="fc" id="L110">            produto.setAtivo(form.ativo());</span>
+        }
+
+<span class="fc" id="L113">        atualizarImagens(produto, form.imagensUrls());</span>
+
+<span class="fc" id="L115">        return produtoRepository.save(produto);</span>
+    }
+
+    @Transactional
+    public void alternarAtivo(Long id) {
+<span class="fc" id="L120">        Produto produto = buscarPorId(id);</span>
+<span class="pc bpc" id="L121" title="1 of 2 branches missed.">        produto.setAtivo(!produto.getAtivo());</span>
+<span class="fc" id="L122">        produtoRepository.save(produto);</span>
+<span class="fc" id="L123">    }</span>
+
+    @Transactional
+    public void excluir(Long id) {
+<span class="fc bfc" id="L127" title="All 2 branches covered.">        if (!produtoRepository.existsById(id)) {</span>
+<span class="fc" id="L128">            throw new ProdutoNaoEncontradoException(id);</span>
+        }
+<span class="fc" id="L130">        produtoRepository.deleteById(id);</span>
+<span class="fc" id="L131">    }</span>
+
+    private void atualizarImagens(Produto produto, String imagensUrlsStr) {
+<span class="fc" id="L134">        produto.clearImagens();</span>
+
+<span class="fc bfc" id="L136" title="All 2 branches covered.">        if (StringUtils.hasText(imagensUrlsStr)) {</span>
+<span class="fc" id="L137">            List&lt;String&gt; urls = Arrays.stream(imagensUrlsStr.split(&quot;[,\\n]&quot;))</span>
+<span class="fc" id="L138">                    .map(String::trim)</span>
+<span class="fc" id="L139">                    .filter(StringUtils::hasText)</span>
+<span class="fc" id="L140">                    .collect(Collectors.toList());</span>
+
+<span class="fc bfc" id="L142" title="All 2 branches covered.">            for (String url : urls) {</span>
+<span class="fc" id="L143">                produto.addImagem(new ProdutoImagem(produto, url));</span>
+<span class="fc" id="L144">            }</span>
+        }
+<span class="fc" id="L146">    }</span>
+
+    public ProdutoDTO converterParaDTO(Produto produto) {
+<span class="fc" id="L149">        List&lt;String&gt; urls = produto.getImagens().stream()</span>
+<span class="fc" id="L150">                .map(ProdutoImagem::getUrl)</span>
+<span class="fc" id="L151">                .collect(Collectors.toList());</span>
+
+<span class="fc" id="L153">        Double notaMedia = produto.getAvaliacoes().stream()</span>
+<span class="fc" id="L154">                .mapToDouble(a -&gt; a.getNota())</span>
+<span class="fc" id="L155">                .average()</span>
+<span class="fc" id="L156">                .orElse(0.0);</span>
+
+<span class="fc" id="L158">        notaMedia = Math.round(notaMedia * 10.0) / 10.0;</span>
+
+<span class="fc" id="L160">        return new ProdutoDTO(</span>
+<span class="fc" id="L161">                produto.getId(),</span>
+<span class="fc" id="L162">                produto.getNome(),</span>
+<span class="fc" id="L163">                produto.getDescricao(),</span>
+<span class="fc" id="L164">                produto.getPreco(),</span>
+<span class="fc bfc" id="L165" title="All 2 branches covered.">                produto.getCategoria() != null ? produto.getCategoria().getId() : null,</span>
+<span class="fc bfc" id="L166" title="All 2 branches covered.">                produto.getCategoria() != null ? produto.getCategoria().getNome() : null,</span>
+<span class="fc" id="L167">                produto.getEstoque(),</span>
+<span class="fc" id="L168">                produto.getAtivo(),</span>
+                urls,
+                notaMedia
+        );
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

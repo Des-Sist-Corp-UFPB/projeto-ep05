@@ -1,0 +1,51 @@
+
+
+/* ================= FORM GRID ================= */
+.register-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); 
+  gap: 2rem;
+  width: 100%;
+  max-width: 480px;
+ 
+  justify-items: center;
+}
+
+
+.register-form-grid > * {
+  width: 100%;
+}
+
+/* ================= BOTÃO ================= */
+.register-button {
+  max-width: 150px;
+  margin-top: 1.5rem;
+  grid-column: 1 / -1;      
+}
+
+
+/* ================= TEXTO ================= */
+.register-text {
+  font-size: var(--font-sm);
+  color: var(--cor-texto);
+  margin-top: 2rem;
+}
+
+/* ================= LINK ================= */
+.register-link {
+  color: var(--cor-botao);
+  font-weight: var(--peso-medio);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.register-link:hover {
+  filter: brightness(0.95);
+}
+
+/* ================= RESPONSIVO ================= */
+@media (max-width: 768px) {
+  .register-form-grid {
+    grid-template-columns: 1fr; 
+  }
+}

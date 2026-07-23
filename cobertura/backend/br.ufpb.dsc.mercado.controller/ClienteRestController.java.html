@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ClienteRestController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mercado</a> &gt; <a href="index.source.html" class="el_package">br.ufpb.dsc.mercado.controller</a> &gt; <span class="el_source">ClienteRestController.java</span></div><h1>ClienteRestController.java</h1><pre class="source lang-java linenums">package br.ufpb.dsc.mercado.controller;
+
+import br.ufpb.dsc.mercado.domain.Cartao;
+import br.ufpb.dsc.mercado.domain.Endereco;
+import br.ufpb.dsc.mercado.domain.Usuario;
+import br.ufpb.dsc.mercado.dto.*;
+import br.ufpb.dsc.mercado.service.UsuarioService;
+import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+/**
+ * Controller de cliente refatorado.
+ *
+ * MUDANÇAS:
+ * ─────────
+ * 1. Removidos try/catch manuais em todos os métodos.
+ *    Exceções ApiException são capturadas pelo GlobalExceptionHandler, que
+ *    retorna o JSON de erro padronizado automaticamente.
+ *
+ * 2. PerfilUpdateRequest movido para DTO próprio (ver abaixo) em vez de record
+ *    interno no controller, facilitando reutilização e testes unitários.
+ *
+ * 3. Mapeamento de entidade → DTO extraído para métodos privados (toDTO),
+ *    evitando repetição e facilitando futura extração para um mapper.
+ */
+@RestController
+@RequestMapping(&quot;/api/clientes&quot;)
+public class ClienteRestController {
+
+    private final UsuarioService usuarioService;
+
+    @SuppressWarnings(&quot;EI_EXPOSE_REP2&quot;)
+<span class="fc" id="L37">    public ClienteRestController(UsuarioService usuarioService) {</span>
+<span class="fc" id="L38">        this.usuarioService = usuarioService;</span>
+<span class="fc" id="L39">    }</span>
+
+    // ── Perfil ────────────────────────────────────────────────────────────────
+
+    @GetMapping(&quot;/perfil&quot;)
+    public ResponseEntity&lt;CadastroRequest&gt; obterPerfil() {
+<span class="fc" id="L45">        Usuario usuario = obterUsuarioLogado();</span>
+<span class="fc" id="L46">        return ResponseEntity.ok(toPerfilDTO(usuario));</span>
+    }
+
+    @PutMapping(&quot;/perfil&quot;)
+    public ResponseEntity&lt;CadastroRequest&gt; atualizarPerfil(
+            @RequestBody PerfilUpdateRequest request) {
+
+<span class="fc" id="L53">        Usuario usuario = obterUsuarioLogado();</span>
+<span class="fc" id="L54">        Usuario atualizado = usuarioService.atualizarPerfil(</span>
+<span class="fc" id="L55">                usuario.getId(),</span>
+<span class="fc" id="L56">                request.nome(),</span>
+<span class="fc" id="L57">                request.email(),</span>
+<span class="fc" id="L58">                request.senhaAtual(),</span>
+<span class="fc" id="L59">                request.novaSenha()</span>
+        );
+<span class="fc" id="L61">        return ResponseEntity.ok(toPerfilDTO(atualizado));</span>
+    }
+
+    @DeleteMapping(&quot;/perfil&quot;)
+    public ResponseEntity&lt;Void&gt; excluirConta() {
+<span class="fc" id="L66">        Usuario usuario = obterUsuarioLogado();</span>
+<span class="fc" id="L67">        usuarioService.excluirConta(usuario.getId());</span>
+<span class="fc" id="L68">        return ResponseEntity.ok().build();</span>
+    }
+
+    // ── Endereços ─────────────────────────────────────────────────────────────
+
+    @GetMapping(&quot;/enderecos&quot;)
+    public ResponseEntity&lt;List&lt;EnderecoDTO&gt;&gt; listarEnderecos() {
+<span class="fc" id="L75">        Usuario usuario = obterUsuarioLogado();</span>
+<span class="fc" id="L76">        List&lt;EnderecoDTO&gt; dtos = usuarioService.listarEnderecos(usuario.getId())</span>
+<span class="fc" id="L77">                .stream().map(this::toEnderecoDTO).toList();</span>
+<span class="fc" id="L78">        return ResponseEntity.ok(dtos);</span>
+    }
+
+    @PostMapping(&quot;/enderecos&quot;)
+    public ResponseEntity&lt;EnderecoDTO&gt; cadastrarEndereco(
+            @Valid @RequestBody EnderecoDTO request) {
+
+<span class="fc" id="L85">        Usuario usuario = obterUsuarioLogado();</span>
+<span class="fc" id="L86">        Endereco e = usuarioService.cadastrarEndereco(usuario.getId(), request);</span>
+<span class="fc" id="L87">        return ResponseEntity.ok(toEnderecoDTO(e));</span>
+    }
+
+    @DeleteMapping(&quot;/enderecos/{id}&quot;)
+    public ResponseEntity&lt;Void&gt; removerEndereco(@PathVariable Long id) {
+<span class="fc" id="L92">        Usuario usuario = obterUsuarioLogado();</span>
+<span class="fc" id="L93">        usuarioService.removerEndereco(usuario.getId(), id);</span>
+<span class="fc" id="L94">        return ResponseEntity.ok().build();</span>
+    }
+
+    // ── Cartões ───────────────────────────────────────────────────────────────
+
+    @GetMapping(&quot;/cartoes&quot;)
+    public ResponseEntity&lt;List&lt;CartaoDTO&gt;&gt; listarCartoes() {
+<span class="fc" id="L101">        Usuario usuario = obterUsuarioLogado();</span>
+<span class="fc" id="L102">        List&lt;CartaoDTO&gt; dtos = usuarioService.listarCartoes(usuario.getId())</span>
+<span class="fc" id="L103">                .stream().map(this::toCartaoDTO).toList();</span>
+<span class="fc" id="L104">        return ResponseEntity.ok(dtos);</span>
+    }
+
+    @PostMapping(&quot;/cartoes&quot;)
+    public ResponseEntity&lt;CartaoDTO&gt; cadastrarCartao(
+            @Valid @RequestBody CartaoSalvarDTO request) {
+
+<span class="fc" id="L111">        Usuario usuario = obterUsuarioLogado();</span>
+<span class="fc" id="L112">        Cartao c = usuarioService.cadastrarCartao(usuario.getId(), request);</span>
+<span class="fc" id="L113">        return ResponseEntity.ok(toCartaoDTO(c));</span>
+    }
+
+    @DeleteMapping(&quot;/cartoes/{id}&quot;)
+    public ResponseEntity&lt;Void&gt; removerCartao(@PathVariable Long id) {
+<span class="fc" id="L118">        Usuario usuario = obterUsuarioLogado();</span>
+<span class="fc" id="L119">        usuarioService.removerCartao(usuario.getId(), id);</span>
+<span class="fc" id="L120">        return ResponseEntity.ok().build();</span>
+    }
+
+    // ── Utilitários ──────────────────────────────────────────────────────────
+
+    private Usuario obterUsuarioLogado() {
+<span class="fc" id="L126">        String email = SecurityContextHolder.getContext().getAuthentication().getName();</span>
+<span class="fc" id="L127">        return usuarioService.buscarPorEmail(email);</span>
+    }
+
+    private CadastroRequest toPerfilDTO(Usuario u) {
+<span class="fc" id="L131">        return new CadastroRequest(u.getNome(), u.getEmail(), null, u.getPapel());</span>
+    }
+
+    private EnderecoDTO toEnderecoDTO(Endereco e) {
+<span class="fc" id="L135">        return new EnderecoDTO(</span>
+<span class="fc" id="L136">                e.getId(), e.getLogradouro(), e.getNumero(), e.getComplemento(),</span>
+<span class="fc" id="L137">                e.getBairro(), e.getCidade(), e.getEstado(), e.getCep(), e.getPrincipal()</span>
+        );
+    }
+
+    private CartaoDTO toCartaoDTO(Cartao c) {
+<span class="fc" id="L142">        return new CartaoDTO(</span>
+<span class="fc" id="L143">                c.getId(), c.getNomeTitular(), c.getBandeira(),</span>
+<span class="fc" id="L144">                c.getQuatroUltimosDigitos(), c.getDataExpiracao()</span>
+        );
+    }
+
+    // ── DTO interno para atualização de perfil ────────────────────────────────
+<span class="fc" id="L149">    public record PerfilUpdateRequest(</span>
+            String nome,
+            String email,
+            String senhaAtual,
+            String novaSenha
+    ) {}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

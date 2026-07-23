@@ -1,0 +1,177 @@
+.layout-page-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh; 
+    width: 100%;
+    background-color: var(--cor-fundo);
+    position: relative; 
+}
+
+.layout-page-header { 
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0.30rem 1rem;
+    background-color: var(--cor-secundaria);
+}
+.layout-page-logo{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    cursor: pointer;
+}
+.layout-page-logo img{
+    height: 40px;
+    width: 40px;
+    margin-right: 0.5rem;
+    
+}
+.layout-page-logo p{
+    color: var(--cor-texto-2);
+    font-weight: var(--peso-bold);
+}
+.layout-page-menu{
+    display: flex;
+    gap: 1rem;
+    
+}
+.layout-page-menu a{
+    color: var(--cor-texto-2);
+    text-decoration: none;
+    font-weight: var(--peso-medio);
+    cursor: pointer;
+}
+.layout-page-user-buttons{
+    display: flex;
+    gap: 0.5rem;
+}
+
+.profile-icon-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background-color: var(--cor-fundo-card); 
+  color: white; 
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+
+.profile-icon-container svg {
+  font-size: 1.8rem;
+}
+
+/* Efeito ao passar o mouse */
+.profile-icon-container:hover {
+  transform: scale(1.1);
+  color: var(--cor-botao-hover);
+  border-color: var(--cor-botao);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+
+.profile-icon-container:active {
+  transform: scale(0.95);
+}
+
+.layout-page-content {
+    flex: 1;
+    position: relative;
+    z-index: 5;
+    
+    
+    
+}
+
+.wave-container {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1;
+    pointer-events: none; 
+}
+
+.wave-container img {
+    width: 100%;
+    display: block;
+    object-fit: contain;
+}
+/* --- RESPONSIVIDADE --- */
+
+/* 1. Ajuste para Tablets (Até 850px) */
+@media (max-width: 850px) {
+    .layout-page-header {
+        padding: 0.5rem;
+    }
+
+    .layout-page-menu {
+        gap: 0.8rem; /* Diminui o espaço entre links */
+    }
+
+    .layout-page-logo p {
+        font-size: 0.9rem; /* Diminui o nome da marca */
+    }
+}
+
+/* 2. Ajuste para Celulares (Até 768px) */
+@media (max-width: 768px) {
+    .layout-page-header {
+        flex-wrap: wrap; /* Permite quebrar linha */
+        justify-content: space-between;
+    }
+
+    /* Move o menu de links para uma linha de baixo para não apertar os botões */
+    .layout-page-menu {
+        order: 3; 
+        width: 100%; 
+        justify-content: center;
+        padding: 0.8rem 0;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        margin-top: 0.3rem;
+        gap: 1.5rem;
+    }
+
+    .layout-page-logo img {
+        height: 30px;
+        width: 30px;
+    }
+
+    .layout-page-user-buttons {
+        gap: 0.3rem;
+    }
+
+    /* Esconde o texto do carrinho no mobile, deixa só o ícone e número se preferir */
+    /* Ou apenas diminui o botão */
+    .layout-page-user-buttons button {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.8rem;
+    }
+}
+
+/* 3. Ajuste para Telas Muito Pequenas (Até 480px) */
+@media (max-width: 480px) {
+    .layout-page-logo p {
+        display: none; /* Deixa apenas o desenho da logo para ganhar espaço */
+    }
+
+    .profile-icon-container {
+        width: 35px;
+        height: 35px;
+    }
+
+    .profile-icon-container svg {
+        font-size: 1.4rem;
+    }
+    
+    /* Faz a onda (Background) se comportar melhor */
+    .wave-container img {
+        object-fit: cover;
+        height: 100px; /* Limita a altura da onda no mobile */
+    }
+}

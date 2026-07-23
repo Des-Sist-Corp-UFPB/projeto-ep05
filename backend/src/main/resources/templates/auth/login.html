@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Login — Sweet Delights Manager</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cor-fundo:             #F9DDE5;
+            --cor-secundaria:        #833320;
+            --cor-detalhe:           #FFF8EB;
+            --cor-detalhe-2:         #EE90AF;
+            --cor-texto-2:           #FFFFFF;
+            --cor-texto-3:           #803225;
+            --cor-backgroundDetails: #E15477;
+            --cor-botao:             #D96A88;
+        }
+
+        body {
+            background: linear-gradient(145deg, var(--cor-fundo) 0%, var(--cor-detalhe-2) 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .login-wrapper {
+            width: 100%;
+            max-width: 440px;
+            padding: 1rem;
+        }
+
+        .login-card {
+            border: none;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(131, 51, 32, 0.22);
+        }
+
+        .login-header {
+            background: linear-gradient(135deg, var(--cor-secundaria) 0%, var(--cor-backgroundDetails) 100%);
+            padding: 2.5rem 2rem 2rem;
+            text-align: center;
+            color: var(--cor-texto-2);
+        }
+
+        .login-header .icon-ring {
+            width: 90px;
+            height: 90px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+
+        .login-header h1 {
+            font-size: 1.45rem;
+            font-weight: 700;
+            margin-bottom: 0.3rem;
+        }
+
+        .login-header p {
+            font-size: 0.82rem;
+            opacity: 0.82;
+            margin: 0;
+        }
+
+        .login-body {
+            background-color: var(--cor-detalhe);
+            padding: 2rem 2rem 1.5rem;
+        }
+
+        .form-label { font-weight: 600; color: var(--cor-texto-3); }
+
+        .form-control {
+            border-color: var(--cor-detalhe-2);
+            border-radius: 9px;
+            padding: 0.6rem 0.85rem;
+            background-color: #fff;
+        }
+
+        .form-control:focus {
+            border-color: var(--cor-botao);
+            box-shadow: 0 0 0 3px rgba(217, 106, 136, 0.2);
+        }
+
+        .input-group-text {
+            background-color: var(--cor-detalhe-2);
+            border-color: var(--cor-detalhe-2);
+            color: var(--cor-texto-3);
+            border-radius: 9px 0 0 9px;
+        }
+
+        .input-group .form-control { border-radius: 0 9px 9px 0; }
+
+        .btn-entrar {
+            background: linear-gradient(135deg, var(--cor-botao) 0%, var(--cor-backgroundDetails) 100%);
+            border: none;
+            color: #fff;
+            font-weight: 700;
+            font-size: 1rem;
+            border-radius: 10px;
+            padding: 0.7rem;
+            letter-spacing: 0.3px;
+            transition: opacity 0.2s, transform 0.15s;
+        }
+
+        .btn-entrar:hover {
+            opacity: 0.93;
+            transform: translateY(-1px);
+            color: #fff;
+        }
+
+        .alert-danger {
+            background-color: rgba(131,51,32,0.1);
+            border-color: var(--cor-secundaria);
+            color: var(--cor-secundaria);
+            border-radius: 9px;
+            font-size: 0.9rem;
+        }
+
+        .alert-success {
+            background-color: rgba(2,134,67,0.1);
+            border-color: #028643;
+            color: #028643;
+            border-radius: 9px;
+            font-size: 0.9rem;
+        }
+
+        .dev-hint {
+            background-color: rgba(238,144,175,0.18);
+            border: 1px dashed var(--cor-detalhe-2);
+            border-radius: 8px;
+            color: var(--cor-texto-3);
+        }
+
+        .login-footer {
+            background-color: var(--cor-detalhe);
+            border-top: 1px solid var(--cor-detalhe-2);
+            padding: 0.85rem;
+            text-align: center;
+            font-size: 0.78rem;
+            color: var(--cor-texto-3);
+        }
+
+        /* separador decorativo */
+        .divider {
+            height: 3px;
+            background: linear-gradient(90deg, var(--cor-detalhe-2), var(--cor-botao), var(--cor-detalhe-2));
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-wrapper">
+    <div class="login-card">
+
+        <!-- Header -->
+        <div class="login-header">
+            <div class="icon-ring">
+                <img th:src="@{/images/logo.png}" width="70" height="70" style="object-fit: contain;"/>
+            </div>
+            <h1>🍰 Sweet Delights Manager</h1>
+            <p>Desenvolvimento de Sistemas Corporativos &mdash; UFPB Campus IV</p>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Body -->
+        <div class="login-body">
+
+            <div th:if="${sucesso}"
+                 class="alert alert-success d-flex align-items-center mb-3" role="alert">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                     class="bi bi-check-circle-fill me-2 flex-shrink-0" viewBox="0 0 16 16">
+                    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0m-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                </svg>
+                <div th:text="${sucesso}">Conta criada com sucesso!</div>
+            </div>
+
+            <div th:if="${param.error}"
+                 class="alert alert-danger d-flex align-items-center mb-3" role="alert">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                     class="bi bi-exclamation-triangle-fill me-2 flex-shrink-0" viewBox="0 0 16 16">
+                    <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5m.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2"/>
+                </svg>
+                <div>Usuário ou senha inválidos. Tente novamente.</div>
+            </div>
+
+            <div th:if="${param.logout}"
+                 class="alert alert-success d-flex align-items-center mb-3" role="alert">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                     class="bi bi-check-circle-fill me-2 flex-shrink-0" viewBox="0 0 16 16">
+                    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0m-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                </svg>
+                <div>Logout realizado com sucesso!</div>
+            </div>
+
+            <p class="text-center mb-4" style="color: var(--cor-texto-3); font-weight: 500;">Acesse sua conta</p>
+
+            <form th:action="@{/admin/login}" method="post">
+
+                <div class="mb-3">
+                    <label for="username" class="form-label">Usuário</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15"
+                                 fill="currentColor" class="bi bi-person" viewBox="0 0 16 16">
+                                <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0m4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4m-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10s-3.516.68-4.168 1.332c-.678.678-.83 1.418-.832 1.664z"/>
+                            </svg>
+                        </span>
+                        <input type="text" id="username" name="username" class="form-control"
+                               placeholder="Digite seu usuário"
+                               autocomplete="username" required autofocus/>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="password" class="form-label">Senha</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15"
+                                 fill="currentColor" class="bi bi-lock" viewBox="0 0 16 16">
+                                <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2m3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2M5 8h6a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1"/>
+                            </svg>
+                        </span>
+                        <input type="password" id="password" name="password" class="form-control"
+                               placeholder="Digite sua senha"
+                               autocomplete="current-password" required/>
+                    </div>
+                </div>
+
+                <div class="d-grid mb-3">
+                    <button type="submit" class="btn btn-entrar btn-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                             fill="currentColor" class="bi bi-box-arrow-in-right me-2" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M6 3.5a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-2a.5.5 0 0 0-1 0v2A1.5 1.5 0 0 0 6.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-8A1.5 1.5 0 0 0 5 3.5v2a.5.5 0 0 0 1 0z"/>
+                            <path fill-rule="evenodd" d="M11.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 1 0-.708.708L10.293 7.5H1.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708z"/>
+                        </svg>
+                        Entrar
+                    </button>
+                </div>
+
+                <div class="dev-hint p-2 text-center">
+                    <small><strong>Desenvolvimento:</strong> admin / admin123</small>
+                </div>
+
+            </form>
+        </div>
+
+        <!-- Footer do card -->
+        <div class="login-footer">
+            Não tem uma conta?
+            <a th:href="@{/admin/cadastro}" style="color: var(--cor-botao); font-weight: 600; text-decoration: none;">
+                Cadastre-se
+            </a>
+            &nbsp;|&nbsp; 🍬 Sweet Delights &copy; 2026 &nbsp;|&nbsp; UFPB Campus IV
+        </div>
+
+    </div>
+</div>
+
+<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+</body>
+</html>

@@ -1,343 +1,243 @@
-# Sistema Mercado — Projeto Base DSC/UFPB
+# Sweet Delights — Monorepo
 
-Projeto base (boilerplate) para a disciplina **Desenvolvimento de Sistemas Corporativos**.
+Este repositório contém dois projetos que juntos formam a plataforma **Sweet Delights**.
 
-**Professor**: Rodrigo Rebouças | **UFPB — Campus IV**
-
----
-
-## Tecnologias
-
-| Camada | Tecnologia |
-|--------|-----------|
-| Backend | Java 21 + Spring Boot 3.4.5 |
-| Templates | Thymeleaf + HTMX 2.0 |
-| Frontend | Bootstrap 5.3 |
-| Banco | PostgreSQL 16 |
-| Migrações | Flyway 11 |
-| Segurança | Spring Security 6 |
-| Build | Maven 3.9 |
-| CI/CD | GitHub Actions |
-
----
-
-## Guia de Instalação para Alunos
-
-### Passo 1 — Instale o Java 21
-
-O projeto requer Java 21. Recomendamos o **Eclipse Temurin** (distribuição gratuita da Adoptium).
-
-**Windows / macOS / Linux:**
-1. Acesse https://adoptium.net/temurin/releases/?version=21
-2. Baixe o instalador para seu sistema operacional
-3. Execute o instalador e siga as instruções
-
-**Verificar se está correto:**
-```bash
-java -version
-# Esperado: openjdk version "21.x.x" ...
 ```
-
-> **Dica para Windows:** durante a instalação, marque a opção *"Add to PATH"* e *"Set JAVA_HOME"*.
-
----
-
-### Passo 2 — Instale o Maven
-
-O Maven é a ferramenta de build do projeto.
-
-**macOS (com Homebrew):**
-```bash
-brew install maven
-```
-
-**Windows:**
-1. Acesse https://maven.apache.org/download.cgi
-2. Baixe o arquivo `apache-maven-3.x.x-bin.zip`
-3. Extraia para uma pasta (ex.: `C:\maven`)
-4. Adicione `C:\maven\bin` à variável de ambiente `PATH`
-
-**Linux (Ubuntu/Debian):**
-```bash
-sudo apt install maven
-```
-
-**Verificar:**
-```bash
-mvn -version
-# Esperado: Apache Maven 3.x.x
+projeto-ep05/
+├── .env.example              # Variáveis da stack de produção completa
+├── docker/                   # Orquestração da stack completa (ver docker/README.md)
+│   ├── compose/
+│   │   ├── dev.yml              ← ambiente de desenvolvimento
+│   │   ├── single.yml           ← produção (imagem única, usado pelo deploy automático)
+│   │   ├── prod.yml             ← alternativa: 4 containers separados
+│   │   └── test.yml             ← testes isolados do backend
+│   └── single/                  # Dockerfile + configs usados só pelo modo single
+├── backend/                  # API + painéis admin/sysadmin (Spring Boot + Thymeleaf)
+│   └── docker/                  # Dockerfiles usados só em dev/test local do backend
+│       ├── Dockerfile
+│       ├── Dockerfile.dev
+│       └── Dockerfile.test
+├── frontend-cliente/         # Loja do cliente (React + Vite)
+├── nginx/                    # Proxy reverso central (produção e dev)
+├── TESTING.md                # Documentação centralizada de testes
+└── README.md
 ```
 
 ---
 
-### Passo 3 — Instale o Docker Desktop
+## backend/
 
-O Docker sobe o banco de dados PostgreSQL sem precisar instalar nada manualmente.
+Aplicação Spring Boot com:
+- **API REST** — consumida pelo frontend React (clientes)
+- **Painel Admin** — gerenciamento de produtos, cupons, categorias e pedidos (Thymeleaf)
+- **Painel SysAdmin** — gerenciamento de admins e configurações do sistema (Thymeleaf)
+- Autenticação JWT, Flyway, Docker
 
-1. Acesse https://www.docker.com/products/docker-desktop/
-2. Baixe e instale o Docker Desktop para seu sistema
-3. Abra o Docker Desktop e aguarde ele inicializar (ícone na barra de tarefas)
-
-**Verificar:**
-```bash
-docker -v
-# Esperado: Docker version 27.x.x ...
-```
-
-> **Importante:** o Docker Desktop deve estar **em execução** sempre que você for rodar o projeto.
-
----
-
-### Passo 4 — Clone o repositório
+### Rodar localmente
 
 ```bash
-git clone <URL-DO-REPOSITÓRIO>
-cd base_projeto
-```
+# Configurar variáveis de ambiente
+cp backend/.env.example backend/.env
 
-> Substitua `<URL-DO-REPOSITÓRIO>` pela URL fornecida pelo professor.
-
----
-
-### Passo 5 — Execute o projeto
-
-Você tem duas opções. **Recomendamos a Opção A para a primeira execução.**
-
-#### Opção A: Tudo com Docker (mais simples)
-
-Um único comando sobe o banco, a aplicação e o Adminer (interface web do banco):
-
-```bash
-docker compose -f docker/docker-compose.dev.yml up --build
-```
-
-Aguarde as mensagens de inicialização. Quando aparecer algo como:
-```
-Started MercadoApplication in X.XXX seconds
-```
-...a aplicação está pronta.
-
-#### Opção B: Banco no Docker + aplicação local (recomendado para desenvolvimento)
-
-Esta opção permite editar o código e ver as mudanças mais rápido:
-
-```bash
-# Terminal 1 — sobe o banco de dados
-docker compose -f docker/docker-compose.dev.yml up postgres adminer
-
-# Terminal 2 — roda a aplicação (em outro terminal, na mesma pasta)
-mvn spring-boot:run
+# Subir a stack completa de desenvolvimento (backend + banco + adminer)
+docker compose -f docker/compose/dev.yml up
 ```
 
 ---
 
-### Passo 6 — Acesse no browser
+## Produção
 
-| O que | Endereço |
-|-------|----------|
-| Aplicação | http://localhost:8080 |
-| Login | usuário: `admin` / senha: `admin123` |
-| Adminer (banco) | http://localhost:8888 |
-| Health check | http://localhost:8080/actuator/health |
+A stack de produção (Postgres + app) é orquestrada por **um único arquivo, na
+raiz**: `docker/compose/single.yml`. O serviço `app` é **uma única imagem**
+(gerada por `docker/single/Dockerfile`) que contém o React já buildado, o
+Spring Boot e um Nginx interno, todos rodando no mesmo container via
+`supervisord` — é o modo pensado para servidores onde só se consegue publicar
+um container por grupo/projeto (ex.: PaaS, ou o servidor da disciplina).
+
+```bash
+cp .env.example .env   # preencha os valores reais, nunca comite o .env
+docker compose -f docker/compose/single.yml --env-file .env pull
+docker compose -f docker/compose/single.yml --env-file .env up -d
+```
+
+Dentro do container, o Nginx interno escuta na porta 80 e roteia por caminho
+(`/api`, `/admin`, `/sysadmin`, `/produtos`, `/logout`, `/actuator`,
+`/webjars`, `/images`, `/css`, `/js` → Spring Boot local; o resto → React). O
+compose publica só essa porta 80 do container para o host, numa porta fixa do
+host (`127.0.0.1:8105`) combinada previamente com o responsável pelo servidor
+da disciplina (`dsc.rodrigor.com`) — o proxy central da turma encaminha o
+domínio do grupo para essa porta.
+
+O deploy automático (GitHub Actions, `.github/workflows/deploy.yml`) builda e
+publica a imagem única no GHCR e depois conecta via SSH no servidor para
+rodar `pull` + `up -d` com esse mesmo compose. Segredos necessários no
+repositório (Settings → Secrets and variables → Actions): `SSH_DEPLOY_KEY`,
+`SSH_USERNAME`, `DEPLOY_PATH` (caminho da raiz do monorepo no servidor,
+contendo o `.env` já preenchido) e `VITE_MP_PUBLIC_KEY`.
+
+> Arquitetura anterior (4 containers separados: postgres, backend, frontend,
+> nginx) ainda existe em `docker/compose/prod.yml`, caso um dia seja preciso
+> escalar frontend e backend de forma independente — mas não é mais o que o
+> deploy automático usa.
 
 ---
 
-### Parando o projeto
+## frontend-cliente/
+
+SPA em React (Vite) para o fluxo do cliente: navegação por categorias, detalhes de produto, carrinho, checkout e perfil.
+
+### Rodar localmente
 
 ```bash
-# Parar a aplicação: Ctrl+C no terminal onde está rodando
-
-# Parar os containers Docker:
-docker compose -f docker/docker-compose.dev.yml down
+cd frontend-cliente
+npm install
+npm run dev
 ```
 
----
-
-## Solução de Problemas Comuns
-
-### "Port 8080 already in use"
-Outra aplicação está usando a porta 8080. Para liberar:
-```bash
-# macOS / Linux
-lsof -ti:8080 | xargs kill
-
-# Windows (PowerShell)
-netstat -ano | findstr :8080
-# Anote o PID da última coluna e execute:
-taskkill /PID <número-do-pid> /F
-```
-
-### "Cannot connect to the Docker daemon"
-O Docker Desktop não está em execução. Abra o aplicativo Docker Desktop e aguarde inicializar.
-
-### "Connection refused" ao banco de dados
-O container do PostgreSQL ainda não subiu. Aguarde alguns segundos e tente novamente. Você pode verificar com:
-```bash
-docker compose -f docker/docker-compose.dev.yml ps
-# O container "mercado-postgres-dev" deve estar com status "healthy"
-```
-
-### Erro de compilação Java
-Verifique se o Java 21 está sendo usado pelo Maven:
-```bash
-mvn -version
-# A linha "Java version:" deve mostrar 21.x.x
-```
-Se mostrar outra versão, configure a variável `JAVA_HOME` apontando para o Java 21.
-
-### Flyway: "Found non-empty schema(s) with no schema history table"
-O banco existe mas foi criado sem as migrations. Apague os dados e recomece:
-```bash
-docker compose -f docker/docker-compose.dev.yml down -v
-docker compose -f docker/docker-compose.dev.yml up postgres
-```
+Veja `frontend-cliente/README.md` para configuração da URL da API e outros detalhes.
 
 ---
 
 ## Testes
 
+Veja [`TESTING.md`](./TESTING.md) para a documentação completa — como rodar, o que é testado e os thresholds de cobertura.
+
+---
+
+## Cobertura de Testes
+
+Relatórios de cobertura gerados e versionados na pasta [`cobertura/`](./cobertura/):
+
+| Módulo   | Ferramenta  | Cobertura (linhas) | Caminho do relatório |
+|----------|-------------|---------------------|------------------------|
+| Backend  | JaCoCo      | **99,41%** (linhas) / 99,10% (instruções) | [`cobertura/backend/index.html`](./cobertura/backend/index.html) |
+| Frontend | Vitest (v8) | **99,71%** (statements/lines) / 93,31% (branches) / 93,02% (functions) | [`cobertura/frontend/index.html`](./cobertura/frontend/index.html) |
+
+Como gerar novamente:
+
 ```bash
-# Rodar todos os testes (requer Docker em execução — usa Testcontainers)
-mvn test
+# Backend
+cd backend
+mvn clean test jacoco:report
+cp -r target/site/jacoco/* ../cobertura/backend/
 
-# Rodar com relatório de cobertura (JaCoCo)
-mvn verify
-# Relatório: abra o arquivo target/site/jacoco/index.html no browser
+# Frontend
+cd frontend-cliente
+npx vitest run --coverage
+cp -r coverage/* ../cobertura/frontend/
 ```
 
 ---
 
-## Análise de Segurança (SAST)
+## Log de Auditoria
 
-```bash
-# SpotBugs + FindSecBugs + OWASP Dependency Check
-mvn verify -Psecurity
+O sistema audita as principais ações realizadas pelos perfis **SYSADMIN**, **ADMIN** e **CLIENTE**, além de eventos automáticos do sistema (papel `SYSTEM`).
 
-# Trivy: scan de vulnerabilidades no filesystem
-docker compose -f docker/docker-compose.dev.yml --profile scan up trivy
+**O que é auditado**
+- Login com sucesso e tentativas de login com falha (categoria `AUTH`), capturados automaticamente a partir dos eventos do Spring Security.
+- Ações administrativas sobre produtos, categorias, cupons e pedidos (categorias `PRODUTO`, `PEDIDO`, etc.), registradas pelos controllers de admin/sysadmin.
+- Ações de gerenciamento de usuários/admins (categoria `USER_MGMT`).
+- Cada registro guarda: papel do ator, identificador do ator (e-mail), categoria, descrição da ação, ID do recurso afetado (quando aplicável) e resultado (`SUCCESS`/`FAILURE`).
 
-# Verificar dependências desatualizadas
-mvn versions:display-dependency-updates -Pversions
-```
+**Onde fica armazenado**
+- Tabela `log_auditoria` (PostgreSQL), criada pela migration `V5__criar_tabela_log_auditoria.sql`.
+- Principais colunas: `papel_ator`, `ator`, `categoria`, `descricao`, `recurso_id`, `resultado`, `criado_em`.
+- Consultável pela tela `/sysadmin/logs`, com filtros por papel, ator e período.
 
-Veja `docs/SECURITY.md` para detalhes.
+**Como foi implementado**
+- Um **service dedicado** (`AuditoriaService`) centraliza a escrita dos logs, sempre em transação própria (`REQUIRES_NEW`), garantindo que a auditoria seja persistida mesmo que a transação principal sofra rollback e que falhas no log nunca derrubem a requisição.
+- Eventos de autenticação são capturados por um **listener** (`AuthAuditoriaListener`) que escuta os eventos nativos do Spring Security (`AuthenticationSuccessEvent` / `AbstractAuthenticationFailureEvent`).
+- Ações de negócio (produtos, pedidos, administração) chamam `AuditoriaService` diretamente a partir dos controllers responsáveis.
 
----
-
-## Configurando o Deploy Automático (GitHub Actions)
-
-O projeto inclui um pipeline de CI/CD em `.github/workflows/deploy.yml` que:
-- roda os testes automaticamente a cada `push` na branch `main`
-- executa análise de segurança (SAST) no código e nas dependências
-- constrói a imagem Docker de produção e faz o deploy no servidor da disciplina
-
-Para ativar o deploy, você precisa configurar **dois secrets** e uma **variável** no seu repositório GitHub.
-
----
-
-### Secret 1 — Chave SSH de deploy (`SSH_DEPLOY_KEY`)
-
-O servidor da disciplina (`dsc.rodrigor.com`) já está preparado para receber deploys.
-A chave SSH que autoriza o acesso está disponível na página da disciplina:
-
-**Acesse: https://gd.dsc.rodrigor.com** e copie a chave SSH privada disponibilizada pelo professor.
-
-Depois, adicione no seu repositório:
-
-1. No GitHub, acesse seu repositório → **Settings**
-2. No menu lateral: **Secrets and variables → Actions**
-3. Clique em **New repository secret**
-4. Nome: `SSH_DEPLOY_KEY`
-5. Valor: cole a chave privada copiada do portal (o texto completo, incluindo as linhas `-----BEGIN...` e `-----END...`)
-6. Clique em **Add secret**
+**Classes/arquivos envolvidos**
+- `backend/src/main/java/br/ufpb/dsc/mercado/audit/LogAuditoria.java` — entidade JPA do registro.
+- `backend/src/main/java/br/ufpb/dsc/mercado/audit/AuditoriaService.java` — service central de escrita e leitura dos logs.
+- `backend/src/main/java/br/ufpb/dsc/mercado/audit/AuthAuditoriaListener.java` — listener de eventos de login/falha de autenticação.
+- `backend/src/main/java/br/ufpb/dsc/mercado/audit/LogAuditoriaRepository.java`, `LogAuditoriaRepositoryCustom.java` e `LogAuditoriaRepositoryImpl.java` — persistência e filtros de consulta.
+- `backend/src/main/resources/db/migration/V5__criar_tabela_log_auditoria.sql` — criação da tabela.
+- Consumido em: `backend/src/main/java/br/ufpb/dsc/mercado/controller/PedidoAdminRestController.java`, `ProdutoController.java`, `AdminController.java`, `SysAdminController.java`.
+- Testes: `backend/src/test/java/br/ufpb/dsc/mercado/audit/` (`LogAuditoriaTest`, `AuditoriaServiceTest`, `AuthAuditoriaListenerTest`, `LogAuditoriaRepositoryImplTest`).
 
 ---
 
-### Secret 2 — Chave da API do NVD (`NVD_API_KEY`)
+## Integração com Serviço Externo
 
-#### O que é o NVD?
+**Serviço:** [Mercado Pago](https://www.mercadopago.com.br/) (API de pagamentos).
 
-**NVD** significa *National Vulnerability Database* — é o banco de dados oficial do governo americano (NIST) que cataloga todas as vulnerabilidades de segurança conhecidas em softwares. Cada vulnerabilidade recebe um identificador chamado **CVE** (ex.: CVE-2024-12345) e uma nota de gravidade chamada **CVSS** (de 0 a 10).
+**Para que é usado:** processar a cobrança dos pedidos no checkout. A tokenização do cartão acontece no **frontend**, via SDK JS do Mercado Pago; o **backend** recebe apenas o token gerado e usa a Payment API para efetivar a cobrança — o número do cartão nunca trafega nem é armazenado pelo nosso backend.
 
-O **OWASP Dependency Check** (uma das ferramentas de segurança do projeto) consulta esse banco para verificar se as bibliotecas que o seu projeto usa possuem vulnerabilidades conhecidas.
+**Fluxo:**
+1. Frontend chama o SDK JS do Mercado Pago e gera um token a partir dos dados do cartão.
+2. Frontend envia o token (mais dados mascarados) para a API do backend.
+3. Backend salva o cartão associando-o ao token.
+4. Na criação do pedido, o backend usa o token salvo para cobrar via Payment API do Mercado Pago.
 
-#### Por que preciso de uma chave?
+**Classes/arquivos envolvidos**
+- Backend:
+  - `backend/src/main/java/br/ufpb/dsc/mercado/config/MercadoPagoConfiguration.java` — inicializa o SDK com o access token.
+  - `backend/src/main/java/br/ufpb/dsc/mercado/service/MercadoPagoService.java` — chama a Payment API (`cobrarComToken`) e trata o resultado/erros da cobrança.
+  - `backend/src/test/java/br/ufpb/dsc/mercado/service/MercadoPagoServiceTest.java` — testes do serviço de pagamento.
+- Frontend:
+  - `frontend-cliente/src/pages/Checkout/Checkout.jsx` — carrega o SDK JS do Mercado Pago e gera o token do cartão no navegador.
 
-Sem a chave, o download do banco de dados NVD é muito lento (pode levar 20+ minutos no CI/CD, ou até falhar por timeout). Com a chave gratuita, o download é feito via API e leva menos de 2 minutos.
+**Configuração (variáveis de ambiente, sem expor segredos)**
+- Backend: `MERCADOPAGO_ACCESS_TOKEN` (lida em `application-dev.yml` / `application-prod.yml`, propriedade `mercadopago.access-token`).
+- Frontend: `VITE_MP_PUBLIC_KEY` (chave pública, usada pelo SDK JS no navegador).
 
-#### Como obter (gratuito, leva ~1 minuto)
+> Observação: o PostgreSQL usado pelo projeto é infraestrutura básica da disciplina e não é considerado integração externa para fins desta avaliação.
 
-1. Acesse https://nvd.nist.gov/developers/request-an-api-key
-2. Preencha seu e-mail institucional (use o e-mail da UFPB se possível)
-3. Marque a caixa de uso não-comercial
-4. Clique em **Submit**
-5. Acesse seu e-mail — você receberá a chave em segundos
-
-#### Adicionando ao repositório
-
-1. No GitHub: **Settings → Secrets and variables → Actions**
-2. Clique em **New repository secret**
-3. Nome: `NVD_API_KEY`
-4. Valor: cole a chave recebida por e-mail
-5. Clique em **Add secret**
-
-> **Sem a chave ainda?** O pipeline funciona mesmo sem ela, mas o OWASP Dependency Check
-> pode demorar muito ou falhar por timeout. Configure assim que possível.
 
 ---
 
-### Variável — Nome da imagem Docker (`APP_IMAGE`)
+## Assistentes de IA — Servidor MCP (`pedidos-mcp`)
 
-O pipeline publica a imagem Docker no GitHub Container Registry (GHCR) com o nome do seu repositório. Você não precisa configurar isso manualmente — o workflow usa `${{ github.repository }}` para montar o nome automaticamente.
+O backend expõe um **servidor MCP** (Model Context Protocol) que permite a qualquer
+assistente de IA compatível (Claude Desktop, Cursor, etc.) consultar o catálogo e
+operar pedidos da loja em nome de um cliente, via linguagem natural.
 
-Mas o arquivo `.env` no servidor precisa saber qual imagem usar. O script de deploy atualiza isso automaticamente na primeira execução.
+**O que é exposto (tools)**
+- `catalogo(busca)` — lista/pesquisa os produtos ativos do cardápio.
+- `rastrearPedido(clienteEmail, pedidoId)` — consulta status, itens e totais de um
+  pedido, confirmando antes que o pedido pertence ao e-mail informado.
+- `montarPedido(clienteEmail, itens, enderecoId, cartaoId, codigoCupom)` — cria e
+  finaliza um novo pedido, usando um endereço e um cartão **já cadastrados** pelo
+  cliente na loja (a tool não coleta nem manipula dados de cartão diretamente).
+
+**Como foi implementado**
+- Camada fina de tools (`@Tool`) que apenas chama os *services* de negócio já
+  existentes (`ProdutoService`, `PedidoService`, `UsuarioService`) — nenhuma regra
+  de negócio nova foi escrita para o MCP.
+- Toda tool que lê ou altera um pedido identifica o cliente pelo e-mail e confere
+  que o recurso pertence a ele antes de agir (não há sessão/cookie no transporte MCP).
+- Toda tool de escrita (`montarPedido`) registra um evento no **log de auditoria**
+  (`AuditoriaService.registrarCliente`, categoria `PEDIDO`), da mesma forma que as
+  ações equivalentes feitas pela API/telas normais.
+- Servidor iniciado automaticamente pelo `spring-ai-starter-mcp-server-webmvc`,
+  configurado em `application.yml` (`spring.ai.mcp.server.name=pedidos-mcp`) e
+  disponível em `/mcp` (e `/sse`, transporte HTTP/SSE).
+
+**Classes/arquivos envolvidos**
+- `backend/src/main/java/br/ufpb/dsc/mercado/mcp/PedidosTools.java` — as tools.
+- `backend/src/main/java/br/ufpb/dsc/mercado/mcp/McpConfig.java` — registra as tools no servidor MCP.
+- `backend/src/main/resources/application.yml` — configuração do servidor MCP.
+- `backend/src/main/java/br/ufpb/dsc/mercado/config/SecurityConfig.java` — libera `/mcp` e `/sse`.
+- Testes: `backend/src/test/java/br/ufpb/dsc/mercado/mcp/PedidosToolsTest.java`.
+
+**Limitação conhecida / próximos passos:** o endpoint `/mcp` hoje é público
+(`permitAll`), pensado para uso local/demonstração (ex.: Claude Desktop via stdio
+ou um ambiente de teste). Antes de expor esse servidor publicamente em produção,
+o recomendado é acrescentar uma camada de autenticação no transporte MCP (ex.:
+API key ou token por requisição), já que hoje qualquer chamador pode invocar
+`montarPedido` para qualquer e-mail de cliente cadastrado.
+
+
 
 ---
 
-### Verificando se o deploy funcionou
+## Perfis de usuário
 
-Após configurar os secrets e fazer um `push` na branch `main`:
-
-1. No GitHub, clique na aba **Actions**
-2. Você verá o workflow **"Build & Deploy"** em execução
-3. Ele tem 3 etapas: **Testes e SAST → Build e push → Deploy em produção**
-4. Se tudo der certo, a aplicação estará disponível em `https://dsc.rodrigor.com`
-
-Se alguma etapa falhar, clique nela para ver os logs detalhados.
-
----
-
-## Estrutura do Projeto
-
-```
-base_projeto/
-├── .github/workflows/
-│   └── deploy.yml           # Pipeline CI/CD (GitHub Actions)
-├── src/main/java/br/ufpb/dsc/mercado/
-│   ├── config/              # Configurações (Security, GlobalModelAttributes, etc.)
-│   ├── controller/          # Controllers HTTP + HTMX
-│   ├── domain/              # Entidades JPA
-│   ├── dto/                 # Data Transfer Objects (Records)
-│   ├── exception/           # Exceções de domínio
-│   ├── repository/          # Interfaces Spring Data JPA
-│   └── service/             # Lógica de negócio
-├── src/main/resources/
-│   ├── db/migration/        # Scripts Flyway (V1__, V2__, ...)
-│   └── templates/           # Templates Thymeleaf
-├── docker/                  # Dockerfiles + docker-compose
-├── docs/                    # Documentação técnica
-├── CLAUDE.md                # Memória para Claude Code
-└── pom.xml
-```
-
----
-
-## Para Alunos: Adaptando o Boilerplate
-
-1. **Renomear** a entidade `Produto` para sua entidade principal
-2. **Criar migration** Flyway com a nova estrutura da tabela (`src/main/resources/db/migration/V2__...sql`)
-3. **Atualizar** Repository, Service, Controller e templates seguindo os mesmos padrões
-4. **Manter** a estrutura de pacotes e convenções (ver `docs/CONVENTIONS.md`)
-5. **Nunca editar** migrations já aplicadas — sempre criar uma nova (`V3__`, `V4__`, ...)
-
-> Dúvidas? Consulte a documentação em `docs/` ou o professor.
+| Perfil    | Interface                | Acesso      |
+|-----------|--------------------------|-------------|
+| Cliente   | React (frontend-cliente) | `/`         |
+| Admin     | Thymeleaf (backend)      | `/admin`    |
+| SysAdmin  | Thymeleaf (backend)      | `/sysadmin` |

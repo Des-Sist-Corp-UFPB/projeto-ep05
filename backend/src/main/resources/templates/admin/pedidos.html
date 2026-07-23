@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="pt-BR"
+      xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout(~{::main})}">
+<head><title>Pedidos</title></head>
+<body>
+<main>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1 fw-bold">Pedidos</h1>
+            <p class="text-muted mb-0">Acompanhe e atualize os pedidos da loja</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div id="tabela-pedidos">
+                <th:block th:insert="~{admin/fragments/tabela_pedidos :: tabela}"></th:block>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ MODAL DE DETALHES DO PEDIDO ═══ -->
+    <div class="modal fade" id="pedidoModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content" id="pedido-modal-content">
+                <!-- preenchido via JS -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // ── Status helpers ────────────────────────────────────────────────────────
+    const STATUS_LABEL = {
+        AGUARDANDO_PAGAMENTO: 'Aguardando Pagamento',
+        PAGO:     'Pago',
+        ENVIADO:  'Enviado / A caminho',
+        ENTREGUE: 'Entregue',
+        CANCELADO:'Cancelado'
+    };
+    const STATUS_BADGE = {
+        AGUARDANDO_PAGAMENTO: 'bg-warning text-dark',
+        PAGO:     'bg-info text-dark',
+        ENVIADO:  'bg-primary',
+        ENTREGUE: 'bg-success',
+        CANCELADO:'bg-danger'
+    };
+    const TODOS_STATUS = ['AGUARDANDO_PAGAMENTO','PAGO','ENVIADO','ENTREGUE','CANCELADO'];
+
+    // ── Abre modal buscando dados do pedido via JSON ──────────────────────────
+    function abrirDetalhesPedido(id) {
+        const content = document.getElementById('pedido-modal-content');
+        content.innerHTML = `
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">Pedido #${id}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2 text-muted">Carregando...</p>
+            </div>`;
+
+        const modal = new bootstrap.Modal(document.getElementById('pedidoModal'));
+        modal.show();
+
+        fetch(`/admin/pedidos/${id}/json`, { headers: { 'Accept': 'application/json' } })
+            .then(r => {
+                if (!r.ok) throw new Error('Erro ' + r.status);
+                return r.json();
+            })
+            .then(pedido => renderModal(pedido, modal))
+            .catch(err => {
+                content.innerHTML = `
+                    <div class="modal-header border-0">
+                        <h5 class="modal-title fw-bold">Pedido #${id}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-danger">Erro ao carregar pedido: ${err.message}</div>
+                    </div>`;
+            });
+    }
+
+    // ── Renderiza o conteúdo do modal com os dados do pedido ─────────────────
+    function renderModal(p, modal) {
+        const content = document.getElementById('pedido-modal-content');
+
+        // monta itens
+        const itensRows = (p.itens || []).map(item => `
+            <tr>
+                <td>${item.produtoNome || item.nomeProduto || '—'}</td>
+                <td class="text-center">${item.quantidade}</td>
+                <td class="text-end">R$ ${fmt(item.precoUnitario)}</td>
+                <td class="text-end">R$ ${fmt(item.subtotal || (item.precoUnitario * item.quantidade))}</td>
+            </tr>`).join('');
+
+        const descontoRow = (p.totalDesconto && parseFloat(p.totalDesconto) > 0) ? `
+            <tr>
+                <td colspan="3" class="text-end text-muted">Desconto (cupom)</td>
+                <td class="text-end text-danger">- R$ ${fmt(p.totalDesconto)}</td>
+            </tr>` : '';
+
+        // monta opções de status
+        const statusOpts = TODOS_STATUS.map(s => `
+            <option value="${s}" ${s === p.status ? 'selected' : ''}>${STATUS_LABEL[s]}</option>`).join('');
+
+        // badge atual
+        const badgeCls = STATUS_BADGE[p.status] || 'bg-secondary';
+
+        // endereço
+        const end = p.enderecoEntrega || {};
+        const endStr = end.logradouro
+            ? `${end.logradouro}, ${end.numero}${end.complemento ? ' — ' + end.complemento : ''} · ${end.bairro} · ${end.cidade}/${end.estado} · CEP ${end.cep}`
+            : '—';
+
+        content.innerHTML = `
+            <div class="modal-header border-0 pb-0">
+                <div>
+                    <h5 class="modal-title fw-bold">Pedido #${p.id}</h5>
+                    <span class="badge ${badgeCls} mt-1">${STATUS_LABEL[p.status] || p.status}</span>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+
+                <!-- Info cliente -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <p class="mb-1"><strong>Cliente:</strong> ${p.clienteNome || '—'}</p>
+                        <p class="mb-0"><strong>E-mail:</strong> ${p.clienteEmail || '—'}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="mb-0"><strong>Endereço:</strong> ${endStr}</p>
+                    </div>
+                </div>
+
+                <hr/>
+
+                <!-- Itens -->
+                <h6 class="fw-semibold mb-2">Itens do pedido</h6>
+                <table class="table table-sm mb-3">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Produto</th>
+                            <th class="text-center">Qtd</th>
+                            <th class="text-end">Preço unit.</th>
+                            <th class="text-end">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>${itensRows}</tbody>
+                    <tfoot>
+                        ${descontoRow}
+                        <tr>
+                            <td colspan="3" class="text-end fw-bold">Total</td>
+                            <td class="text-end fw-bold">R$ ${fmt(p.totalGeral)}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+
+                <hr/>
+
+                <!-- Feedback -->
+                <div id="modal-feedback" class="alert alert-success d-none mb-3">
+                    ✅ Pedido atualizado com sucesso!
+                </div>
+                <div id="modal-erro" class="alert alert-danger d-none mb-3"></div>
+
+                <!-- Ações de atualização -->
+                <div class="row g-3 align-items-end">
+
+                    <!-- Status -->
+                    <div class="col-md-5">
+                        <label class="form-label fw-semibold mb-1">Atualizar status</label>
+                        <select id="select-status" class="form-select form-select-sm">
+                            ${statusOpts}
+                        </select>
+                    </div>
+
+                    <!-- Rastreamento -->
+                    <div class="col-md-5">
+                        <label class="form-label fw-semibold mb-1">Código de rastreamento</label>
+                        <input id="input-rastreamento" type="text"
+                               class="form-control form-control-sm"
+                               value="${p.codigoRastreamento || ''}"
+                               placeholder="Ex.: BR123456789BR"/>
+                    </div>
+
+                    <!-- Botão salvar ambos -->
+                    <div class="col-md-2 d-grid">
+                        <button id="btn-salvar-pedido" class="btn btn-primary btn-sm"
+                                onclick="salvarPedido(${p.id})">
+                            Salvar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Dica contextual -->
+                <p class="text-muted small mt-2 mb-0" id="dica-status">
+                    ${dicaStatus(p.status)}
+                </p>
+
+            </div>`;
+
+        // Atualiza dica ao mudar status no select
+        document.getElementById('select-status').addEventListener('change', function() {
+            document.getElementById('dica-status').textContent = dicaStatus(this.value);
+        });
+    }
+
+    // ── Dica contextual por status ────────────────────────────────────────────
+    function dicaStatus(status) {
+        const dicas = {
+            AGUARDANDO_PAGAMENTO: '⏳ Aguardando confirmação do pagamento.',
+            PAGO:     '💳 Pagamento confirmado. Separe o pedido para envio.',
+            ENVIADO:  '🚚 Pedido enviado — o cliente verá "A caminho" no app.',
+            ENTREGUE: '✅ Pedido entregue ao cliente.',
+            CANCELADO:'❌ Pedido cancelado.'
+        };
+        return dicas[status] || '';
+    }
+
+    // ── Salva status + rastreamento juntos ────────────────────────────────────
+    function salvarPedido(id) {
+        const btn = document.getElementById('btn-salvar-pedido');
+        const feedback = document.getElementById('modal-feedback');
+        const erroDiv = document.getElementById('modal-erro');
+        const status = document.getElementById('select-status').value;
+        const rastreamento = document.getElementById('input-rastreamento').value.trim();
+
+        feedback.classList.add('d-none');
+        erroDiv.classList.add('d-none');
+        btn.disabled = true;
+        btn.textContent = 'Salvando...';
+
+        // 1) Atualiza status
+        const p1 = fetch(`/admin/pedidos/${id}/status`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'status=' + encodeURIComponent(status)
+        });
+
+        // 2) Atualiza rastreamento só se preenchido
+        const p2 = rastreamento
+            ? fetch(`/admin/pedidos/${id}/rastreamento`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'codigoRastreamento=' + encodeURIComponent(rastreamento)
+            })
+            : Promise.resolve({ ok: true });
+
+        Promise.all([p1, p2])
+            .then(([r1, r2]) => {
+                if (r1.ok && r2.ok) {
+                    feedback.classList.remove('d-none');
+                    btn.textContent = 'Salvo ✓';
+                    // Atualiza badge dentro do modal imediatamente
+                    const badgeModal = document.querySelector('#pedido-modal-content .badge');
+                    if (badgeModal) {
+                        badgeModal.className = 'badge ' + (STATUS_BADGE[status] || 'bg-secondary');
+                        badgeModal.textContent = STATUS_LABEL[status] || status;
+                    }
+                    recarregarTabelaPedidos(id);
+                } else {
+                    throw new Error('Falha ao salvar');
+                }
+            })
+            .catch(err => {
+                erroDiv.textContent = '❌ Erro: ' + err.message;
+                erroDiv.classList.remove('d-none');
+                btn.disabled = false;
+                btn.textContent = 'Salvar';
+            });
+    }
+
+    // ── Recarrega só a linha do pedido na tabela (sem fechar modal) ───────────
+    function recarregarTabelaPedidos(id) {
+        // Tenta atualizar a linha específica via fragment
+        fetch(`/admin/pedidos/${id}/status?status=`, {
+            method: 'GET',
+            headers: { 'Accept': 'text/html' }
+        }).catch(() => {});
+
+        // Recarrega a tabela inteira em background para manter sincronizado
+        fetch('/admin/pedidos?pagina=0', { headers: { 'HX-Request': 'true' } })
+            .then(r => r.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const novaTabela = doc.getElementById('tabela-pedidos');
+                const tabelaAtual = document.getElementById('tabela-pedidos');
+                if (novaTabela && tabelaAtual) {
+                    tabelaAtual.outerHTML = novaTabela.outerHTML;
+                }
+            })
+            .catch(() => {});
+    }
+
+    // ── Formata número como moeda ─────────────────────────────────────────────
+    function fmt(v) {
+        return parseFloat(v || 0).toFixed(2).replace('.', ',');
+    }
+    </script>
+
+</main>
+</body>
+</html>

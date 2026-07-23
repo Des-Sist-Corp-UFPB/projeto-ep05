@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Arquivo de exclusões do SpotBugs / FindSecBugs.
+
+  Uso: mvn verify -Psecurity
+
+  REGRAS PARA EXCLUSÕES:
+  1. Toda exclusão DEVE ter um comentário explicando o motivo.
+  2. Nunca suprima alertas de segurança sem entender completamente o risco.
+  3. Prefira corrigir o código a suprimir o alerta.
+  4. Revise este arquivo periodicamente — exclusões antigas podem se tornar inválidas.
+
+  Documentação dos padrões de exclusão:
+  https://spotbugs.readthedocs.io/en/latest/filter.html
+-->
+<FindBugsFilter>
+
+    <!--
+      Exclui classes internas geradas pelo Java/Spring (lambdas, proxies, classes anônimas).
+      Esses padrões de nome ($) indicam classes geradas automaticamente que não podemos modificar.
+    -->
+    <Match>
+        <Class name="~.*\$.*"/>
+    </Match>
+
+    <!--
+      Exclui a classe principal da aplicação.
+      O método main() com System.exit implícito não é um problema real aqui.
+    -->
+    <Match>
+        <Class name="br.ufpb.dsc.mercado.MercadoApplication"/>
+    </Match>
+
+    <!--
+      EI_EXPOSE_REP / EI_EXPOSE_REP2 — Entidades JPA (domain)
+
+      As entidades do domínio (Produto, Pedido, Avaliacao, etc.) são gerenciadas
+      pelo JPA/Hibernate, que requer acesso direto às referências de objetos para
+      gerenciar o ciclo de vida, lazy loading e relacionamentos (ManyToOne, OneToMany).
+      Copiar defensivamente entidades JPA quebraria o mecanismo de proxy do Hibernate
+      e impediria o funcionamento correto do ORM. A mutabilidade controlada é intencional.
+    -->
+    <Match>
+        <Package name="~br\.ufpb\.dsc\.mercado\.domain.*"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+
+    <!--
+      EI_EXPOSE_REP2 — Controllers e Services (injeção de dependência Spring)
+
+      Os serviços e repositórios injetados via construtor são beans Spring gerenciados
+      como singletons pelo ApplicationContext. O Spring controla todo o ciclo de vida
+      desses objetos — eles nunca são substituídos ou modificados externamente após
+      a injeção. Copiar defensivamente quebraria a injeção de dependência.
+    -->
+    <Match>
+        <Package name="~br\.ufpb\.dsc\.mercado\.controller.*"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Package name="~br\.ufpb\.dsc\.mercado\.service.*"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="br.ufpb.dsc.mercado.config.SecurityConfig"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+
+    <!--
+      SPRING_CSRF_PROTECTION_DISABLED — API REST stateless com JWT
+
+      A proteção CSRF é desabilitada intencionalmente apenas para os endpoints
+      da API REST (/api/**), que usam autenticação stateless via JWT (Bearer token).
+      Ataques CSRF exploram cookies de sessão — como essa API não usa sessões,
+      a proteção CSRF é desnecessária e sua desabilitação é uma prática padrão
+      para APIs REST com JWT. O front-end MVC mantém CSRF habilitado.
+    -->
+    <Match>
+        <Class name="br.ufpb.dsc.mercado.config.SecurityConfig"/>
+        <Bug pattern="SPRING_CSRF_PROTECTION_DISABLED"/>
+    </Match>
+
+</FindBugsFilter>

@@ -1,0 +1,56 @@
+# docker/ — orquestração do projeto
+
+Este diretório concentra tudo relacionado a como subir o projeto via Docker.
+Os `Dockerfile`s de cada serviço continuam dentro da própria pasta do serviço
+(`backend/docker/`, `frontend-cliente/docker/`, `nginx/`); aqui ficam só as
+"receitas" de orquestração (compose) e os artefatos exclusivos do modo
+single-container.
+
+> **Nota:** existiam cópias duplicadas destes arquivos em `docker/docker-compose.*.yml`
+> (raiz) e em `backend/docker/docker-compose.*.yml`, com os mesmos nomes de
+> container/portas/rede — o que causava conflito ao subir mais de uma cópia
+> por engano. Elas foram removidas; **`docker/compose/*.yml` é a única fonte
+> de verdade** para orquestração. `backend/docker/`, `frontend-cliente/docker/`
+> e `nginx/` guardam apenas os `Dockerfile`s de cada serviço, não compose files.
+
+## Estrutura
+
+```
+docker/
+├── README.md          este arquivo
+├── compose/            um docker-compose.*.yml por modo de uso
+│   ├── dev.yml
+│   ├── prod.yml
+│   ├── single.yml
+│   └── test.yml
+└── single/              Dockerfile + configs usados só pelo modo single
+    ├── Dockerfile
+    ├── nginx.conf
+    ├── nginx-main.conf
+    └── supervisord.conf
+```
+
+## Qual arquivo usar
+
+| Arquivo | Quando usar |
+|---|---|
+| `compose/dev.yml` | Ambiente local completo (postgres + app + frontend + nginx + adminer), com hot-reload. É o que um dev roda no dia a dia. |
+| `compose/single.yml` | **Produção — é o que roda hoje via CI/CD (`.github/workflows/deploy.yml`)**. Tudo (frontend + backend + nginx) numa única imagem/container, via `docker/single/Dockerfile` + supervisord. Escolhido porque o servidor da disciplina só permite publicar um container/porta por grupo. |
+| `compose/prod.yml` | Alternativa com 4 containers separados (postgres, app, frontend, nginx). Não é mais usado pelo deploy automático, mas fica disponível caso um dia seja necessário escalar frontend e backend de forma independente. |
+| `compose/test.yml` | Sobe um Postgres descartável + a aplicação em modo `test`, para rodar a suíte de integração isolada (nunca mistura com dados de dev/prod). |
+
+Todos os comandos abaixo são executados a partir da **raiz do projeto**:
+
+```bash
+# desenvolvimento
+docker compose -f docker/compose/dev.yml --env-file backend/.env.dev --env-file frontend-cliente/.env up --build
+
+# produção (imagem única, o que o deploy automático usa)
+docker compose -f docker/compose/single.yml --env-file .env up -d --build
+
+# alternativa: 4 containers separados
+docker compose -f docker/compose/prod.yml --env-file .env up -d --build
+
+# testes de integração
+docker compose -f docker/compose/test.yml up --build --abort-on-container-exit
+```

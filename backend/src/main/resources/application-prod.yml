@@ -1,0 +1,27 @@
+server:
+  forward-headers-strategy: framework
+
+spring:
+  datasource:
+    # Em produção, as credenciais vêm de variáveis de ambiente — NUNCA hardcode!
+    # Configure no sistema operacional, Docker, Kubernetes secrets, etc.
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+  flyway:
+    enabled: true
+    out-of-order: true
+    baseline-on-migrate: true
+
+logging:
+  level:
+    root: WARN
+    br.ufpb.dsc.mercado: INFO
+
+# Mercado Pago — em produção use a chave LIVE (começa com APP_USR-)
+mercadopago:
+  access-token: ${MERCADOPAGO_ACCESS_TOKEN}
