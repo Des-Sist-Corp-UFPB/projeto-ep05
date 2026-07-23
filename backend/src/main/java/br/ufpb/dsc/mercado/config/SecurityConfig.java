@@ -3,6 +3,7 @@ package br.ufpb.dsc.mercado.config;
 import java.util.Arrays;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -26,6 +27,12 @@ import jakarta.servlet.http.HttpServletResponse;
 public class SecurityConfig {
 
     private final JwtFilter jwtFilter;
+
+    // Lista de origens permitidas para CORS, separadas por vírgula.
+    // Configurável via variável de ambiente APP_CORS_ALLOWED_ORIGINS.
+    // Ex.: "https://eq05.dsc.rodrigor.com,http://localhost,http://localhost:5173"
+    @Value("${app.cors.allowed-origins:http://localhost,http://localhost:80,http://localhost:5173,http://localhost:3000,http://127.0.0.1:8105}")
+    private List<String> allowedOrigins;
 
     @SuppressWarnings("EI_EXPOSE_REP2")
     public SecurityConfig(JwtFilter jwtFilter) {
@@ -126,13 +133,9 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Permitir o frontend React local (Vite padrão é 5173 ou 3000)
-        configuration.setAllowedOrigins(Arrays.asList(
-                "http://localhost",        // nginx porta 80 (sem porta explícita)
-                "http://localhost:80",     // nginx porta 80 (explícita)
-                "http://localhost:5173",   // Vite dev server padrão
-                "http://localhost:3000"    // alternativo dev
-        ));
+        // Origens permitidas: locais (dev) + domínio de produção, vindas de
+        // app.cors.allowed-origins (env APP_CORS_ALLOWED_ORIGINS). Ver .env.
+        configuration.setAllowedOrigins(allowedOrigins);
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Cache-Control"));
         configuration.setExposedHeaders(List.of("Authorization"));
