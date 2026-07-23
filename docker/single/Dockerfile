@@ -1,12 +1,17 @@
 # =============================================================================
 # Dockerfile ÚNICO — Frontend (React) + Backend (Spring Boot) + Nginx
 # =============================================================================
-# Gera UMA imagem só, que sobe UMA única porta (80 por padrão) contendo:
+# Gera UMA imagem só, que sobe UMA única porta (8080 por padrão) contendo:
 #   - Nginx        → serve o React (SPA) e roteia por caminho para o backend
-#   - Spring Boot   → roda internamente em 127.0.0.1:8080 (não exposto ao host)
+#   - Spring Boot   → roda internamente em 127.0.0.1:8081 (não exposto ao host)
+#
+# OBS: a porta pública é 8080 (e não 80) porque o painel de deploy da
+# disciplina encaminha a porta fixa da equipe (8105) pra porta 8080 do
+# container, e esse mapeamento não é editável pela equipe. Por isso o Nginx
+# passou a escutar na 8080, liberando o Java pra rodar em 8081 internamente.
 #
 # Mesma lógica de rotas do nginx/nginx.prod.conf original, só que agora o
-# "mercado-app-prod:8080" vira "127.0.0.1:8080" (mesmo container).
+# "mercado-app-prod:8080" vira "127.0.0.1:8081" (mesmo container).
 #
 # Roteamento:
 #   /api/*, /admin/*, /sysadmin/*, /produtos/*, /logout, /actuator/*,
@@ -18,7 +23,7 @@
 #     --build-arg VITE_MP_PUBLIC_KEY=$VITE_MP_PUBLIC_KEY .
 #
 # Run:
-#   docker run -p 80:80 \
+#   docker run -p 8080:8080 \
 #     -e SPRING_DATASOURCE_URL=jdbc:postgresql://<host>:5432/mercado_prod \
 #     -e SPRING_DATASOURCE_USERNAME=mercado \
 #     -e SPRING_DATASOURCE_PASSWORD=... \
@@ -82,11 +87,15 @@ RUN mkdir -p /var/log/supervisor && \
 
 ENV SPRING_PROFILES_ACTIVE=prod
 ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+# Java roda internamente na 8081; o Nginx é quem escuta a porta pública
+# (8080), porque é pra lá que o painel de deploy da disciplina encaminha o
+# tráfego — esse mapeamento não é editável pela equipe.
+ENV SERVER_PORT=8081
 
-EXPOSE 80
+EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD wget -qO- http://127.0.0.1/ping || exit 1
+    CMD wget -qO- http://127.0.0.1:8080/ping || exit 1
 
 # supervisord roda como root (necessário p/ nginx bindar na porta 80);
 # o processo Java é executado como usuário "mercado" (ver supervisord.conf)

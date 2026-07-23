@@ -4,10 +4,14 @@
 # Serviços: PostgreSQL · app (frontend-cliente + backend + nginx, tudo junto)
 #
 # ARQUITETURA:
-#   app (porta 80, única porta exposta) contém:
+#   app (porta 8080, única porta exposta) contém:
 #     - Nginx: serve o React (SPA) e roteia /api, /admin, /sysadmin, /produtos,
 #       /logout, /actuator, /webjars, /images, /css, /js → Spring Boot local
-#     - Spring Boot: roda internamente em 127.0.0.1:8080 (não exposto ao host)
+#     - Spring Boot: roda internamente em 127.0.0.1:8081 (não exposto ao host)
+#
+# OBS: a porta pública do container é 8080 (não mais 80) porque o painel de
+# deploy da disciplina encaminha a porta fixa da equipe (8105) pra 8080 do
+# container, e esse mapeamento não é editável pela equipe.
 #
 # Como usar (a partir da pasta raiz do projeto):
 #   docker compose -f docker/compose/single.yml --env-file .env up -d --build
@@ -62,12 +66,12 @@ services:
       APP_SEED_ADMIN_PASSWORD: ${APP_SEED_ADMIN_PASSWORD}
       MERCADOPAGO_ACCESS_TOKEN: ${MERCADOPAGO_ACCESS_TOKEN}
     ports:
-      - "127.0.0.1:8105:80"
+      - "127.0.0.1:8105:8080"
     depends_on:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/ping || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/ping || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -76,9 +80,11 @@ services:
     networks:
       - mercado-net
     # NOTA: 8105 é a porta fixa combinada com o responsável pelo servidor da
-    # disciplina (dsc.rodrigor.com) — o proxy central da turma encaminha o
-    # domínio do grupo para 127.0.0.1:8105. Não é configurável por .env porque
-    # não varia por ambiente (é a mesma porta que docker/compose/prod.yml usava).
+    # disciplina (dsc.rodrigor.com) — o painel de deploy da turma encaminha o
+    # domínio do grupo para 127.0.0.1:8105, que por sua vez é redirecionado
+    # pelo próprio painel pra porta 8080 do container (esse redirecionamento
+    # interno não é configurável pela equipe, por isso o Nginx passou a
+    # escutar na 8080 em vez da 80 — ver docker/single/nginx.conf).
 
 volumes:
   postgres-data:
