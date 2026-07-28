@@ -15,16 +15,27 @@
 .categorias-page h1 {
     color: var(--cor-secundaria);
     font-size: var(--font-xxl);
-    margin: var(--esp-lg) 0;
+    margin: var(--esp-lg) 0 var(--esp-xs);
     font-weight: var(--peso-bold);
     text-align: center;
 }
 
-/* Grid que organiza os cards */
+.categorias-subtitulo {
+    color: var(--cor-texto-3);
+    font-size: var(--font-md);
+    opacity: 0.8;
+    margin: 0 0 var(--esp-lg);
+    text-align: center;
+}
+
+/* Grid que organiza os cards.
+   Trocado de CSS grid para flexbox: com um número de categorias que não
+   fecha uma linha exata (ex.: 7), o grid deixava a última linha "solta" à
+   esquerda. Flex + justify-content:center centraliza o resto sempre. */
 .categorias-grid {
-    display: grid;
-    /* Ajustado o minmax para 140px para caber melhor em telas médias como 540px */
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: var(--esp-md);
     width: 100%;
     max-width: 1000px;
@@ -34,25 +45,32 @@
 
 /* O Card da Categoria */
 .categoria-card {
-    background-color: var(--cor-detalhe); 
+    background-color: var(--cor-detalhe);
     border-radius: var(--radius-lg);
     padding: var(--esp-md);
     text-align: center;
     cursor: pointer;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
     border: 1px solid var(--cor-detalhe-2);
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    /* Garante que o card mantenha uma proporção agradável */
-    aspect-ratio: 1 / 1.1; 
+    justify-content: flex-start;
+    /* flex-basis define a largura "ideal"; cresce/encolhe dentro de min/max */
+    flex: 1 1 150px;
+    max-width: 170px;
+    min-height: 190px;
+    animation: categoria-entrada 0.4s ease backwards;
 }
 
 .categoria-card:hover {
     transform: translateY(-8px);
     box-shadow: var(--shadow-md);
-    border-color: var(--cor-botao); 
+    border-color: var(--cor-botao);
+}
+
+.categoria-card:active {
+    transform: translateY(-4px) scale(0.98);
 }
 
 .categoria-card img {
@@ -66,12 +84,37 @@
     -webkit-user-drag: none;
 }
 
-.categoria-card p {
+.categoria-card .categoria-nome {
     color: var(--cor-texto-3);
     font-weight: var(--peso-semi);
     font-size: var(--font-md);
     text-transform: capitalize;
     margin: 0;
+}
+
+.categoria-card .categoria-desc {
+    color: var(--cor-texto-3);
+    opacity: 0.7;
+    font-weight: var(--peso-regular);
+    font-size: var(--font-xs);
+    line-height: var(--line-sm);
+    margin: var(--esp-xxs) 0 0;
+    /* Trunca em 2 linhas para não desalinhar a altura dos cards */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+@keyframes categoria-entrada {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* --- AJUSTE PARA TELAS MÉDIAS (COMO 540px) --- */
@@ -81,9 +124,13 @@
     }
 
     .categorias-grid {
-        /* Força 2 colunas para evitar que fiquem muito pequenas ou uma só gigante */
-        grid-template-columns: repeat(2, 1fr); 
         gap: var(--esp-md);
+    }
+
+    /* Duas colunas confortáveis em telas de celular */
+    .categoria-card {
+        flex: 1 1 calc(50% - var(--esp-md));
+        max-width: calc(50% - var(--esp-md));
     }
 
     .categoria-card img {
@@ -96,21 +143,49 @@
     .categorias-grid {
         gap: var(--esp-sm);
     }
-    
+
     .categoria-card {
         padding: var(--esp-sm);
+        flex: 1 1 calc(50% - var(--esp-sm));
+        max-width: calc(50% - var(--esp-sm));
+        min-height: 160px;
     }
 
-    .categoria-card p {
+    .categoria-card .categoria-nome {
         font-size: var(--font-sm);
     }
 }
-/* FIX #3: fallback visual quando categoria não tem imagem */
-.categoria-emoji {
-  font-size: 48px;
+/* FIX #3: fallback visual quando categoria não tem imagem.
+   Chip circular por trás do emoji, em vez do emoji "flutuando" solto. */
+.categoria-emoji-chip {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: var(--cor-fundo);
+  border: 1px solid var(--cor-detalhe-2);
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  height: 80px;
+  margin-bottom: var(--esp-sm);
+  transition: transform 0.3s ease;
+}
+
+.categoria-card:hover .categoria-emoji-chip {
+  transform: scale(1.08);
+}
+
+.categoria-emoji {
+  font-size: 40px;
+  line-height: 1;
+}
+
+@media (max-width: 600px) {
+  .categoria-emoji-chip {
+    width: 64px;
+    height: 64px;
+  }
+
+  .categoria-emoji {
+    font-size: 32px;
+  }
 }
