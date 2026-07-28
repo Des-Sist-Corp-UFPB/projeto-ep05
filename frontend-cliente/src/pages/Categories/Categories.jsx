@@ -70,21 +70,30 @@ const Categories = () => {
         </div>
 
         <h1>Categorias</h1>
+        <p className="categorias-subtitulo">
+          Encontre bolos, doces e salgados para todas as ocasiões
+        </p>
 
         <div className="categorias-grid">
-          {categorias.map((cat) => (
+          {categorias.map((cat, index) => (
             <div
               key={cat.id}
               className="categoria-card"
+              style={{ animationDelay: `${index * 0.05}s` }}
               onClick={() => navigate(`/loja/${cat.nome}`)}
             >
               {/* FIX #3: fallback com emoji quando a categoria não tem imagem */}
               {cat.imagem ? (
                 <img src={cat.imagem} alt={cat.nome} />
               ) : (
-                <div className="categoria-emoji">{getEmoji(cat.nome)}</div>
+                <div className="categoria-emoji-chip">
+                  <span className="categoria-emoji">{getEmoji(cat.nome)}</span>
+                </div>
               )}
-              <p>{cat.nome}</p>
+              <p className="categoria-nome">{cat.nome}</p>
+              {cat.descricao && (
+                <p className="categoria-desc">{cat.descricao}</p>
+              )}
             </div>
           ))}
         </div>
