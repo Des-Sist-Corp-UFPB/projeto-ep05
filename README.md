@@ -160,7 +160,11 @@ O sistema audita as principais ações realizadas pelos perfis **SYSADMIN**, **A
 
 ---
 
-## Integração com Serviço Externo
+## Integrações com Serviços Externos
+
+O projeto consome dois serviços externos: **Mercado Pago** (pagamentos) e **ViaCEP** (consulta de endereço por CEP).
+
+### Mercado Pago
 
 **Serviço:** [Mercado Pago](https://www.mercadopago.com.br/) (API de pagamentos).
 
@@ -186,6 +190,27 @@ O sistema audita as principais ações realizadas pelos perfis **SYSADMIN**, **A
 
 > Observação: o PostgreSQL usado pelo projeto é infraestrutura básica da disciplina e não é considerado integração externa para fins desta avaliação.
 
+---
+
+### ViaCEP
+
+**Serviço:** [ViaCEP](https://viacep.com.br/) (API pública de consulta de endereço a partir do CEP).
+
+**Para que é usado:** preencher automaticamente rua, bairro, cidade e estado ao cadastrar/editar um endereço, evitando digitação manual e erros de digitação pelo cliente.
+
+**Fluxo:**
+1. Cliente digita o CEP no formulário (perfil ou cadastro de endereço).
+2. O frontend chama diretamente a API pública do ViaCEP (`https://viacep.com.br/ws/{cep}/json/`) via `fetch`, sem passar pelo backend.
+3. Se o CEP for válido, os campos de endereço são preenchidos automaticamente com o retorno; se inválido/inexistente, os campos ficam livres para digitação manual.
+
+**Classes/arquivos envolvidos**
+- Frontend:
+  - `frontend-cliente/src/api/cep.js` — função `buscarCEP`, que chama a API do ViaCEP.
+  - `frontend-cliente/src/pages/Profile/Profile.jsx` — usa `buscarCEP` ao editar o endereço no perfil.
+  - `frontend-cliente/src/pages/Addresses/Address.jsx` — usa `buscarCEP` ao cadastrar/editar endereços.
+  - `frontend-cliente/src/test/apiLayer.test.js` — testes da função `buscarCEP`.
+
+**Configuração:** nenhuma — é uma API pública e gratuita, sem chave de acesso ou variável de ambiente.
 
 ---
 
