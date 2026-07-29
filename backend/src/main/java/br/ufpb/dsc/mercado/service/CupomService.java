@@ -2,6 +2,9 @@ package br.ufpb.dsc.mercado.service;
 
 import br.ufpb.dsc.mercado.domain.Cupom;
 import br.ufpb.dsc.mercado.repository.CupomRepository;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.instrumentation.annotations.SpanAttribute;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -38,13 +41,18 @@ public class CupomService {
                 .orElseThrow(() -> new IllegalArgumentException("Cupom não encontrado com código: " + codigo));
     }
 
-    public Cupom validarCupom(String codigo) {
+    @WithSpan("aplicar-cupom")
+    public Cupom validarCupom(@SpanAttribute("cupom.codigo") String codigo) {
         Cupom cupom = cupomRepository.findByCodigoIgnoreCaseAndAtivoTrue(codigo)
                 .orElseThrow(() -> new IllegalArgumentException("Cupom inválido ou inativo"));
 
         if (cupom.isExpirado()) {
             throw new IllegalArgumentException("Este cupom já está expirado");
         }
+
+        // Atributos só conhecidos após a validação — setados no span atual.
+        Span.current().setAttribute("cupom.tipo", cupom.getTipo().name());
+        Span.current().setAttribute("cupom.desconto", cupom.getDesconto().toString());
 
         return cupom;
     }

@@ -61,6 +61,9 @@ services:
       APP_JWT_SECRET: ${APP_JWT_SECRET}
       APP_SEED_ADMIN_PASSWORD: ${APP_SEED_ADMIN_PASSWORD}
       MERCADOPAGO_ACCESS_TOKEN: ${MERCADOPAGO_ACCESS_TOKEN}
+      # Observabilidade (OpenTelemetry -> Grafana da turma) — só o token é
+      # segredo; o resto já vem com default certo do Dockerfile.dev.
+      OTEL_EXPORTER_OTLP_HEADERS: ${OTEL_EXPORTER_OTLP_HEADERS}
     ports:
       - "8080:8080"
     volumes:

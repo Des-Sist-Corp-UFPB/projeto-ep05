@@ -160,6 +160,82 @@ O sistema audita as principais ações realizadas pelos perfis **SYSADMIN**, **A
 
 ---
 
+## Observabilidade (Grafana / OpenTelemetry)
+
+O backend é instrumentado com **OpenTelemetry** e envia traces, métricas e logs para o servidor central da disciplina, hospedado em `otel.dsc.rodrigor.com`. Não é preciso subir Grafana localmente — a stack (Prometheus + Tempo + Loki + Grafana, o "LGTM") é compartilhada por todas as equipes.
+
+- **service.name da equipe:** `dsc-eq05`
+- **Painel:** <https://otel.dsc.rodrigor.com> (Explore → filtrar por `service.name = dsc-eq05`)
+
+### Como funciona
+
+A instrumentação usa dois níveis, como recomendado no guia da disciplina (`docs/opentelemetry.md`):
+
+**Automática (zero código)** — o **agente Java** (`opentelemetry-javaagent.jar`) é baixado durante o build da imagem Docker e anexado à JVM via `-javaagent`. Ele instrumenta sozinho:
+- todas as requisições HTTP recebidas pelo Spring (Tomcat/Jetty embutido);
+- todas as queries JDBC ao PostgreSQL;
+- chamadas HTTP de saída (ex.: para o Mercado Pago);
+- métricas da JVM (heap, threads, GC);
+- logs via Logback, já correlacionados com `trace_id`/`span_id`.
+
+**Manual** — spans de negócio adicionados com a anotação `@WithSpan`, para enriquecer o trace com o que só a regra de negócio sabe que é importante:
+
+| Span | Onde | Arquivo | Atributos |
+|------|------|---------|-----------|
+| `mercadopago-cobranca` | Cobrança do pedido via Mercado Pago | `MercadoPagoService.cobrarComToken` | `pedido.valor`, `pedido.parcelas`, `pedido.descricao`, `mercadopago.status`, `mercadopago.payment_id` |
+| `aplicar-cupom` | Validação de cupom no checkout | `CupomService.validarCupom` | `cupom.codigo`, `cupom.tipo`, `cupom.desconto` |
+
+Os dois métodos são chamados dentro de `PedidoService.criarPedido` (finalizar pedido), então aparecem aninhados no mesmo trace da requisição `POST` de checkout — junto com os spans automáticos de HTTP e SQL.
+
+> ⚠️ O token de pagamento (`Cartao.tokenPagamento`) nunca é anotado como atributo de span — é um dado sensível e fica de fora da telemetria de propósito.
+
+### Configuração
+
+A instrumentação é controlada por variáveis de ambiente, já com os valores certos definidos direto nas imagens Docker (`docker/single/Dockerfile`, `backend/docker/Dockerfile`, `backend/docker/Dockerfile.dev`):
+
+```bash
+OTEL_SERVICE_NAME=dsc-eq05
+OTEL_EXPORTER_OTLP_ENDPOINT=https://otel.dsc.rodrigor.com
+OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+OTEL_TRACES_EXPORTER=otlp
+OTEL_METRICS_EXPORTER=otlp
+OTEL_LOGS_EXPORTER=otlp
+```
+
+A única variável que **não** vem no Dockerfile — porque é segredo — é o token de autenticação da turma:
+
+```bash
+OTEL_EXPORTER_OTLP_HEADERS=Authorization=Bearer <token-distribuído-no-discord>
+```
+
+Ela é injetada em runtime via `.env` (ver `.env.example` na raiz e em `backend/`) e passada ao container pelos `docker-compose` (`dev.yml`, `single.yml`, `prod.yml`). Sem o token, a aplicação sobe normalmente — só a ingestão de telemetria responde `401` e nada aparece no Grafana.
+
+### Dependências (instrumentação manual)
+
+```xml
+<dependency>
+    <groupId>io.opentelemetry</groupId>
+    <artifactId>opentelemetry-api</artifactId>
+</dependency>
+<dependency>
+    <groupId>io.opentelemetry.instrumentation</groupId>
+    <artifactId>opentelemetry-instrumentation-annotations</artifactId>
+</dependency>
+```
+
+Só a API — o SDK real (quem de fato coleta e exporta) vem do agente Java anexado via `-javaagent`. Sem o agente rodando (ex.: em `mvn test`), as anotações `@WithSpan` viram *no-op*: não quebram nada, só não geram spans.
+
+### Como ver os dados
+
+1. Suba a aplicação normalmente (`docker compose -f docker/compose/dev.yml ... up` ou o deploy de produção) com o token configurado.
+2. Gere tráfego: navegue pelo catálogo, faça login, finalize um pedido com cupom.
+3. Abra <https://otel.dsc.rodrigor.com> → **Explore** → fonte **Tempo** → busque por `service.name = dsc-eq05`.
+4. Abra um trace de checkout e observe a cascata: requisição HTTP → `criarPedido` → queries SQL → `aplicar-cupom` → `mercadopago-cobranca`.
+5. Para logs: fonte **Loki**, consulta `{service_name="dsc-eq05"}`. Clicar numa linha com `trace_id` leva direto ao trace correspondente no Tempo.
+6. Aba **Dashboards** para métricas de latência, throughput e uso de memória da JVM, coletadas automaticamente.
+
+---
+
 ## Integrações com Serviços Externos
 
 O projeto consome dois serviços externos: **Mercado Pago** (pagamentos) e **ViaCEP** (consulta de endereço por CEP).

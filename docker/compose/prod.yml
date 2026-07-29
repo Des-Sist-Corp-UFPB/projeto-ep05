@@ -21,6 +21,8 @@
 #   APP_JWT_SECRET=<segredo-jwt>
 #   APP_SEED_ADMIN_PASSWORD=<senha-admin>
 #   MERCADOPAGO_ACCESS_TOKEN=<chave-live-APP_USR-...>
+#   OTEL_EXPORTER_OTLP_HEADERS=Authorization=Bearer <token-otel-da-turma>
+#     (distribuído pelo Discord da disciplina — NUNCA commitar)
 # =============================================================================
 
 services:
@@ -66,6 +68,9 @@ services:
       APP_SEED_ADMIN_PASSWORD: ${APP_SEED_ADMIN_PASSWORD}
       MERCADOPAGO_ACCESS_TOKEN: ${MERCADOPAGO_ACCESS_TOKEN}
       APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS}
+      # Observabilidade (OpenTelemetry -> Grafana da turma) — só o token é
+      # segredo; o resto já vem com default certo do backend/docker/Dockerfile.
+      OTEL_EXPORTER_OTLP_HEADERS: ${OTEL_EXPORTER_OTLP_HEADERS}
     expose:
       - "8080"
     depends_on:
