@@ -41,6 +41,16 @@
         <versions-maven-plugin.version>2.18.0</versions-maven-plugin.version>
         <jacoco-maven-plugin.version>0.8.13</jacoco-maven-plugin.version>
         <spring-ai.version>1.1.4</spring-ai.version>
+        <!-- OpenTelemetry: usadas só para instrumentação MANUAL (spans de negócio).
+             O agente Java (opentelemetry-javaagent.jar, baixado no Dockerfile) já
+             cuida sozinho de HTTP/JDBC/logs — não é dependência deste pom.
+             Sem <opentelemetry-api.version> de propósito: o spring-ai-bom (import
+             logo abaixo) já gerencia io.opentelemetry:opentelemetry-api em 1.43.0;
+             forçar outra versão aqui sobrescreveria o BOM e arriscaria conflito de
+             classpath com o próprio Spring AI, que também usa OTel internamente.
+             2.9.0 é a versão de opentelemetry-instrumentation-annotations que a
+             própria OpenTelemetry publica pareada com a API 1.43.0. -->
+        <opentelemetry-instrumentation-annotations.version>2.9.0</opentelemetry-instrumentation-annotations.version>
     </properties>
 
     <!-- === SPRING-IA === -->
@@ -183,6 +193,22 @@
             <groupId>com.mercadopago</groupId>
             <artifactId>sdk-java</artifactId>
             <version>2.1.28</version>
+        </dependency>
+
+        <!-- === OBSERVABILIDADE: OpenTelemetry (instrumentação manual) ===
+             Só a API + as anotações — o SDK/exporter reais vêm do agente Java
+             (-javaagent), anexado via JAVA_TOOL_OPTIONS no Dockerfile.
+             Sem o agente rodando, essas anotações viram no-op (não quebram nada,
+             só não geram spans) — por isso é seguro ter isso mesmo em testes. -->
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-api</artifactId>
+            <!-- versão vem do spring-ai-bom (dependencyManagement) -->
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry.instrumentation</groupId>
+            <artifactId>opentelemetry-instrumentation-annotations</artifactId>
+            <version>${opentelemetry-instrumentation-annotations.version}</version>
         </dependency>
     </dependencies>
 

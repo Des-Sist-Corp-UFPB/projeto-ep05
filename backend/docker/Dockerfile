@@ -26,6 +26,12 @@ RUN mvn dependency:go-offline -B -q
 COPY src ./src
 RUN mvn clean package -DskipTests -B -q
 
+# ---- Estágio 1b: Agente Java do OpenTelemetry (observabilidade) ------------
+FROM alpine:3.20 AS otel-agent
+RUN apk add --no-cache curl && \
+    curl -L -o /opentelemetry-javaagent.jar \
+    https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/latest/download/opentelemetry-javaagent.jar
+
 # ---- Estágio 2: Runtime -----------------------------------------------------
 FROM eclipse-temurin:21-jre-jammy AS runtime
 
@@ -39,11 +45,25 @@ WORKDIR /app
 # Copiar apenas o JAR do estágio anterior
 COPY --from=builder /build/target/*.jar app.jar
 
-# Definir owner do arquivo
-RUN chown mercado:mercado app.jar
+# Agente Java do OpenTelemetry (observabilidade — traces, métricas e logs)
+COPY --from=otel-agent /opentelemetry-javaagent.jar otel-javaagent.jar
+
+# Definir owner dos arquivos
+RUN chown mercado:mercado app.jar otel-javaagent.jar
 
 # Trocar para usuário não-root
 USER mercado
+
+# OTEL_SERVICE_NAME e o endpoint são fixos do projeto; o TOKEN da turma NUNCA
+# fica aqui — vem por variável de ambiente injetada no `docker run`/compose
+# (ver docker/compose/prod.yml e docs/opentelemetry.md).
+ENV JAVA_TOOL_OPTIONS="-javaagent:/app/otel-javaagent.jar"
+ENV OTEL_SERVICE_NAME="dsc-eq05"
+ENV OTEL_EXPORTER_OTLP_ENDPOINT="https://otel.dsc.rodrigor.com"
+ENV OTEL_EXPORTER_OTLP_PROTOCOL="http/protobuf"
+ENV OTEL_TRACES_EXPORTER="otlp"
+ENV OTEL_METRICS_EXPORTER="otlp"
+ENV OTEL_LOGS_EXPORTER="otlp"
 
 EXPOSE 8080
 

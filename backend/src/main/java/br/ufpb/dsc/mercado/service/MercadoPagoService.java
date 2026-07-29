@@ -6,6 +6,9 @@ import com.mercadopago.client.payment.PaymentPayerRequest;
 import com.mercadopago.exceptions.MPApiException;
 import com.mercadopago.exceptions.MPException;
 import com.mercadopago.resources.payment.Payment;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.instrumentation.annotations.SpanAttribute;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -51,9 +54,12 @@ public class MercadoPagoService {
      * @return Payment com o resultado da cobrança
      * @throws IllegalArgumentException se o Mercado Pago recusar o pagamento
      */
-    public Payment cobrarComToken(String token, BigDecimal valor,
-                                  String emailPagador, String descricao,
-                                  int parcelas) {
+    @WithSpan("mercadopago-cobranca")
+    public Payment cobrarComToken(String token, // sensível: NUNCA vira atributo de span
+                                  @SpanAttribute("pedido.valor") BigDecimal valor,
+                                  String emailPagador,
+                                  @SpanAttribute("pedido.descricao") String descricao,
+                                  @SpanAttribute("pedido.parcelas") int parcelas) {
         try {
             PaymentCreateRequest paymentRequest = PaymentCreateRequest.builder()
                     .transactionAmount(valor)
@@ -77,6 +83,13 @@ public class MercadoPagoService {
             String status = payment.getStatus();
             log.info("Pagamento processado. ID: {}, Status: {}, StatusDetail: {}",
                     payment.getId(), status, payment.getStatusDetail());
+
+            // Atributo dinâmico: só sabemos o status depois da resposta do Mercado Pago,
+            // por isso é setado no span atual em vez de vir do @SpanAttribute.
+            Span.current().setAttribute("mercadopago.status", status);
+            if (payment.getId() != null) {
+                Span.current().setAttribute("mercadopago.payment_id", payment.getId().toString());
+            }
 
             // approved = aprovado, in_process = em análise (ambos aceitáveis)
             if ("approved".equals(status) || "in_process".equals(status) || "authorized".equals(status)) {

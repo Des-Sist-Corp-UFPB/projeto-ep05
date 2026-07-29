@@ -51,6 +51,16 @@ RUN mvn dependency:go-offline -B -q
 COPY backend/src ./src
 RUN mvn clean package -DskipTests -B -q
 
+# ---- Estágio 2b: Agente Java do OpenTelemetry (observabilidade) -------------
+# Baixado à parte para não invalidar o cache do build acima quando o agente
+# sobe de versão. "latest" é o padrão recomendado pelo próprio OTel (o agente
+# é retrocompatível e a instrumentação é ativada por variáveis de ambiente,
+# não por código — atualizar a imagem já traz a versão nova).
+FROM alpine:3.20 AS otel-agent
+RUN apk add --no-cache curl && \
+    curl -L -o /opentelemetry-javaagent.jar \
+    https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/latest/download/opentelemetry-javaagent.jar
+
 # ---- Estágio 3: Runtime — Nginx + JRE + Supervisor ---------------------------
 FROM eclipse-temurin:21-jre-jammy AS runtime
 
@@ -70,6 +80,23 @@ WORKDIR /app
 # JAR do backend
 COPY --from=backend-build /build/target/*.jar /app/app.jar
 RUN chown mercado:mercado /app/app.jar
+
+# Agente Java do OpenTelemetry (observabilidade — traces, métricas e logs)
+COPY --from=otel-agent /opentelemetry-javaagent.jar /app/otel-javaagent.jar
+RUN chown mercado:mercado /app/otel-javaagent.jar
+
+# JAVA_TOOL_OPTIONS é lido automaticamente por QUALQUER JVM que a supervisord
+# suba (o java do backend), sem precisar tocar no ENTRYPOINT/supervisord.conf.
+# OTEL_SERVICE_NAME e o endpoint são fixos do projeto; o TOKEN da turma nunca
+# fica aqui — vem por variável de ambiente injetada no `docker run`/compose
+# (ver docker/compose/single.yml e docs/opentelemetry.md).
+ENV JAVA_TOOL_OPTIONS="-javaagent:/app/otel-javaagent.jar"
+ENV OTEL_SERVICE_NAME="dsc-eq05"
+ENV OTEL_EXPORTER_OTLP_ENDPOINT="https://otel.dsc.rodrigor.com"
+ENV OTEL_EXPORTER_OTLP_PROTOCOL="http/protobuf"
+ENV OTEL_TRACES_EXPORTER="otlp"
+ENV OTEL_METRICS_EXPORTER="otlp"
+ENV OTEL_LOGS_EXPORTER="otlp"
 
 # Build estático do React → raiz servida pelo Nginx
 COPY --from=frontend-build /app/dist /usr/share/nginx/html
