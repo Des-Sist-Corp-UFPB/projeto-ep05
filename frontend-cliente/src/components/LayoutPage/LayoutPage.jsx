@@ -1,16 +1,15 @@
-import React from "react";
-import './LayoutPage.css';
-import Button from "../Button/Button";
 import { FaUserCircle } from "react-icons/fa";
-import { Link, Outlet, useNavigate } from "react-router-dom";
-import Logo from "../../assets/logo.png";
-import Background from "../../assets/img/Background.png"
 import { FaBasketShopping } from "react-icons/fa6";
+import { Link, Outlet, useNavigate } from "react-router-dom";
+import Background from "../../assets/img/Background.png";
+import Logo from "../../assets/logo.png";
+import AssistenteChat from "../AssistenteChat/AssistenteChat";
+import Button from "../Button/Button";
+import './LayoutPage.css';
 
 
-
-import { useCart } from "../../context/CartContext";
 import { useAuth } from "../../context/AuthContext";
+import { useCart } from "../../context/CartContext";
 
 const LayoutPage = () => {
     const { totalItems } = useCart()
@@ -91,6 +90,11 @@ const LayoutPage = () => {
                 
                 <img src={Background} alt="" />
             </div>
+
+            <div className="wave-container">
+                <img src={Background} alt="" />
+            </div>
+            {isAuthenticated && <AssistenteChat />}
         </div>
     );
 }
