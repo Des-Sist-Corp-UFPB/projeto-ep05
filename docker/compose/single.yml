@@ -73,6 +73,8 @@ services:
       # segredo — service.name/endpoint/protocolo/exporters já vêm com
       # default certo direto do Dockerfile (docker/single/Dockerfile).
       OTEL_EXPORTER_OTLP_HEADERS: ${OTEL_EXPORTER_OTLP_HEADERS}
+      LLM_API_KEY: ${LLM_API_KEY}
+      LLM_MODEL: ${LLM_MODEL}
     ports:
       - "127.0.0.1:8105:8080"
     depends_on:

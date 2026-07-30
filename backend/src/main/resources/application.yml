@@ -9,6 +9,12 @@ spring:
       server:
           name: pedidos-mcp
           version: 0.0.1
+    openai:
+      base-url: https://llm.rodrigor.com
+      api-key: ${LLM_API_KEY}
+      chat:
+        options:
+          model: ${LLM_MODEL}
 
 # Actuator - monitoramento da aplicação
 # Acesse: http://localhost:8080/actuator/health
