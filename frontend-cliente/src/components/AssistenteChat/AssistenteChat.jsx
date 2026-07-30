@@ -9,10 +9,14 @@ const AssistenteChat = () => {
   ]);
   const [input, setInput] = useState("");
   const [carregando, setCarregando] = useState(false);
-  const fimRef = useRef(null);
+  const mensagensRef = useRef(null);
 
+  // Rola só o container de mensagens (scrollTop), nunca a página por trás —
+  // scrollIntoView rola o ancestral scrollável mais próximo, que em alguns
+  // layouts acaba sendo a página inteira em vez da caixinha do chat.
   useEffect(() => {
-    fimRef.current?.scrollIntoView({ behavior: "smooth" });
+    const el = mensagensRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
   }, [mensagens, aberto]);
 
   const enviar = async () => {
@@ -41,12 +45,11 @@ const AssistenteChat = () => {
             <span>Assistente Sweet Delights</span>
             <button onClick={() => setAberto(false)}>×</button>
           </div>
-          <div className="assistente-chat-mensagens">
+          <div className="assistente-chat-mensagens" ref={mensagensRef}>
             {mensagens.map((m, i) => (
               <div key={i} className={`assistente-chat-bolha ${m.autor}`}>{m.texto}</div>
             ))}
             {carregando && <div className="assistente-chat-bolha ia">digitando...</div>}
-            <div ref={fimRef} />
           </div>
           <div className="assistente-chat-input">
             <input
