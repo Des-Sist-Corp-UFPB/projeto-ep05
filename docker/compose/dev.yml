@@ -64,6 +64,8 @@ services:
       # Observabilidade (OpenTelemetry -> Grafana da turma) — só o token é
       # segredo; o resto já vem com default certo do Dockerfile.dev.
       OTEL_EXPORTER_OTLP_HEADERS: ${OTEL_EXPORTER_OTLP_HEADERS}
+      LLM_API_KEY: ${LLM_API_KEY}
+      LLM_MODEL: ${LLM_MODEL}
     ports:
       - "8080:8080"
     volumes:
