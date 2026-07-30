@@ -15,6 +15,7 @@ spring:
       chat:
         options:
           model: ${LLM_MODEL}
+          temperature: 0.3
 
 # Actuator - monitoramento da aplicação
 # Acesse: http://localhost:8080/actuator/health
