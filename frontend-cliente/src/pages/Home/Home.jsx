@@ -63,8 +63,14 @@ const Home = () => {
         <header className="header-home">
           <img src={logo} alt="Logo" />
           <div className="header-home-texto">
+            <div className="flourish flourish-left" aria-hidden="true">
+              <svg viewBox="0 0 60 24"><path d="M2 12 Q 15 2, 28 12 T 58 12" fill="none" stroke="#EE90AF" strokeWidth="3" strokeLinecap="round" /><circle cx="4" cy="12" r="3" fill="#833320" /></svg>
+            </div>
             <h1>Sweet Delights</h1>
             <p>Brownies, Cookie, Trufas e muito mais</p>
+            <div className="flourish flourish-right" aria-hidden="true">
+              <svg viewBox="0 0 60 24"><path d="M2 12 Q 15 2, 28 12 T 58 12" fill="none" stroke="#EE90AF" strokeWidth="3" strokeLinecap="round" /><circle cx="56" cy="12" r="3" fill="#833320" /></svg>
+            </div>
           </div>
         </header>
 
