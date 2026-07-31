@@ -6,6 +6,8 @@ import Logo from "../../assets/logo.png";
 import AssistenteChat from "../AssistenteChat/AssistenteChat";
 import Button from "../Button/Button";
 import './LayoutPage.css';
+import { GiCupcake, GiPartyPopper } from "react-icons/gi";
+import { FaStar } from "react-icons/fa";
 
 
 import { useAuth } from "../../context/AuthContext";
@@ -42,9 +44,9 @@ const LayoutPage = () => {
 
                 
                 <div className="layout-page-menu">
-                    <Link to="/Categorias">Categorias</Link>
-                    <Link to="/home#destaques">Destaques</Link>
-                    <Link to="/promocao">Promoções</Link>
+                    <Link to="/Categorias"><GiCupcake /> Categorias</Link>
+                    <Link to="/home#destaques"><FaStar /> Destaques</Link>
+                    <Link to="/promocao"><GiPartyPopper /> Promoções</Link>
                 </div>
 
                 
