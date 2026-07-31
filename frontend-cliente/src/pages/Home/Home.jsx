@@ -9,6 +9,7 @@ import ScrollContainer from "../../components/ScrollContainer/ScrollContainer";
 import MainScrollContainer from "../../components/MainScrollContainer/MainScrollContainer";
 import Loading from "../../components/Loading/Loading";
 import ErrorState from "../../components/ErrorState/ErrorState";
+import logo from "../../assets/logo.png";
 
 const Home = () => {
   const location = useLocation();
@@ -130,13 +131,17 @@ const Home = () => {
             Um doce é pequeno, mas a
             <br /> felicidade que traz é gigante.
           </h1>
-          <p>Pesquise seu doce favorito</p>
+          <p>Feito com carinho, um docinho de cada vez 🍰</p>
         </div>
 
         <footer className="footer">
+          <div className="footer-top-scallop" aria-hidden="true"></div>
           <div className="footer-brand">
-            <h2>Cantinho Doce</h2>
-            <p>Doces feitos com carinho 🍰</p>
+            <img src={logo} alt="Sweet Delights" className="footer-logo" />
+            <div>
+              <h2>Sweet Delights</h2>
+              <p>Doces feitos com carinho 🍰</p>
+            </div>
           </div>
           <div className="footer-columns">
             <div>
