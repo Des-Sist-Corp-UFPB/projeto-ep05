@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from "react";
-import "./Home.css";
-import logo from "../../assets/logo.png";
-import ProductCard from "../../components/ProductCard/ProductCard";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useCart } from "../../context/CartContext";
-import { getProdutos, getMaisVendidos, getCategorias } from "../../api/productApi";
-import ScrollContainer from "../../components/ScrollContainer/ScrollContainer";
-import MainScrollContainer from "../../components/MainScrollContainer/MainScrollContainer";
-import Loading from "../../components/Loading/Loading";
-import ErrorState from "../../components/ErrorState/ErrorState";
+import { getCategorias, getMaisVendidos, getProdutos } from "../../api/productApi";
 import logo from "../../assets/logo.png";
+import ErrorState from "../../components/ErrorState/ErrorState";
+import Loading from "../../components/Loading/Loading";
+import MainScrollContainer from "../../components/MainScrollContainer/MainScrollContainer";
+import ProductCard from "../../components/ProductCard/ProductCard";
+import ScrollContainer from "../../components/ScrollContainer/ScrollContainer";
+import { useCart } from "../../context/CartContext";
+import "./Home.css";
+
 
 const Home = () => {
   const location = useLocation();
