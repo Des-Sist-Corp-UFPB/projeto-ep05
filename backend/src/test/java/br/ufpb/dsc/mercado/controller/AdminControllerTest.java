@@ -5,6 +5,7 @@ import br.ufpb.dsc.mercado.domain.*;
 import br.ufpb.dsc.mercado.dto.CategoriaDTO;
 import br.ufpb.dsc.mercado.repository.PedidoRepository;
 import br.ufpb.dsc.mercado.service.*;
+import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -41,6 +42,7 @@ class AdminControllerTest {
     @Mock Model model;
     @Mock BindingResult bindingResult;
     @Mock Authentication auth;
+    @Mock HttpServletResponse response;
 
     private AdminController controller;
 
@@ -267,34 +269,53 @@ class AdminControllerTest {
 
         assertThat(view).isEqualTo("admin/fragments/form_cupom :: modal");
         verify(model).addAttribute(eq("cupom"), any(Cupom.class));
+        verify(model).addAttribute(eq("cupomId"), isNull());
         verify(model).addAttribute(eq("tipos"), eq(TipoCupom.values()));
     }
 
     @Test
-    @DisplayName("criarCupom com erros de validacao deve retornar formulario")
+    @DisplayName("editarCupomForm deve popular cupom existente e o id")
+    void editarCupomForm_devePopularModel() {
+        Cupom existente = new Cupom();
+        existente.setId(5L);
+        when(cupomService.buscarPorId(5L)).thenReturn(existente);
+
+        String view = controller.editarCupomForm(5L, model);
+
+        assertThat(view).isEqualTo("admin/fragments/form_cupom :: modal");
+        verify(model).addAttribute("cupom", existente);
+        verify(model).addAttribute("cupomId", 5L);
+        verify(model).addAttribute(eq("tipos"), eq(TipoCupom.values()));
+    }
+
+    @Test
+    @DisplayName("criarCupom com erros de validacao deve retornar formulario e redirecionar swap para o modal")
     void criarCupom_comErros_deveRetornarFormulario() {
         when(bindingResult.hasErrors()).thenReturn(true);
         Cupom cupom = new Cupom();
 
-        String view = controller.criarCupom(cupom, bindingResult, auth, model);
+        String view = controller.criarCupom(cupom, bindingResult, auth, model, response);
 
         assertThat(view).isEqualTo("admin/fragments/form_cupom :: modal");
         verify(cupomService, never()).criar(any());
+        verify(response).setHeader("HX-Retarget", "#modal-container");
+        verify(response).setHeader("HX-Reswap", "innerHTML");
     }
 
     @Test
-    @DisplayName("criarCupom com sucesso deve retornar linha e registrar auditoria")
-    void criarCupom_comSucesso_deveRetornarLinhaERegistrarAuditoria() {
+    @DisplayName("criarCupom com sucesso deve retornar a tabela atualizada e registrar auditoria")
+    void criarCupom_comSucesso_deveRetornarTabelaERegistrarAuditoria() {
         when(bindingResult.hasErrors()).thenReturn(false);
         Cupom criado = new Cupom();
         criado.setId(3L);
         criado.setCodigo("PROMO10");
         when(cupomService.criar(any())).thenReturn(criado);
+        when(cupomService.listar(any())).thenReturn(Page.empty());
 
-        String view = controller.criarCupom(new Cupom(), bindingResult, auth, model);
+        String view = controller.criarCupom(new Cupom(), bindingResult, auth, model, response);
 
-        assertThat(view).isEqualTo("admin/fragments/linha_cupom :: linha");
-        verify(model).addAttribute("cupom", criado);
+        assertThat(view).isEqualTo("admin/fragments/tabela_cupons :: tabela");
+        verify(model).addAttribute(eq("cupons"), any());
         verify(auditoriaService).registrarAdmin(eq("admin@teste.com"), eq("PRODUTO"), contains("PROMO10"), eq(3L));
     }
 
@@ -304,53 +325,62 @@ class AdminControllerTest {
         when(bindingResult.hasErrors()).thenReturn(false);
         when(cupomService.criar(any())).thenThrow(new IllegalArgumentException("Codigo ja existe"));
 
-        String view = controller.criarCupom(new Cupom(), bindingResult, auth, model);
+        String view = controller.criarCupom(new Cupom(), bindingResult, auth, model, response);
 
         assertThat(view).isEqualTo("admin/fragments/form_cupom :: modal");
         verify(bindingResult).rejectValue(eq("codigo"), anyString(), contains("Codigo ja existe"));
     }
 
     @Test
-    @DisplayName("alternarCupom com sucesso deve retornar 200 e registrar auditoria")
-    void alternarCupom_comSucesso_deveRetornar200() {
+    @DisplayName("atualizarCupom com sucesso deve retornar a tabela atualizada e registrar auditoria")
+    void atualizarCupom_comSucesso_deveRetornarTabelaERegistrarAuditoria() {
+        when(bindingResult.hasErrors()).thenReturn(false);
+        Cupom atualizado = new Cupom();
+        atualizado.setId(4L);
+        atualizado.setCodigo("PROMO20");
+        when(cupomService.atualizar(eq(4L), any())).thenReturn(atualizado);
+        when(cupomService.listar(any())).thenReturn(Page.empty());
+
+        String view = controller.atualizarCupom(4L, new Cupom(), bindingResult, auth, model, response);
+
+        assertThat(view).isEqualTo("admin/fragments/tabela_cupons :: tabela");
+        verify(auditoriaService).registrarAdmin(eq("admin@teste.com"), eq("PRODUTO"), contains("PROMO20"), eq(4L));
+    }
+
+    @Test
+    @DisplayName("atualizarCupom com erros de validacao deve retornar formulario e redirecionar swap para o modal")
+    void atualizarCupom_comErros_deveRetornarFormulario() {
+        when(bindingResult.hasErrors()).thenReturn(true);
+
+        String view = controller.atualizarCupom(4L, new Cupom(), bindingResult, auth, model, response);
+
+        assertThat(view).isEqualTo("admin/fragments/form_cupom :: modal");
+        verify(cupomService, never()).atualizar(any(), any());
+        verify(response).setHeader("HX-Retarget", "#modal-container");
+    }
+
+    @Test
+    @DisplayName("alternarCupom com sucesso deve retornar a tabela atualizada e registrar auditoria")
+    void alternarCupom_comSucesso_deveRetornarTabela() {
         doNothing().when(cupomService).alternarAtivo(1L);
+        when(cupomService.listar(any())).thenReturn(Page.empty());
 
-        ResponseEntity<?> resp = controller.alternarCupom(1L, auth);
+        String view = controller.alternarCupom(1L, auth, model);
 
-        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(view).isEqualTo("admin/fragments/tabela_cupons :: tabela");
         verify(auditoriaService).registrarAdmin(eq("admin@teste.com"), eq("PRODUTO"), anyString(), eq(1L));
     }
 
     @Test
-    @DisplayName("alternarCupom inexistente deve retornar 400")
-    void alternarCupom_inexistente_deveRetornar400() {
-        doThrow(new IllegalArgumentException("nao encontrado")).when(cupomService).alternarAtivo(99L);
-
-        ResponseEntity<?> resp = controller.alternarCupom(99L, auth);
-
-        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        assertThat(resp.getBody()).isEqualTo("nao encontrado");
-    }
-
-    @Test
-    @DisplayName("excluirCupom com sucesso deve retornar 200 e registrar auditoria")
-    void excluirCupom_comSucesso_deveRetornar200() {
+    @DisplayName("excluirCupom com sucesso deve retornar a tabela atualizada e registrar auditoria")
+    void excluirCupom_comSucesso_deveRetornarTabela() {
         doNothing().when(cupomService).excluir(2L);
+        when(cupomService.listar(any())).thenReturn(Page.empty());
 
-        ResponseEntity<Void> resp = controller.excluirCupom(2L, auth);
+        String view = controller.excluirCupom(2L, auth, model);
 
-        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(view).isEqualTo("admin/fragments/tabela_cupons :: tabela");
         verify(auditoriaService).registrarAdmin(eq("admin@teste.com"), eq("PRODUTO"), anyString(), eq(2L));
-    }
-
-    @Test
-    @DisplayName("excluirCupom inexistente deve retornar 404")
-    void excluirCupom_inexistente_deveRetornar404() {
-        doThrow(new IllegalArgumentException("nao encontrado")).when(cupomService).excluir(99L);
-
-        ResponseEntity<Void> resp = controller.excluirCupom(99L, auth);
-
-        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     // ── Clientes ───────────────────────────────────────────────────────────────

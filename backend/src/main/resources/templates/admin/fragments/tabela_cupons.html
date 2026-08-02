@@ -21,11 +21,11 @@
                 <td class="fw-semibold" th:text="${cupom.codigo}"></td>
                 <td>
                     <span class="badge"
-                          th:classappend="${cupom.tipo.name() == 'PERCENTUAL'} ? 'bg-info text-dark' : 'bg-secondary'"
-                          th:text="${cupom.tipo.name() == 'PERCENTUAL' ? 'Percentual' : 'Valor fixo'}">
+                          th:classappend="${cupom.tipo.name() == 'PORCENTAGEM'} ? 'bg-info text-dark' : 'bg-secondary'"
+                          th:text="${cupom.tipo.name() == 'PORCENTAGEM' ? 'Porcentagem' : 'Valor fixo'}">
                     </span>
                 </td>
-                <td th:text="${cupom.tipo.name() == 'PERCENTUAL'
+                <td th:text="${cupom.tipo.name() == 'PORCENTAGEM'
                     ? cupom.desconto + '%'
                     : 'R$ ' + #numbers.formatDecimal(cupom.desconto, 1, 'POINT', 2, 'COMMA')}">
                 </td>
@@ -36,6 +36,12 @@
                     <span th:if="${!cupom.ativo and !cupom.expirado}" class="badge bg-danger">Inativo</span>
                 </td>
                 <td class="text-end">
+                    <button class="btn btn-sm btn-outline-secondary me-1"
+                            th:hx-get="@{/admin/cupons/{id}/editar(id=${cupom.id})}"
+                            hx-target="#modal-container"
+                            hx-swap="innerHTML">
+                        Editar
+                    </button>
                     <button class="btn btn-sm btn-outline-warning me-1"
                             th:hx-post="@{/admin/cupons/{id}/alternar(id=${cupom.id})}"
                             hx-target="#tabela-cupons"

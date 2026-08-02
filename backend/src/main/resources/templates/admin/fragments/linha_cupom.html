@@ -5,11 +5,11 @@
     <td class="fw-semibold" th:text="${cupom.codigo}"></td>
     <td>
         <span class="badge"
-              th:classappend="${cupom.tipo.name() == 'PERCENTUAL'} ? 'bg-info text-dark' : 'bg-secondary'"
-              th:text="${cupom.tipo.name() == 'PERCENTUAL' ? 'Percentual' : 'Valor fixo'}">
+              th:classappend="${cupom.tipo.name() == 'PORCENTAGEM'} ? 'bg-info text-dark' : 'bg-secondary'"
+              th:text="${cupom.tipo.name() == 'PORCENTAGEM' ? 'Porcentagem' : 'Valor fixo'}">
         </span>
     </td>
-    <td th:text="${cupom.tipo.name() == 'PERCENTUAL'
+    <td th:text="${cupom.tipo.name() == 'PORCENTAGEM'
         ? cupom.desconto + '%'
         : 'R$ ' + #numbers.formatDecimal(cupom.desconto, 1, 'POINT', 2, 'COMMA')}">
     </td>

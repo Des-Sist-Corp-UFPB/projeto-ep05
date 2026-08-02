@@ -5,6 +5,7 @@ import br.ufpb.dsc.mercado.domain.*;
 import br.ufpb.dsc.mercado.dto.CategoriaDTO;
 import br.ufpb.dsc.mercado.repository.PedidoRepository;
 import br.ufpb.dsc.mercado.service.*;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.*;
 import org.springframework.http.ResponseEntity;
@@ -158,6 +159,16 @@ public class AdminController {
     @GetMapping("/cupons/novo")
     public String novoCupomForm(Model model) {
         model.addAttribute("cupom", new Cupom());
+        model.addAttribute("cupomId", null);
+        model.addAttribute("tipos", TipoCupom.values());
+        return "admin/fragments/form_cupom :: modal";
+    }
+
+    @GetMapping("/cupons/{id}/editar")
+    public String editarCupomForm(@PathVariable Long id, Model model) {
+        Cupom c = cupomService.buscarPorId(id);
+        model.addAttribute("cupom", c);
+        model.addAttribute("cupomId", id);
         model.addAttribute("tipos", TipoCupom.values());
         return "admin/fragments/form_cupom :: modal";
     }
@@ -167,48 +178,96 @@ public class AdminController {
             @Valid @ModelAttribute("cupom") Cupom cupom,
             BindingResult bindingResult,
             Authentication auth,
-            Model model) {
+            Model model,
+            HttpServletResponse response) {
         if (bindingResult.hasErrors()) {
+            model.addAttribute("cupomId", null);
             model.addAttribute("tipos", TipoCupom.values());
+            retargetParaModal(response);
             return "admin/fragments/form_cupom :: modal";
         }
         try {
             Cupom c = cupomService.criar(cupom);
             auditoriaService.registrarAdmin(atorEmail(auth), "PRODUTO",
                     "Criou cupom: " + c.getCodigo(), c.getId());
-            model.addAttribute("cupom", c);
-            return "admin/fragments/linha_cupom :: linha";
+            return listarCuponsFragmento(model);
         } catch (IllegalArgumentException e) {
             bindingResult.rejectValue("codigo", "error.form", e.getMessage());
+            model.addAttribute("cupomId", null);
             model.addAttribute("tipos", TipoCupom.values());
+            retargetParaModal(response);
+            return "admin/fragments/form_cupom :: modal";
+        }
+    }
+
+    @PutMapping("/cupons/{id}")
+    public String atualizarCupom(
+            @PathVariable Long id,
+            @Valid @ModelAttribute("cupom") Cupom cupom,
+            BindingResult bindingResult,
+            Authentication auth,
+            Model model,
+            HttpServletResponse response) {
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("cupomId", id);
+            model.addAttribute("tipos", TipoCupom.values());
+            retargetParaModal(response);
+            return "admin/fragments/form_cupom :: modal";
+        }
+        try {
+            Cupom c = cupomService.atualizar(id, cupom);
+            auditoriaService.registrarAdmin(atorEmail(auth), "PRODUTO",
+                    "Editou cupom ID " + id + ": " + c.getCodigo(), id);
+            return listarCuponsFragmento(model);
+        } catch (IllegalArgumentException e) {
+            bindingResult.rejectValue("codigo", "error.form", e.getMessage());
+            model.addAttribute("cupomId", id);
+            model.addAttribute("tipos", TipoCupom.values());
+            retargetParaModal(response);
             return "admin/fragments/form_cupom :: modal";
         }
     }
 
     @PostMapping("/cupons/{id}/alternar")
-    @ResponseBody
-    public ResponseEntity<?> alternarCupom(@PathVariable Long id, Authentication auth) {
-        try {
-            cupomService.alternarAtivo(id);
-            auditoriaService.registrarAdmin(atorEmail(auth), "PRODUTO",
-                    "Alternou status do cupom ID " + id, id);
-            return ResponseEntity.ok().build();
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    public String alternarCupom(@PathVariable Long id, Authentication auth, Model model) {
+        cupomService.alternarAtivo(id);
+        auditoriaService.registrarAdmin(atorEmail(auth), "PRODUTO",
+                "Alternou status do cupom ID " + id, id);
+        return listarCuponsFragmento(model);
     }
 
     @DeleteMapping("/cupons/{id}")
-    @ResponseBody
-    public ResponseEntity<Void> excluirCupom(@PathVariable Long id, Authentication auth) {
-        try {
-            cupomService.excluir(id);
-            auditoriaService.registrarAdmin(atorEmail(auth), "PRODUTO",
-                    "Excluiu cupom ID " + id, id);
-            return ResponseEntity.ok().build();
-        } catch (Exception e) {
-            return ResponseEntity.notFound().build();
-        }
+    public String excluirCupom(@PathVariable Long id, Authentication auth, Model model) {
+        cupomService.excluir(id);
+        auditoriaService.registrarAdmin(atorEmail(auth), "PRODUTO",
+                "Excluiu cupom ID " + id, id);
+        return listarCuponsFragmento(model);
+    }
+
+    /**
+     * Recarrega a primeira pagina da tabela de cupons e retorna o fragmento
+     * inteiro (nao apenas uma linha), ja que os botoes de acao usam
+     * hx-target="#tabela-cupons" com hx-swap="outerHTML". Retornar uma
+     * linha avulsa (ou corpo vazio) quebrava a tabela e dava a impressao
+     * de que a acao nao tinha funcionado.
+     */
+    private String listarCuponsFragmento(Model model) {
+        PageRequest pr = PageRequest.of(0, 10, Sort.by("codigo").ascending());
+        model.addAttribute("cupons", cupomService.listar(pr));
+        model.addAttribute("paginaAtual", 0);
+        return "admin/fragments/tabela_cupons :: tabela";
+    }
+
+    /**
+     * Redireciona o swap do htmx para o modal (em vez do alvo original,
+     * a tabela) quando a submissao do formulario falha por validacao.
+     * Sem isso, o listener global de htmx:beforeSwap em layout.html fecha
+     * o modal (por o alvo nao ser #modal-container) e o HTML do formulario
+     * de erro acaba sendo inserido dentro da tabela.
+     */
+    private void retargetParaModal(HttpServletResponse response) {
+        response.setHeader("HX-Retarget", "#modal-container");
+        response.setHeader("HX-Reswap", "innerHTML");
     }
 
     // === CLIENTES ===
