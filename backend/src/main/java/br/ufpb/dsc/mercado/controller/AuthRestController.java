@@ -2,6 +2,8 @@ package br.ufpb.dsc.mercado.controller;
 
 import java.util.Arrays;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -25,6 +27,8 @@ import jakarta.validation.Valid;
 @RestController
 @RequestMapping("/api/auth")
 public class AuthRestController {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthRestController.class);
 
     private final UsuarioService usuarioService;
     private final TokenProvider tokenProvider;
@@ -58,16 +62,25 @@ public class AuthRestController {
         try {
             usuario = usuarioService.buscarPorEmail(request.email());
         } catch (ApiException e) {
+            // Não logamos o e-mail digitado em tentativa falha para não
+            // confirmar/negar existência de contas em texto de log.
+            log.warn("Tentativa de login com e-mail não cadastrado");
             throw ApiException.naoAutorizado("E-mail ou senha inválidos");
         }
 
         if (usuario.getStatus() == StatusUsuario.BLOQUEADO) {
+            log.warn("Tentativa de login em conta bloqueada. usuario_id={}", usuario.getId());
             throw ApiException.proibido("Sua conta está bloqueada. Entre em contato com o suporte.");
         }
 
         if (!passwordEncoder.matches(request.senha(), usuario.getSenha())) {
+            log.warn("Tentativa de login com senha inválida. usuario_id={}", usuario.getId());
             throw ApiException.naoAutorizado("E-mail ou senha inválidos");
         }
+
+        // Log estruturado do evento de negócio "login realizado". Nunca inclui
+        // senha nem token — só identificadores úteis para auditoria/correlação.
+        log.info("Login realizado com sucesso. usuario_id={} papel={}", usuario.getId(), usuario.getPapel());
 
         return ResponseEntity.ok(buildLoginResponse(usuario));
     }

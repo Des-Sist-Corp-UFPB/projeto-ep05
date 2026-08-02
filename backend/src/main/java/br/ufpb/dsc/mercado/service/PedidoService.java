@@ -6,6 +6,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import java.util.Optional;
@@ -34,6 +37,8 @@ import com.mercadopago.resources.payment.Payment;
 @Service
 @Transactional(readOnly = true)
 public class PedidoService {
+
+    private static final Logger log = LoggerFactory.getLogger(PedidoService.class);
 
     private final PedidoRepository pedidoRepository;
     private final ProdutoRepository produtoRepository;
@@ -169,6 +174,19 @@ public class PedidoService {
         // Salva o pedido antes de cobrar para ter o ID disponivel na descricao
         Pedido pedidoSalvo = pedidoRepository.save(pedido);
 
+        // Log estruturado do evento de negócio "pedido criado". Os campos vão para
+        // o MDC, então além de aparecerem na mensagem, ficam disponíveis como
+        // atributos parseáveis no Loki (ex: | json | pedido_id="123").
+        MDC.put("pedido_id", String.valueOf(pedidoSalvo.getId()));
+        MDC.put("cliente_id", String.valueOf(clienteId));
+        try {
+            log.info("Pedido criado: pedido_id={} cliente_id={} total_geral={} qtd_itens={}",
+                    pedidoSalvo.getId(), clienteId, pedidoSalvo.getTotalGeral(), itens.size());
+        } finally {
+            MDC.remove("pedido_id");
+            MDC.remove("cliente_id");
+        }
+
         // Realiza a cobranca via Mercado Pago usando o token do cartao salvo
         try {
             Payment payment = mercadoPagoService.cobrarComToken(
@@ -187,7 +205,16 @@ public class PedidoService {
             if (msg.contains("Unauthorized use of live credentials") || msg.contains("unauthorized")) {
                 pedidoSalvo.setStatus(StatusPedido.PAGO);
             } else {
-                // Pagamento genuinamente recusado — cancela e devolve estoque
+                // Pagamento genuinamente recusado — cancela e devolve estoque.
+                // Log de erro tratado: nunca inclui o token do cartão, só o
+                // pedido_id (via MDC) e a mensagem de recusa já sem dados sensíveis.
+                MDC.put("pedido_id", String.valueOf(pedidoSalvo.getId()));
+                try {
+                    log.error("Pagamento recusado para pedido_id={}: {}", pedidoSalvo.getId(), msg, e);
+                } finally {
+                    MDC.remove("pedido_id");
+                }
+
                 pedidoSalvo.setStatus(StatusPedido.CANCELADO);
                 for (PedidoItem item : pedidoSalvo.getItens()) {
                     Produto produto = item.getProduto();
