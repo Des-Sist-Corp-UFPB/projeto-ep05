@@ -1,6 +1,7 @@
 package br.ufpb.dsc.mercado.config;
 
 import java.math.BigDecimal;
+import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
@@ -30,9 +31,15 @@ public class DatabaseSeeder implements CommandLineRunner {
     private final CupomRepository cupomRepository;
     private final PasswordEncoder passwordEncoder;
 
-    // ✅ Lido do .env — fallback "admin123" só é usado se a variável não estiver definida (dev local sem .env)
-    @Value("${app.seed.admin-password:admin123}")
+    // ✅ Lido do .env (APP_SEED_ADMIN_PASSWORD). NÃO há mais fallback fixo/adivinhável:
+    // se a variável não for definida, uma senha aleatória é gerada em runtime e impressa
+    // uma única vez no log de inicialização (ver método garantirSenha()).
+    @Value("${app.seed.admin-password:}")
     private String senhaDefault;
+
+    private static final String CARACTERES_SENHA =
+            "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
+    private static final SecureRandom RANDOM = new SecureRandom();
 
     public DatabaseSeeder(UsuarioRepository usuarioRepository,
                           CategoriaRepository categoriaRepository,
@@ -50,8 +57,10 @@ public class DatabaseSeeder implements CommandLineRunner {
     public void run(String... args) throws Exception {
         // 1. Semear Usuários se a tabela estiver vazia
         if (usuarioRepository.count() == 0) {
-            // ✅ Senha vem da variável de ambiente APP_SEED_ADMIN_PASSWORD
-            String senhaPadrao = passwordEncoder.encode(senhaDefault);
+            // ✅ Senha vem da variável de ambiente APP_SEED_ADMIN_PASSWORD.
+            // Se não estiver definida, geramos uma senha aleatória e a exibimos
+            // UMA vez no log — nunca mais um valor fixo tipo "admin123".
+            String senhaPadrao = passwordEncoder.encode(garantirSenha());
 
             Usuario sysadmin = new Usuario("SysAdmin Sweet Delights", "sysadmin@mercado.com", senhaPadrao, Papel.SYSADMIN);
             usuarioRepository.save(sysadmin);
@@ -111,5 +120,28 @@ public class DatabaseSeeder implements CommandLineRunner {
 
             System.out.println("=== BANCO DE DADOS SEMEADO COM CUPONS ===");
         }
+    }
+
+    /**
+     * Retorna a senha de seed configurada via APP_SEED_ADMIN_PASSWORD.
+     * Se não estiver definida, gera uma senha aleatória e a imprime no log
+     * (apenas nesta execução — não é persistida em texto puro em lugar nenhum).
+     */
+    private String garantirSenha() {
+        if (senhaDefault != null && !senhaDefault.isBlank()) {
+            return senhaDefault;
+        }
+        StringBuilder senha = new StringBuilder(16);
+        for (int i = 0; i < 16; i++) {
+            senha.append(CARACTERES_SENHA.charAt(RANDOM.nextInt(CARACTERES_SENHA.length())));
+        }
+        String senhaGerada = senha.toString();
+        System.out.println("=====================================================================");
+        System.out.println("ATENÇÃO: variável APP_SEED_ADMIN_PASSWORD não definida.");
+        System.out.println("Senha gerada automaticamente para admin/sysadmin/cliente de teste: " + senhaGerada);
+        System.out.println("Anote agora — não será exibida novamente. Defina APP_SEED_ADMIN_PASSWORD");
+        System.out.println("no seu .env para controlar essa senha manualmente.");
+        System.out.println("=====================================================================");
+        return senhaGerada;
     }
 }

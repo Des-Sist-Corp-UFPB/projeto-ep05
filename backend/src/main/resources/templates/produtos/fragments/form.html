@@ -143,11 +143,49 @@
                         <div class="mb-3">
                             <label for="imagensUrls" class="form-label fw-semibold">URLs das Imagens</label>
                             <textarea th:field="*{imagensUrls}"
+                                      id="imagensUrls"
                                       class="form-control"
                                       rows="2"
+                                      oninput="atualizarPreviewImagens(this.value)"
                                       placeholder="Insira as URLs das imagens separadas por vírgula ou por linha..."></textarea>
-                            <div class="form-text">Forneça links de imagens válidos (ex: Unsplash, Imgur, etc.).</div>
+                            <div class="form-text">Forneça links de imagens válidos (ex: Unsplash, Imgur, etc.). A primeira URL é usada como imagem principal do produto.</div>
+                            <div id="preview-imagens" class="d-flex flex-wrap gap-2 mt-2"></div>
                         </div>
+
+                        <script th:inline="none">
+                            function atualizarPreviewImagens(valor) {
+                                const container = document.getElementById('preview-imagens');
+                                container.innerHTML = '';
+                                if (!valor) return;
+                                const urls = valor.split(/[,\n]/).map(u => u.trim()).filter(u => u.length > 0);
+                                urls.forEach((url, idx) => {
+                                    const wrapper = document.createElement('div');
+                                    wrapper.className = 'position-relative';
+                                    const img = document.createElement('img');
+                                    img.src = url;
+                                    img.style.width = '64px';
+                                    img.style.height = '64px';
+                                    img.style.objectFit = 'cover';
+                                    img.className = 'rounded border';
+                                    if (idx === 0) img.title = 'Imagem principal';
+                                    img.onerror = function () {
+                                        wrapper.innerHTML = '<span class="d-flex align-items-center justify-content-center border rounded text-danger small" style="width:64px;height:64px;">URL inválida</span>';
+                                    };
+                                    wrapper.appendChild(img);
+                                    container.appendChild(wrapper);
+                                });
+                            }
+                            // Preenche o preview ao abrir o modal (ex.: ao editar um produto existente)
+                            document.addEventListener('DOMContentLoaded', function () {
+                                const campo = document.getElementById('imagensUrls');
+                                if (campo) atualizarPreviewImagens(campo.value);
+                            });
+                            // htmx troca o conteúdo do modal sem disparar DOMContentLoaded — cobrimos esse caso também
+                            document.body.addEventListener('htmx:afterSwap', function () {
+                                const campo = document.getElementById('imagensUrls');
+                                if (campo) atualizarPreviewImagens(campo.value);
+                            });
+                        </script>
 
                         <div th:if="${produto != null}" class="alert alert-light border small py-2 mb-0">
                             <div class="row">
