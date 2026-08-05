@@ -55,23 +55,41 @@ public class DatabaseSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        // 1. Semear Usuários se a tabela estiver vazia
-        if (usuarioRepository.count() == 0) {
-            // ✅ Senha vem da variável de ambiente APP_SEED_ADMIN_PASSWORD.
-            // Se não estiver definida, geramos uma senha aleatória e a exibimos
-            // UMA vez no log — nunca mais um valor fixo tipo "admin123".
+        // 1. Semear Usuários padrão — checagem por e-mail (não mais só "tabela vazia"),
+        // assim usuários novos adicionados aqui no futuro são criados no próximo
+        // restart mesmo que o banco já tenha dados, sem precisar apagar o volume.
+        // ✅ Senha vem da variável de ambiente APP_SEED_ADMIN_PASSWORD.
+        // Se não estiver definida, geramos uma senha aleatória e a exibimos
+        // UMA vez no log — nunca mais um valor fixo tipo "admin123".
+        boolean precisaSemearUsuario =
+                !usuarioRepository.existsByEmail("sysadmin@mercado.com") ||
+                !usuarioRepository.existsByEmail("admin@mercado.com") ||
+                !usuarioRepository.existsByEmail("cliente@mercado.com") ||
+                !usuarioRepository.existsByEmail("test@testuser.com");
+
+        if (precisaSemearUsuario) {
             String senhaPadrao = passwordEncoder.encode(garantirSenha());
 
-            Usuario sysadmin = new Usuario("SysAdmin Sweet Delights", "sysadmin@mercado.com", senhaPadrao, Papel.SYSADMIN);
-            usuarioRepository.save(sysadmin);
+            if (!usuarioRepository.existsByEmail("sysadmin@mercado.com")) {
+                usuarioRepository.save(new Usuario("SysAdmin Sweet Delights", "sysadmin@mercado.com", senhaPadrao, Papel.SYSADMIN));
+            }
 
-            Usuario admin = new Usuario("Admin Sweet Delights", "admin@mercado.com", senhaPadrao, Papel.ADMIN);
-            usuarioRepository.save(admin);
+            if (!usuarioRepository.existsByEmail("admin@mercado.com")) {
+                usuarioRepository.save(new Usuario("Admin Sweet Delights", "admin@mercado.com", senhaPadrao, Papel.ADMIN));
+            }
 
-            Usuario cliente = new Usuario("Cliente Teste", "cliente@mercado.com", senhaPadrao, Papel.CLIENTE);
-            usuarioRepository.save(cliente);
+            if (!usuarioRepository.existsByEmail("cliente@mercado.com")) {
+                usuarioRepository.save(new Usuario("Cliente Teste", "cliente@mercado.com", senhaPadrao, Papel.CLIENTE));
+            }
 
-            System.out.println("=== BANCO DE DADOS SEMEADO COM USUÁRIOS PADRÃO ===");
+            // ✅ Usuário de teste com o e-mail exigido pelo Mercado Pago para
+            // simular compras de teste com credenciais de produção (APP_USR-).
+            // Ver: https://www.mercadopago.com.br/developers/pt/docs/checkout-api-orders/integration-test/cards
+            if (!usuarioRepository.existsByEmail("test@testuser.com")) {
+                usuarioRepository.save(new Usuario("Comprador Teste MP", "test@testuser.com", senhaPadrao, Papel.CLIENTE));
+            }
+
+            System.out.println("=== USUÁRIOS PADRÃO SEMEADOS/ATUALIZADOS ===");
         }
 
         // 2. Semear Categorias e Produtos

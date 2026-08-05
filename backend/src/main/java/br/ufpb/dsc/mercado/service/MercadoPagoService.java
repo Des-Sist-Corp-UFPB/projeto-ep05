@@ -66,7 +66,6 @@ public class MercadoPagoService {
                     .token(token)
                     .description(descricao)
                     .installments(parcelas)
-                    .paymentMethodId("visa") // será detectado automaticamente pelo token
                     .payer(
                         PaymentPayerRequest.builder()
                             .email(emailPagador)

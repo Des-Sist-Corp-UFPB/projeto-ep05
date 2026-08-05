@@ -107,7 +107,7 @@ const Checkout = () => {
           card_number: dados.cardNumber.replace(/\s/g, ""),
           cardholder: {
             name: dados.name,
-            identification: { type: "CPF", number: "00000000000" },
+            identification: { type: "CPF", number: "12345678909" },
           },
           expiration_month: parseInt(mes, 10),
           expiration_year: parseInt(anoCompleto, 10),
