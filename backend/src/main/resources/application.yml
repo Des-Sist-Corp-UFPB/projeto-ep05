@@ -16,12 +16,6 @@ spring:
           starttls:
             enable: true
 
-app:
-  mail:
-    from: ${MAIL_FROM:no-reply@delightssweet.com}
-  frontend:
-    url: ${APP_FRONTEND_URL:http://localhost:5173}
-
   ai:
     mcp:
       server:
@@ -29,11 +23,17 @@ app:
           version: 0.0.1
     openai:
       base-url: https://llm.rodrigor.com
-      api-key: ${LLM_API_KEY}
+      api-key: ${LLM_API_KEY:sk-nao-configurada}
       chat:
         options:
-          model: ${LLM_MODEL}
+          model: ${LLM_MODEL:gpt-4o-mini}
           temperature: 0.3
+
+app:
+  mail:
+    from: ${MAIL_FROM:no-reply@delightssweet.com}
+  frontend:
+    url: ${APP_FRONTEND_URL:http://localhost:5173}
 
 # Actuator - monitoramento da aplicação
 # Acesse: http://localhost:8080/actuator/health
