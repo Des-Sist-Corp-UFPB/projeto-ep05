@@ -28,12 +28,13 @@ class RecuperacaoSenhaServiceTest {
     @Mock RecuperacaoSenhaRepository recuperacaoRepository;
     @Mock UsuarioRepository usuarioRepository;
     @Mock PasswordEncoder passwordEncoder;
+    @Mock EmailService emailService;
 
     private RecuperacaoSenhaService service;
 
     @BeforeEach
     void setUp() {
-        service = new RecuperacaoSenhaService(recuperacaoRepository, usuarioRepository, passwordEncoder);
+        service = new RecuperacaoSenhaService(recuperacaoRepository, usuarioRepository, passwordEncoder, emailService);
     }
 
     private Usuario usuarioComId(Long id) {
@@ -54,6 +55,7 @@ class RecuperacaoSenhaServiceTest {
         assertThat(token).doesNotContain("-"); // UUID sem hífens
         verify(recuperacaoRepository).invalidarTokensDoUsuario(1L);
         verify(recuperacaoRepository).save(any(RecuperacaoSenha.class));
+        verify(emailService).enviarEmailRecuperacaoSenha("ana@teste.com", token);
     }
 
     @Test
@@ -66,6 +68,7 @@ class RecuperacaoSenhaServiceTest {
         assertThat(token).isNull();
         verify(recuperacaoRepository, never()).invalidarTokensDoUsuario(any());
         verify(recuperacaoRepository, never()).save(any());
+        verify(emailService, never()).enviarEmailRecuperacaoSenha(any(), any());
     }
 
     @Test
