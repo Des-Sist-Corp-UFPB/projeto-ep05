@@ -19,13 +19,16 @@ public class RecuperacaoSenhaService {
     private final RecuperacaoSenhaRepository recuperacaoRepository;
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
 
     public RecuperacaoSenhaService(RecuperacaoSenhaRepository recuperacaoRepository,
                                    UsuarioRepository usuarioRepository,
-                                   PasswordEncoder passwordEncoder) {
+                                   PasswordEncoder passwordEncoder,
+                                   EmailService emailService) {
         this.recuperacaoRepository = recuperacaoRepository;
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
+        this.emailService = emailService;
     }
 
     @Transactional
@@ -43,8 +46,10 @@ public class RecuperacaoSenhaService {
 
         recuperacaoRepository.save(new RecuperacaoSenha(usuario, token, expiraEm));
 
-        // Em produção, aqui enviaria o e-mail com o token
-        // Por enquanto retorna o token para exibir em dev
+        emailService.enviarEmailRecuperacaoSenha(usuario.getEmail(), token);
+
+        // Token continua retornado só para uso interno (ex.: exibir em logs/dev
+        // via profile). O e-mail já foi enviado de verdade acima.
         return token;
     }
 
