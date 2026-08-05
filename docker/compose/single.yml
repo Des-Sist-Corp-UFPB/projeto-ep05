@@ -25,6 +25,10 @@
 #   APP_SEED_ADMIN_PASSWORD=<senha-admin>
 #   MERCADOPAGO_ACCESS_TOKEN=<chave-live-APP_USR-...>
 #   VITE_MP_PUBLIC_KEY=<chave-publica-mercado-pago>
+#   MAIL_HOST / MAIL_PORT / MAIL_USERNAME / MAIL_PASSWORD / MAIL_FROM
+#     (SMTP para envio do e-mail de recuperação de senha)
+#   APP_FRONTEND_URL=https://eq05.dsc.rodrigor.com
+#     (usada para montar o link dentro do e-mail de recuperação de senha)
 #   OTEL_EXPORTER_OTLP_HEADERS=Authorization=Bearer <token-otel-da-turma>
 #     (distribuído pelo Discord da disciplina — NUNCA commitar; sem ele a
 #     ingestão no servidor central de observabilidade responde 401)
@@ -69,6 +73,12 @@ services:
       APP_SEED_ADMIN_PASSWORD: ${APP_SEED_ADMIN_PASSWORD}
       MERCADOPAGO_ACCESS_TOKEN: ${MERCADOPAGO_ACCESS_TOKEN}
       APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS}
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      MAIL_FROM: ${MAIL_FROM:-no-reply@delightssweet.com}
+      APP_FRONTEND_URL: ${APP_FRONTEND_URL}
       # Observabilidade (OpenTelemetry -> Grafana da turma). Só o token é
       # segredo — service.name/endpoint/protocolo/exporters já vêm com
       # default certo direto do Dockerfile (docker/single/Dockerfile).
