@@ -2,6 +2,7 @@
 <html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
 <body>
 <div th:fragment="tabela" id="tabela-clientes">
+    <div th:if="${erroClientes != null}" class="alert alert-danger py-2 mb-3" th:text="${erroClientes}"></div>
     <table class="table table-hover align-middle mb-0">
         <thead class="table-light">
             <tr>

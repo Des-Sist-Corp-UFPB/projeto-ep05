@@ -11,7 +11,13 @@
             <h1 class="h3 mb-1 fw-bold">Logs &amp; Auditoria</h1>
             <p class="text-muted mb-0">Histórico de ações de Admins e Clientes</p>
         </div>
-        <span class="badge bg-secondary px-3 py-2">Somente leitura</span>
+        <button type="button" class="btn btn-outline-danger"
+                hx-post="/sysadmin/logs/limpar"
+                hx-target="#tabela-logs"
+                hx-swap="innerHTML"
+                hx-confirm="Isso vai apagar PERMANENTEMENTE todo o histórico de logs de auditoria. Esta ação não pode ser desfeita. Deseja continuar?">
+            🗑️ Limpar Logs
+        </button>
     </div>
 
     <!-- Filtros -->
@@ -45,7 +51,7 @@
                 </div>
                 <div class="col-md-3 d-flex gap-2">
                     <button type="submit" class="btn btn-primary w-100">Filtrar</button>
-                    <a href="/sysadmin/logs" class="btn btn-outline-secondary w-100">Limpar</a>
+                    <a href="/sysadmin/logs" class="btn btn-outline-secondary w-100">Limpar filtros</a>
                 </div>
             </form>
         </div>

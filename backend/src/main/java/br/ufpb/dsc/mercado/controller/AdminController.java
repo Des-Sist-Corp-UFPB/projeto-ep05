@@ -97,8 +97,7 @@ public class AdminController {
             Categoria c = categoriaService.criar(form);
             auditoriaService.registrarAdmin(atorEmail(auth), "PRODUTO",
                     "Criou categoria: " + c.getNome(), c.getId());
-            model.addAttribute("categoria", c);
-            return "admin/fragments/linha_categoria :: linha";
+            return recarregarTabelaCategorias(0, model);
         } catch (IllegalArgumentException e) {
             bindingResult.rejectValue("nome", "error.form", e.getMessage());
             model.addAttribute("categoria", null);
@@ -121,8 +120,7 @@ public class AdminController {
             Categoria c = categoriaService.atualizar(id, form);
             auditoriaService.registrarAdmin(atorEmail(auth), "PRODUTO",
                     "Atualizou categoria ID " + id + ": " + c.getNome(), id);
-            model.addAttribute("categoria", c);
-            return "admin/fragments/linha_categoria :: linha";
+            return recarregarTabelaCategorias(0, model);
         } catch (IllegalArgumentException e) {
             bindingResult.rejectValue("nome", "error.form", e.getMessage());
             model.addAttribute("categoria", categoriaService.buscarPorId(id));
@@ -131,16 +129,22 @@ public class AdminController {
     }
 
     @DeleteMapping("/categorias/{id}")
-    @ResponseBody
-    public ResponseEntity<Void> excluirCategoria(@PathVariable Long id, Authentication auth) {
+    public String excluirCategoria(@PathVariable Long id, Authentication auth, Model model) {
         try {
             categoriaService.excluir(id);
             auditoriaService.registrarAdmin(atorEmail(auth), "PRODUTO",
                     "Excluiu categoria ID " + id, id);
-            return ResponseEntity.ok().build();
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.notFound().build();
+        } catch (IllegalArgumentException ignored) {
+            // categoria já não existe mais; segue para recarregar a tabela normalmente
         }
+        return recarregarTabelaCategorias(0, model);
+    }
+
+    private String recarregarTabelaCategorias(int pagina, Model model) {
+        PageRequest pr = PageRequest.of(pagina, 10, Sort.by("nome").ascending());
+        model.addAttribute("categorias", categoriaService.listar(pr));
+        model.addAttribute("paginaAtual", pagina);
+        return "admin/fragments/tabela_categorias :: tabela";
     }
 
     // === CUPONS ===
@@ -286,17 +290,41 @@ public class AdminController {
     }
 
     @PostMapping("/clientes/{id}/bloquear")
-    @ResponseBody
-    public ResponseEntity<?> bloquearCliente(@PathVariable Long id, Authentication auth) {
+    public String bloquearCliente(@PathVariable Long id, Authentication auth, Model model) {
         try {
             Usuario alvo = usuarioService.buscarPorId(id);
             StatusUsuario novoStatus = usuarioService.alternarStatus(id);
             auditoriaService.registrarAdmin(atorEmail(auth), "USER_MGMT",
                     "Alterou status do cliente " + alvo.getEmail() + " → " + novoStatus.name(), id);
-            return ResponseEntity.ok().build();
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (IllegalArgumentException ignored) {
+            // cliente já não existe mais; segue para recarregar a tabela normalmente
         }
+        return recarregarTabelaClientes("", 0, model);
+    }
+
+    @DeleteMapping("/clientes/{id}")
+    public String excluirCliente(@PathVariable Long id, Authentication auth, Model model) {
+        try {
+            Usuario alvo = usuarioService.buscarPorId(id);
+            String email = alvo.getEmail();
+            usuarioService.excluirConta(id);
+            auditoriaService.registrarAdmin(atorEmail(auth), "USER_MGMT",
+                    "Excluiu cliente " + email, id);
+        } catch (IllegalArgumentException ignored) {
+            // cliente já não existe mais; segue para recarregar a tabela normalmente
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            model.addAttribute("erroClientes",
+                    "Não é possível excluir este cliente pois ele possui pedidos registrados. Bloqueie-o em vez de excluir.");
+        }
+        return recarregarTabelaClientes("", 0, model);
+    }
+
+    private String recarregarTabelaClientes(String busca, int pagina, Model model) {
+        PageRequest pr = PageRequest.of(pagina, 10, Sort.by("nome").ascending());
+        model.addAttribute("clientes", usuarioService.listarPorPapel(Papel.CLIENTE, busca, pr));
+        model.addAttribute("busca", busca);
+        model.addAttribute("paginaAtual", pagina);
+        return "admin/fragments/tabela_clientes :: tabela";
     }
 
     // === PEDIDOS ===

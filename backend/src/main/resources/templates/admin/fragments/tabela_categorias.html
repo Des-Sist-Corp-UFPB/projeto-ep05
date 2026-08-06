@@ -15,7 +15,7 @@
             <tr th:if="${categorias == null or categorias.isEmpty()}">
                 <td colspan="4" class="text-center text-muted py-4">Nenhuma categoria cadastrada.</td>
             </tr>
-            <tr th:each="cat : ${categorias}">
+            <tr th:each="cat : ${categorias}" th:id="'linha-cat-' + ${cat.id}">
                 <td th:text="${cat.id}"></td>
                 <td class="fw-semibold" th:text="${cat.nome}"></td>
                 <td class="text-muted" th:text="${cat.descricao != null ? cat.descricao : '—'}"></td>
@@ -29,7 +29,7 @@
                     <button class="btn btn-sm btn-outline-danger"
                             th:hx-delete="@{/admin/categorias/{id}(id=${cat.id})}"
                             hx-confirm="Excluir esta categoria?"
-                            th:hx-target="'#linha-cat-' + ${cat.id}"
+                            hx-target="#tabela-categorias"
                             hx-swap="outerHTML">
                         Excluir
                     </button>

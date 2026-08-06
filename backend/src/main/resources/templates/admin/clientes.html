@@ -43,9 +43,7 @@
                 </div>
             </div>
 
-            <div id="tabela-clientes">
-                <th:block th:insert="~{admin/fragments/tabela_clientes :: tabela}"></th:block>
-            </div>
+            <th:block th:replace="~{admin/fragments/tabela_clientes :: tabela}"></th:block>
 
         </div>
     </div>

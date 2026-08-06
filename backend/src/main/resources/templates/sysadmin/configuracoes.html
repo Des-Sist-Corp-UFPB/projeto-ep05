@@ -13,24 +13,30 @@
         </div>
     </div>
 
+    <div class="alert alert-success" th:if="${salvoComSucesso}">
+        ✅ Informações da loja atualizadas com sucesso.
+    </div>
+
     <div class="row g-4">
         <div class="col-md-6">
-            <div class="card h-100">
-                <div class="card-header fw-semibold">🏪 Informações da loja</div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <label class="form-label small text-muted">Nome da plataforma</label>
-                        <input type="text" class="form-control" value="Sweet Delights Manager" disabled/>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small text-muted">E-mail de contato</label>
-                        <input type="email" class="form-control" value="contato@sweetdelights.com" disabled/>
-                    </div>
-                    <div class="alert alert-info small mb-0">
-                        ℹ️ Configurações dinâmicas serão implementadas em versão futura.
+            <form method="post" th:action="@{/sysadmin/configuracoes}">
+                <div class="card h-100">
+                    <div class="card-header fw-semibold">🏪 Informações da loja</div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label small text-muted">Nome da plataforma</label>
+                            <input type="text" name="nomePlataforma" class="form-control"
+                                   th:value="${nomePlataforma}" required maxlength="100"/>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small text-muted">E-mail de contato</label>
+                            <input type="email" name="emailContato" class="form-control"
+                                   th:value="${emailContato}" required maxlength="150"/>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm">Salvar alterações</button>
                     </div>
                 </div>
-            </div>
+            </form>
         </div>
 
         <div class="col-md-6">
@@ -39,14 +45,14 @@
                 <div class="card-body">
                     <div class="mb-3">
                         <label class="form-label small text-muted">Força mínima de senha</label>
-                        <input type="text" class="form-control" value="6 caracteres (BCrypt strength 12)" disabled/>
+                        <input type="text" class="form-control" value="8 caracteres (validação no cadastro)" disabled/>
                     </div>
                     <div class="mb-3">
                         <label class="form-label small text-muted">JWT Token TTL</label>
                         <input type="text" class="form-control" value="24 horas" disabled/>
                     </div>
                     <div class="alert alert-warning small mb-0">
-                        ⚠️ Altere as configurações de segurança com cautela.
+                        ⚠️ Parâmetros técnicos definidos na configuração do servidor — não são editáveis por aqui para evitar quebrar login e validação de senha em produção.
                     </div>
                 </div>
             </div>

@@ -122,4 +122,16 @@ public class AuditoriaService {
 
         return repository.filtrar(papelFiltro, atorFiltro, desde, pageable);
     }
+
+    // ── Manutenção ────────────────────────────────────────────────────────────
+
+    /**
+     * Apaga todos os registros de auditoria. Ação destrutiva e irreversível,
+     * disponível apenas para SYSADMIN. Roda fora da transação principal para
+     * garantir que o próprio registro do evento "limpeza" seja salvo depois.
+     */
+    @Transactional
+    public void limparTudo() {
+        repository.deleteAllInBatch();
+    }
 }

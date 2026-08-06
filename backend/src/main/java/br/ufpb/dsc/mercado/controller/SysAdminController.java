@@ -10,6 +10,7 @@ import br.ufpb.dsc.mercado.dto.EditarAdminRequest;
 import br.ufpb.dsc.mercado.exception.ApiException;
 import br.ufpb.dsc.mercado.repository.PedidoRepository;
 import br.ufpb.dsc.mercado.repository.ProdutoRepository;
+import br.ufpb.dsc.mercado.service.ConfiguracaoService;
 import br.ufpb.dsc.mercado.service.PedidoService;
 import br.ufpb.dsc.mercado.service.UsuarioService;
 import jakarta.validation.Valid;
@@ -33,18 +34,21 @@ public class SysAdminController {
     private final PedidoRepository pedidoRepository;
     private final PedidoService pedidoService;
     private final AuditoriaService auditoriaService;
+    private final ConfiguracaoService configuracaoService;
 
     @SuppressWarnings("EI_EXPOSE_REP2")
     public SysAdminController(UsuarioService usuarioService,
                               ProdutoRepository produtoRepository,
                               PedidoRepository pedidoRepository,
                               PedidoService pedidoService,
-                              AuditoriaService auditoriaService) {
+                              AuditoriaService auditoriaService,
+                              ConfiguracaoService configuracaoService) {
         this.usuarioService = usuarioService;
         this.produtoRepository = produtoRepository;
         this.pedidoRepository = pedidoRepository;
         this.pedidoService = pedidoService;
         this.auditoriaService = auditoriaService;
+        this.configuracaoService = configuracaoService;
     }
 
     // ── Dashboard ─────────────────────────────────────────────────────────────
@@ -237,8 +241,53 @@ public class SysAdminController {
         return "sysadmin/logs";
     }
 
+    @PostMapping("/logs/limpar")
+    public String limparLogs(Authentication auth, Model model) {
+        auditoriaService.limparTudo();
+        // Registrada após a limpeza, para que fique evidente quem/quando limpou o histórico.
+        auditoriaService.registrarSysAdmin(
+                atorEmail(auth),
+                "SYSTEM",
+                "Limpou todo o histórico de logs de auditoria",
+                null);
+
+        PageRequest pr = PageRequest.of(0, 25);
+        Page<LogAuditoria> logs = auditoriaService.listar(null, null, null, pr);
+
+        model.addAttribute("logs", logs);
+        model.addAttribute("filtroPapel", null);
+        model.addAttribute("filtroAtor", null);
+        model.addAttribute("filtroDias", null);
+        model.addAttribute("paginaAtual", 0);
+        return "sysadmin/fragments/tabela_logs :: tabela";
+    }
+
     @GetMapping("/configuracoes")
-    public String configuracoes() {
+    public String configuracoes(Model model) {
+        model.addAttribute("nomePlataforma", configuracaoService.obterNomePlataforma());
+        model.addAttribute("emailContato", configuracaoService.obterEmailContato());
+        return "sysadmin/configuracoes";
+    }
+
+    @PostMapping("/configuracoes")
+    public String salvarConfiguracoes(
+            @RequestParam String nomePlataforma,
+            @RequestParam String emailContato,
+            Authentication auth,
+            Model model) {
+
+        configuracaoService.salvar(ConfiguracaoService.CHAVE_NOME_PLATAFORMA, nomePlataforma);
+        configuracaoService.salvar(ConfiguracaoService.CHAVE_EMAIL_CONTATO, emailContato);
+
+        auditoriaService.registrarSysAdmin(
+                atorEmail(auth),
+                "SYSTEM",
+                "Atualizou as informações da loja (nome/e-mail de contato)",
+                null);
+
+        model.addAttribute("nomePlataforma", configuracaoService.obterNomePlataforma());
+        model.addAttribute("emailContato", configuracaoService.obterEmailContato());
+        model.addAttribute("salvoComSucesso", true);
         return "sysadmin/configuracoes";
     }
 

@@ -219,24 +219,25 @@ class AdminControllerTest {
     }
 
     @Test
-    @DisplayName("excluirCategoria com sucesso deve retornar 200 e registrar auditoria")
+    @DisplayName("excluirCategoria com sucesso deve retornar a tabela atualizada e registrar auditoria")
     void excluirCategoria_comSucesso_deveRetornar200() {
         doNothing().when(categoriaService).excluir(1L);
 
-        ResponseEntity<Void> resp = controller.excluirCategoria(1L, auth);
+        String view = controller.excluirCategoria(1L, auth, model);
 
-        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(view).isEqualTo("admin/fragments/tabela_categorias :: tabela");
         verify(auditoriaService).registrarAdmin(eq("admin@teste.com"), eq("PRODUTO"), anyString(), eq(1L));
     }
 
     @Test
-    @DisplayName("excluirCategoria inexistente deve retornar 404")
+    @DisplayName("excluirCategoria inexistente deve recarregar a tabela mesmo assim")
     void excluirCategoria_inexistente_deveRetornar404() {
         doThrow(new IllegalArgumentException("nao encontrada")).when(categoriaService).excluir(99L);
 
-        ResponseEntity<Void> resp = controller.excluirCategoria(99L, auth);
+        String view = controller.excluirCategoria(99L, auth, model);
 
-        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(view).isEqualTo("admin/fragments/tabela_categorias :: tabela");
+        verify(auditoriaService, never()).registrarAdmin(anyString(), anyString(), anyString(), eq(99L));
     }
 
     // ── Cupons ─────────────────────────────────────────────────────────────────
@@ -408,27 +409,28 @@ class AdminControllerTest {
     }
 
     @Test
-    @DisplayName("bloquearCliente com sucesso deve retornar 200 e registrar auditoria")
+    @DisplayName("bloquearCliente com sucesso deve retornar a tabela atualizada e registrar auditoria")
     void bloquearCliente_comSucesso_deveRetornar200() {
         Usuario alvo = new Usuario();
         alvo.setEmail("cliente@teste.com");
         when(usuarioService.buscarPorId(1L)).thenReturn(alvo);
         when(usuarioService.alternarStatus(1L)).thenReturn(StatusUsuario.BLOQUEADO);
 
-        ResponseEntity<?> resp = controller.bloquearCliente(1L, auth);
+        String view = controller.bloquearCliente(1L, auth, model);
 
-        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(view).isEqualTo("admin/fragments/tabela_clientes :: tabela");
         verify(auditoriaService).registrarAdmin(eq("admin@teste.com"), eq("USER_MGMT"), anyString(), eq(1L));
     }
 
     @Test
-    @DisplayName("bloquearCliente com usuario nao encontrado deve retornar 400")
+    @DisplayName("bloquearCliente com usuario nao encontrado deve recarregar a tabela mesmo assim")
     void bloquearCliente_naoEncontrado_deveRetornar400() {
         when(usuarioService.buscarPorId(99L)).thenThrow(new IllegalArgumentException("nao encontrado"));
 
-        ResponseEntity<?> resp = controller.bloquearCliente(99L, auth);
+        String view = controller.bloquearCliente(99L, auth, model);
 
-        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(view).isEqualTo("admin/fragments/tabela_clientes :: tabela");
+        verify(auditoriaService, never()).registrarAdmin(anyString(), anyString(), anyString(), eq(99L));
     }
 
     // ── Pedidos ────────────────────────────────────────────────────────────────
