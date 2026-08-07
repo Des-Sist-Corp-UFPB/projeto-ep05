@@ -342,3 +342,9 @@ API key ou token por requisição), já que hoje qualquer chamador pode invocar
 | Cliente   | React (frontend-cliente) | `/`         |
 | Admin     | Thymeleaf (backend)      | `/admin`    |
 | SysAdmin  | Thymeleaf (backend)      | `/sysadmin` |
+
+
+
+
+## Video avaliativo sobre o projeto
+https://drive.google.com/drive/folders/1i3aW3EhCtLvb_NjOYLeIWRM7_0-rWzPE?usp=sharing
