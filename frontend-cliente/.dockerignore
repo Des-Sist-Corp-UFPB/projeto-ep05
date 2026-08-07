@@ -1,0 +1,18 @@
+# Não copiar para o contexto Docker (reduz tamanho do build)
+.git
+.gitignore
+*.md
+.DS_Store
+.vscode/
+.idea/
+
+# Dependências — reinstaladas no build pelo `npm ci`
+node_modules/
+
+# Outputs de build e testes — não devem entrar na imagem
+dist/
+coverage/
+
+# Variáveis de ambiente locais
+.env.local
+.env.*.local

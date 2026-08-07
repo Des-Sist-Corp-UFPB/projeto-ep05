@@ -1,0 +1,127 @@
+/* Details.css */
+
+.details-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Reduzido o padding lateral para telas menores */
+  padding: var(--esp-lg) var(--esp-md); 
+  min-height: 100dvh; /* Altura dinâmica para mobile */
+  background-color: var(--cor-fundo);
+  box-sizing: border-box;
+}
+
+/* Container principal */
+.details-container {
+  display: flex;
+  gap: var(--esp-xl);
+  width: 100%;
+  max-width: 1000px;
+  margin: 20px auto 0;
+}
+
+.details-image {
+  flex: 1;
+  max-width: 450px;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  background-color: #fff;
+  /* Garante que a imagem não fique gigante se o texto for pequeno */
+  height: fit-content; 
+}
+
+.details-image img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1; /* Mantém a imagem quadrada e organizada */
+  object-fit: cover;
+  display: block;
+}
+
+.details-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--esp-sm); /* Reduzido o gap para caber mais info */
+}
+
+.details-info h1 {
+  color: var(--cor-secundaria);
+  font-size: 2.2rem; /* Levemente reduzido para não quebrar linha agressiva */
+  font-weight: var(--peso-bold);
+  margin: 0;
+}
+
+.details-description {
+  color: var(--cor-texto-3);
+  font-size: var(--font-md);
+  line-height: 1.5;
+}
+
+.details-meta {
+  display: flex;
+  flex-wrap: wrap; /* Permite que as tags quebrem linha se necessário */
+  justify-content: center;
+  gap: var(--esp-sm);
+  color: var(--cor-backgroundDetails);
+  font-weight: var(--peso-semi);
+  font-size: var(--font-sm);
+}
+
+.details-price {
+  font-size: 1.8rem;
+  color: var(--cor-texto-3);
+  font-weight: var(--peso-bold);
+  margin: var(--esp-xs) 0;
+}
+
+/* --- AJUSTE PARA 375px até 768px --- */
+@media (max-width: 768px) {
+  .details-page {
+    padding: var(--esp-md);
+  }
+
+  .details-container {
+    flex-direction: column;
+    align-items: center;
+    gap: var(--esp-md);
+    margin-top: 10px;
+  }
+
+  .details-image {
+    max-width: 320px; /* Limita a imagem no mobile para sobrar espaço pro texto */
+    width: 100%;
+  }
+
+  .details-info {
+    text-align: center;
+    align-items: center;
+    width: 100%;
+  }
+
+  .details-info h1 {
+    font-size: 1.8rem;
+  }
+
+  .details-description {
+    font-size: var(--font-sm);
+    padding: 0 10px; /* Evita o texto colar nas bordas */
+  }
+}
+
+/* --- AJUSTE FINO PARA TELAS PEQUENAS (375px e menores) --- */
+@media (max-width: 375px) {
+  .details-image {
+    max-width: 260px; /* Reduz ainda mais a imagem para caber tudo na vertical sem scroll */
+  }
+
+  .details-info h1 {
+    font-size: 1.5rem;
+  }
+
+  .details-price {
+    font-size: 1.6rem;
+  }
+}

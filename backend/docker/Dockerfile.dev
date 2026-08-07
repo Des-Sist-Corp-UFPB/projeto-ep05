@@ -1,0 +1,46 @@
+# =============================================================================
+# Dockerfile de DESENVOLVIMENTO
+# =============================================================================
+# Objetivo: ambiente de desenvolvimento com hot-reload via Spring DevTools.
+# O código-fonte é montado como volume — alterações em .java relançam a app.
+#
+# Como usar:
+#   docker compose -f docker/compose/dev.yml up
+#
+# ATENÇÃO: Esta imagem contém o JDK completo e ferramentas de build.
+#          NUNCA use em produção.
+# =============================================================================
+
+FROM maven:3.9.9-eclipse-temurin-21 AS dev
+
+WORKDIR /app
+
+# Copiar apenas o pom.xml primeiro para aproveitar o cache de dependências.
+# Se o pom.xml não mudar, o Docker reutiliza a camada de "mvn dependency:go-offline".
+COPY pom.xml .
+RUN mvn dependency:go-offline -B
+
+# Agente Java do OpenTelemetry (observabilidade — traces, métricas e logs).
+# Em dev também é útil: dá pra ver os próprios traces no Grafana da turma
+# enquanto se desenvolve. JAVA_TOOL_OPTIONS é lido automaticamente pela JVM
+# que o `mvn spring-boot:run` sobe, sem precisar mexer no comando abaixo.
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates && \
+    rm -rf /var/lib/apt/lists/* && \
+    curl -L -o /opt/otel-javaagent.jar \
+    https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/latest/download/opentelemetry-javaagent.jar
+ENV JAVA_TOOL_OPTIONS="-javaagent:/opt/otel-javaagent.jar"
+ENV OTEL_SERVICE_NAME="dsc-eq05"
+ENV OTEL_EXPORTER_OTLP_ENDPOINT="https://otel.dsc.rodrigor.com"
+ENV OTEL_EXPORTER_OTLP_PROTOCOL="http/protobuf"
+ENV OTEL_TRACES_EXPORTER="otlp"
+ENV OTEL_METRICS_EXPORTER="otlp"
+ENV OTEL_LOGS_EXPORTER="otlp"
+
+# O restante do código-fonte é montado via volume no docker-compose.
+# Isso permite hot-reload sem reconstruir a imagem.
+
+EXPOSE 8080
+
+# O perfil "dev" já vem de SPRING_PROFILES_ACTIVE definido no docker-compose.
+# Não repetir via jvmArguments evita conflito e mantém uma única fonte de verdade.
+CMD ["mvn", "spring-boot:run"]

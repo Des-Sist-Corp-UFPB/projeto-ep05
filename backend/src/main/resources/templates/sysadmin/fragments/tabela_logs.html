@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="tabela">
+
+    <div class="card">
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th style="width:160px">Data/Hora</th>
+                        <th style="width:100px">Papel</th>
+                        <th style="width:200px">Ator</th>
+                        <th style="width:110px">Categoria</th>
+                        <th>Descrição</th>
+                        <th style="width:90px">Resultado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${logs == null or logs.empty}">
+                        <td colspan="6" class="text-center text-muted py-5">Nenhum log encontrado.</td>
+                    </tr>
+                    <tr th:each="log : ${logs.content}">
+                        <td class="small text-muted text-nowrap"
+                            th:text="${#temporals.format(log.criadoEm.atZone(T(java.time.ZoneId).of('America/Sao_Paulo')).toLocalDateTime(), 'dd/MM/yyyy HH:mm:ss')}">
+                        </td>
+                        <td>
+                            <span th:switch="${log.papelAtor}">
+                                <span th:case="'SYSADMIN'" class="badge bg-warning text-dark">SYSADMIN</span>
+                                <span th:case="'ADMIN'"    class="badge bg-primary">ADMIN</span>
+                                <span th:case="'CLIENTE'"  class="badge bg-info text-dark">CLIENTE</span>
+                                <span th:case="*"          class="badge bg-secondary">SYSTEM</span>
+                            </span>
+                        </td>
+                        <td class="small text-truncate" style="max-width:200px" th:text="${log.ator}"></td>
+                        <td><span class="badge bg-light text-dark border" th:text="${log.categoria}"></span></td>
+                        <td class="small" th:text="${log.descricao}"></td>
+                        <td>
+                            <span th:if="${log.resultado == 'SUCCESS'}" class="badge bg-success">OK</span>
+                            <span th:if="${log.resultado != 'SUCCESS'}" class="badge bg-danger">FALHA</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginação -->
+        <div class="card-footer d-flex justify-content-between align-items-center"
+             th:if="${logs != null and logs.totalPages > 1}">
+            <span class="small text-muted"
+                  th:text="${'Mostrando ' + (logs.number * logs.size + 1) + '–' +
+                             #numbers.formatInteger(#lists.size(logs.content) + logs.number * logs.size, 1) +
+                             ' de ' + logs.totalElements + ' registros'}">
+            </span>
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item" th:classappend="${logs.first} ? 'disabled'">
+                        <a class="page-link"
+                           th:href="@{/sysadmin/logs(pagina=${logs.number - 1}, papel=${filtroPapel}, ator=${filtroAtor}, dias=${filtroDias})}">
+                            &laquo;
+                        </a>
+                    </li>
+                    <li class="page-item active">
+                        <span class="page-link" th:text="${logs.number + 1}"></span>
+                    </li>
+                    <li class="page-item" th:classappend="${logs.last} ? 'disabled'">
+                        <a class="page-link"
+                           th:href="@{/sysadmin/logs(pagina=${logs.number + 1}, papel=${filtroPapel}, ator=${filtroAtor}, dias=${filtroDias})}">
+                            &raquo;
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

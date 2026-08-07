@@ -1,0 +1,57 @@
+/* Loja.css */
+
+.loja-page {
+  padding: var(--esp-xl) 0; /* Removido padding lateral para o scroll encostar nas bordas */
+  background-color: var(--cor-fundo);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* Alinhado à esquerda para o título não flutuar no meio sozinho */
+  width: 100%;
+ 
+  min-height: 100vh;
+}
+
+.loja-page h1 {
+  color: var(--cor-secundaria);
+  font-size: var(--font-xxl);
+  margin: var(--esp-lg) 0 var(--esp-lg) 20px; /* Margem à esquerda para alinhar com os cards */
+  font-weight: var(--peso-bold);
+  text-transform: capitalize;
+}
+
+/* Transformando o Grid em Container de Scroll Horizontal */
+.products-grid {
+  display: flex; /* Mudamos de grid para flex */
+  flex-direction: row;
+  gap: var(--esp-lg);
+  width: 100%;
+  padding: 10px 20px 30px 20px; /* Espaço para a sombra do card não cortar */
+  
+  
+  
+  
+}
+
+
+
+
+.no-products {
+  width: 100%;
+  margin-top: var(--esp-xxl);
+  text-align: center;
+  color: var(--cor-texto-3);
+  font-style: italic;
+}
+
+/* Responsividade */
+@media (max-width: 600px) {
+  .loja-page h1 {
+    font-size: var(--font-xl);
+    margin-left: 15px;
+  }
+  
+  .products-grid {
+    gap: var(--esp-sm);
+    padding-left: 15px;
+  }
+}

@@ -1,0 +1,86 @@
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--esp-xs);
+
+  height: var(--altura-botao);
+  padding: 0 var(--esp-lg);
+
+  font-family: var(--fonte-primaria);
+  font-size: var(--font-md);
+  font-weight: var(--peso-medio);
+
+  border-radius: var(--radius-md);
+  cursor: pointer;
+
+  border: none;
+  transition: all 0.2s ease;
+}
+
+/* ===== BOTÃO PRINCIPAL ===== */
+.btn--primary {
+  background-color: var(--cor-botao);
+  color: var(--cor-texto-2);
+}
+
+.btn--primary:hover {
+  filter: brightness(0.95);
+}
+
+/* ===== BOTÃO SECUNDÁRIO ===== */
+.btn--secondary {
+  background-color: var(--cor-botao-secundario);
+  color: var(--cor-texto-2);
+}
+
+.btn--secondary:hover {
+  filter: brightness(0.95);
+}
+
+/* ===== BOTÃO TERCIÁRIO ===== */
+.btn--tertiary {
+  color: var(--cor-texto);
+  background-color: var(--cor-botao-terciario);
+}
+
+.btn--tertiary:hover {
+  filter: brightness(0.95);
+}
+
+/* ===== BOTÃO DANGER (cancelar, excluir) ===== */
+.btn--danger {
+  background-color: #dc3545;
+  color: #fff;
+}
+
+.btn--danger:hover:not(:disabled) {
+  background-color: #b02a37;
+}
+
+/* ===== ÍCONE ===== */
+.btn__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.btn__icon svg {
+  display: block;
+}
+
+.btn__icon img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  display: block;
+}
+
+/* ===== DISABLED ===== */
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

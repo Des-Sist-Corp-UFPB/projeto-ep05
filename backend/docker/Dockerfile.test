@@ -1,0 +1,39 @@
+# =============================================================================
+# Dockerfile — TEST (Docker Compose)
+# =============================================================================
+# Roda APENAS os testes de integração (@Tag("integration")) dentro do container.
+# O banco PostgreSQL é fornecido pelo serviço postgres-test do Compose —
+# não há Docker-in-Docker aqui, então Testcontainers é desabilitado.
+#
+# Fluxo:
+#   1. Copia o pom.xml e baixa dependências (camada cacheada pelo Docker)
+#   2. Copia o código-fonte
+#   3. Executa mvn test -P integration com Testcontainers desabilitado
+#
+# Para rodar testes unitários (sem Docker), use: mvn test
+# Para rodar testes de integração localmente (com Docker): mvn test -P integration
+#
+# ATENÇÃO: Esta imagem contém o JDK completo e código-fonte.
+#          NUNCA use em produção.
+# =============================================================================
+
+FROM maven:3.9.9-eclipse-temurin-21 AS test
+
+WORKDIR /app
+
+# Copia o pom.xml primeiro — camada cacheada enquanto as dependências não mudam
+COPY pom.xml .
+RUN mvn dependency:go-offline -B -q
+
+# Copia o código-fonte completo (src/main e src/test)
+COPY src ./src
+
+# Executa APENAS os testes de integração (@Tag("integration")).
+# -P integration: perfil Maven que filtra pelo tag JUnit "integration"
+# -Dtestcontainers.enabled=false: desabilita o bean do Testcontainers —
+#   o banco vem do serviço postgres-test do docker-compose.test.yml
+# As variáveis SPRING_DATASOURCE_URL / USERNAME / PASSWORD são injetadas
+# pelo docker-compose.test.yml via environment.
+CMD ["mvn", "test", "-B", "-P", "integration", \
+     "-Dspring.profiles.active=test", \
+     "-Dtestcontainers.enabled=false"]

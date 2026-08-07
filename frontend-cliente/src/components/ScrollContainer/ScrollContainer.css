@@ -1,0 +1,50 @@
+.scroll-section {
+  width: 100%;
+  margin-bottom: 40px;
+  display: block;
+}
+
+.scroll-title {
+  margin: 25px 0 15px 20px;
+  color: var(--cor-secundaria);
+  font-weight: var(--peso-bold);
+  font-size: var(--font-lg);
+}
+
+.scroll-wrapper {
+  display: flex;
+  gap: 2rem;
+  padding: 20px;
+  
+  
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  scroll-behavior: smooth;
+  
+  -webkit-overflow-scrolling: touch;
+  cursor: grab;
+  user-select: none;
+}
+
+.scroll-wrapper.active {
+  cursor: grabbing;
+  scroll-behavior: auto; /* Desativa o smooth para o arraste ser instantâneo */
+}
+
+
+.scroll-wrapper > * {
+  flex-shrink: 0;
+}
+
+
+.scroll-wrapper::-webkit-scrollbar {
+  height: 6px;
+}
+.scroll-wrapper::-webkit-scrollbar-thumb {
+  background: var(--cor-botao);
+  border-radius: 10px;
+}
+.scroll-wrapper::-webkit-scrollbar-track {
+  background: transparent; 
+}

@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuditoriaService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mercado</a> &gt; <a href="index.source.html" class="el_package">br.ufpb.dsc.mercado.audit</a> &gt; <span class="el_source">AuditoriaService.java</span></div><h1>AuditoriaService.java</h1><pre class="source lang-java linenums">package br.ufpb.dsc.mercado.audit;
+
+import jakarta.persistence.criteria.Predicate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Serviço central de auditoria.
+ *
+ * Uso:
+ * &lt;pre&gt;
+ *   auditoriaService.registrar(LogAuditoria.builder()
+ *       .papelAtor(&quot;ADMIN&quot;)
+ *       .ator(email)
+ *       .categoria(&quot;PRODUTO&quot;)
+ *       .descricao(&quot;Criou produto: &quot; + nome)
+ *       .recursoId(produto.getId())
+ *       .build());
+ * &lt;/pre&gt;
+ *
+ * O método {@code registrar} roda em transação própria (REQUIRES_NEW) para
+ * garantir que o log seja salvo mesmo se a transação principal sofrer rollback.
+ */
+@Service
+public class AuditoriaService {
+
+<span class="fc" id="L38">    private static final Logger log = LoggerFactory.getLogger(AuditoriaService.class);</span>
+
+    private final LogAuditoriaRepository repository;
+
+<span class="fc" id="L42">    public AuditoriaService(LogAuditoriaRepository repository) {</span>
+<span class="fc" id="L43">        this.repository = repository;</span>
+<span class="fc" id="L44">    }</span>
+
+    // ── Escrita ───────────────────────────────────────────────────────────────
+
+    /**
+     * Persiste um registro de auditoria em transação própria.
+     * Nunca propaga exceções — um erro de log não deve derrubar a requisição.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void registrar(LogAuditoria entry) {
+        try {
+<span class="fc" id="L55">            repository.save(entry);</span>
+<span class="fc" id="L56">        } catch (Exception ex) {</span>
+<span class="fc" id="L57">            log.error(&quot;[AUDITORIA] Falha ao persistir log: {}&quot;, ex.getMessage(), ex);</span>
+<span class="fc" id="L58">        }</span>
+<span class="fc" id="L59">    }</span>
+
+    /** Atalho para ações de ADMIN */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void registrarAdmin(String ator, String categoria, String descricao, Long recursoId) {
+<span class="fc" id="L64">        registrar(LogAuditoria.builder()</span>
+<span class="fc" id="L65">                .papelAtor(&quot;ADMIN&quot;)</span>
+<span class="fc" id="L66">                .ator(ator)</span>
+<span class="fc" id="L67">                .categoria(categoria)</span>
+<span class="fc" id="L68">                .descricao(descricao)</span>
+<span class="fc" id="L69">                .recursoId(recursoId)</span>
+<span class="fc" id="L70">                .build());</span>
+<span class="fc" id="L71">    }</span>
+
+    /** Atalho para ações de CLIENTE */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void registrarCliente(String ator, String categoria, String descricao, Long recursoId) {
+<span class="fc" id="L76">        registrar(LogAuditoria.builder()</span>
+<span class="fc" id="L77">                .papelAtor(&quot;CLIENTE&quot;)</span>
+<span class="fc" id="L78">                .ator(ator)</span>
+<span class="fc" id="L79">                .categoria(categoria)</span>
+<span class="fc" id="L80">                .descricao(descricao)</span>
+<span class="fc" id="L81">                .recursoId(recursoId)</span>
+<span class="fc" id="L82">                .build());</span>
+<span class="fc" id="L83">    }</span>
+
+    /** Atalho para ações do SYSADMIN */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void registrarSysAdmin(String ator, String categoria, String descricao, Long recursoId) {
+<span class="fc" id="L88">        registrar(LogAuditoria.builder()</span>
+<span class="fc" id="L89">                .papelAtor(&quot;SYSADMIN&quot;)</span>
+<span class="fc" id="L90">                .ator(ator)</span>
+<span class="fc" id="L91">                .categoria(categoria)</span>
+<span class="fc" id="L92">                .descricao(descricao)</span>
+<span class="fc" id="L93">                .recursoId(recursoId)</span>
+<span class="fc" id="L94">                .build());</span>
+<span class="fc" id="L95">    }</span>
+
+    /** Atalho para eventos do sistema */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void registrarSystem(String categoria, String descricao) {
+<span class="fc" id="L100">        registrar(LogAuditoria.builder()</span>
+<span class="fc" id="L101">                .papelAtor(&quot;SYSTEM&quot;)</span>
+<span class="fc" id="L102">                .ator(&quot;SYSTEM&quot;)</span>
+<span class="fc" id="L103">                .categoria(categoria)</span>
+<span class="fc" id="L104">                .descricao(descricao)</span>
+<span class="fc" id="L105">                .build());</span>
+<span class="fc" id="L106">    }</span>
+
+    // ── Leitura ───────────────────────────────────────────────────────────────
+
+    @Transactional(readOnly = true)
+    public Page&lt;LogAuditoria&gt; listar(String papel, String ator, Integer diasAtras, Pageable pageable) {
+<span class="fc bfc" id="L112" title="All 4 branches covered.">        Instant desde = (diasAtras != null &amp;&amp; diasAtras &gt; 0)</span>
+<span class="fc" id="L113">                ? Instant.now().minus(diasAtras, ChronoUnit.DAYS)</span>
+<span class="fc" id="L114">                : null;</span>
+
+<span class="fc bfc" id="L116" title="All 4 branches covered.">        String papelFiltro = (papel != null &amp;&amp; !papel.isBlank()) ? papel : null;</span>
+<span class="pc bpc" id="L117" title="1 of 4 branches missed.">        String atorFiltro  = (ator  != null &amp;&amp; !ator.isBlank())  ? ator  : null;</span>
+
+<span class="fc bfc" id="L119" title="All 6 branches covered.">        if (papelFiltro == null &amp;&amp; atorFiltro == null &amp;&amp; desde == null) {</span>
+<span class="fc" id="L120">            return repository.findAllByOrderByCriadoEmDesc(pageable);</span>
+        }
+
+<span class="fc" id="L123">        return repository.filtrar(papelFiltro, atorFiltro, desde, pageable);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

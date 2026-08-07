@@ -1,0 +1,26 @@
+.main-scroll-viewport {
+    height: 100dvh; /* Garante que preencha a tela real do celular */
+    overflow-y: auto;
+    overflow-x: hidden;
+    position: relative;
+    scroll-behavior: smooth;
+    /* Adicione isso para o scroll ficar "lisinho" no iPhone */
+    -webkit-overflow-scrolling: touch;
+}
+
+
+.main-scroll-content {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+
+.main-scroll-viewport::-webkit-scrollbar {
+    width: 8px;
+}
+
+.main-scroll-viewport::-webkit-scrollbar-thumb {
+    background-color: var(--cor-botao);
+    border-radius: 10px;
+}

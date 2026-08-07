@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CategoriaService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mercado</a> &gt; <a href="index.source.html" class="el_package">br.ufpb.dsc.mercado.service</a> &gt; <span class="el_source">CategoriaService.java</span></div><h1>CategoriaService.java</h1><pre class="source lang-java linenums">package br.ufpb.dsc.mercado.service;
+
+import br.ufpb.dsc.mercado.domain.Categoria;
+import br.ufpb.dsc.mercado.dto.CategoriaDTO;
+import br.ufpb.dsc.mercado.repository.CategoriaRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+@Service
+@Transactional(readOnly = true)
+public class CategoriaService {
+
+    private final CategoriaRepository categoriaRepository;
+
+<span class="fc" id="L19">    public CategoriaService(CategoriaRepository categoriaRepository) {</span>
+<span class="fc" id="L20">        this.categoriaRepository = categoriaRepository;</span>
+<span class="fc" id="L21">    }</span>
+
+    public List&lt;Categoria&gt; listarTodas() {
+<span class="fc" id="L24">        return categoriaRepository.findAll();</span>
+    }
+
+    public Page&lt;Categoria&gt; listar(Pageable pageable) {
+<span class="fc" id="L28">        return categoriaRepository.findAll(pageable);</span>
+    }
+
+    public Categoria buscarPorId(Long id) {
+<span class="fc" id="L32">        return categoriaRepository.findById(id)</span>
+<span class="fc" id="L33">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Categoria não encontrada com ID: &quot; + id));</span>
+    }
+
+    @Transactional
+    public Categoria criar(CategoriaDTO dto) {
+<span class="fc bfc" id="L38" title="All 2 branches covered.">        if (categoriaRepository.existsByNomeIgnoreCase(dto.nome())) {</span>
+<span class="fc" id="L39">            throw new IllegalArgumentException(&quot;Já existe uma categoria com este nome&quot;);</span>
+        }
+<span class="fc" id="L41">        Categoria categoria = new Categoria(dto.nome(), dto.descricao());</span>
+<span class="fc" id="L42">        return categoriaRepository.save(categoria);</span>
+    }
+
+    @Transactional
+    public Categoria atualizar(Long id, CategoriaDTO dto) {
+<span class="fc" id="L47">        Categoria categoria = buscarPorId(id);</span>
+<span class="fc bfc" id="L48" title="All 4 branches covered.">        if (!categoria.getNome().equalsIgnoreCase(dto.nome()) &amp;&amp; categoriaRepository.existsByNomeIgnoreCase(dto.nome())) {</span>
+<span class="fc" id="L49">            throw new IllegalArgumentException(&quot;Já existe outra categoria com este nome&quot;);</span>
+        }
+<span class="fc" id="L51">        categoria.setNome(dto.nome());</span>
+<span class="fc" id="L52">        categoria.setDescricao(dto.descricao());</span>
+<span class="fc" id="L53">        return categoriaRepository.save(categoria);</span>
+    }
+
+    @Transactional
+    public void excluir(Long id) {
+<span class="fc bfc" id="L58" title="All 2 branches covered.">        if (!categoriaRepository.existsById(id)) {</span>
+<span class="fc" id="L59">            throw new IllegalArgumentException(&quot;Categoria não encontrada com ID: &quot; + id);</span>
+        }
+<span class="fc" id="L61">        categoriaRepository.deleteById(id);</span>
+<span class="fc" id="L62">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

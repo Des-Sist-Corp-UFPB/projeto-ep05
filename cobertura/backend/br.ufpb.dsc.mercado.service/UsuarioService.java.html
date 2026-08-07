@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UsuarioService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mercado</a> &gt; <a href="index.source.html" class="el_package">br.ufpb.dsc.mercado.service</a> &gt; <span class="el_source">UsuarioService.java</span></div><h1>UsuarioService.java</h1><pre class="source lang-java linenums">package br.ufpb.dsc.mercado.service;
+
+import br.ufpb.dsc.mercado.domain.*;
+import br.ufpb.dsc.mercado.dto.*;
+import br.ufpb.dsc.mercado.dto.CadastroClienteRequest;
+import br.ufpb.dsc.mercado.exception.ApiException;
+import br.ufpb.dsc.mercado.repository.CartaoRepository;
+import br.ufpb.dsc.mercado.repository.EnderecoRepository;
+import br.ufpb.dsc.mercado.repository.UsuarioRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * Serviço de usuários refatorado.
+ *
+ * MUDANÇAS EM RELAÇÃO À VERSÃO ANTERIOR:
+ * ─────────────────────────────────────
+ * 1. IllegalArgumentException → ApiException tipada (naoEncontrado, conflito…)
+ *    O GlobalExceptionHandler já captura ApiException e retorna o HTTP correto.
+ *    Controllers deixam de ter try/catch manual.
+ *
+ * 2. Métodos de endereço e cartão continuam iguais, apenas exceções tipadas.
+ */
+@Service
+@Transactional(readOnly = true)
+public class UsuarioService {
+
+    // ── Token store em memória ────────────────────────────────────────────────
+    // Chave: token UUID  |  Valor: email + expiry
+<span class="nc" id="L40">    private record TokenEntry(String email, Instant expiry) {}</span>
+<span class="fc" id="L41">    private final Map&lt;String, TokenEntry&gt; tokenStore = new ConcurrentHashMap&lt;&gt;();</span>
+    private static final long TOKEN_TTL_SECONDS = 30 * 60; // 30 minutos
+
+    // ── Dependências ─────────────────────────────────────────────────────────
+    private final UsuarioRepository usuarioRepository;
+    private final EnderecoRepository enderecoRepository;
+    private final CartaoRepository cartaoRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final MercadoPagoService mercadoPagoService;
+
+    public UsuarioService(UsuarioRepository usuarioRepository,
+                          EnderecoRepository enderecoRepository,
+                          CartaoRepository cartaoRepository,
+                          PasswordEncoder passwordEncoder,
+<span class="fc" id="L55">                          MercadoPagoService mercadoPagoService) {</span>
+<span class="fc" id="L56">        this.usuarioRepository = usuarioRepository;</span>
+<span class="fc" id="L57">        this.enderecoRepository = enderecoRepository;</span>
+<span class="fc" id="L58">        this.cartaoRepository = cartaoRepository;</span>
+<span class="fc" id="L59">        this.passwordEncoder = passwordEncoder;</span>
+<span class="fc" id="L60">        this.mercadoPagoService = mercadoPagoService;</span>
+<span class="fc" id="L61">    }</span>
+
+    // ── Consultas básicas ─────────────────────────────────────────────────────
+
+    public Usuario buscarPorId(Long id) {
+<span class="fc" id="L66">        return usuarioRepository.findById(id)</span>
+<span class="fc" id="L67">                .orElseThrow(() -&gt; ApiException.naoEncontrado(&quot;Usuário não encontrado com ID: &quot; + id));</span>
+    }
+
+    public Usuario buscarPorEmail(String email) {
+<span class="fc" id="L71">        return usuarioRepository.findByEmail(email)</span>
+<span class="fc" id="L72">                .orElseThrow(() -&gt; ApiException.naoEncontrado(&quot;E-mail não cadastrado&quot;));</span>
+    }
+
+    public Page&lt;Usuario&gt; listarPorPapel(Papel papel, String busca, Pageable pageable) {
+<span class="pc bpc" id="L76" title="1 of 4 branches missed.">        if (busca != null &amp;&amp; !busca.isBlank()) {</span>
+<span class="fc" id="L77">            return usuarioRepository.findByPapelAndNomeContainingIgnoreCase(papel, busca, pageable);</span>
+        }
+<span class="fc" id="L79">        return usuarioRepository.findByPapel(papel, pageable);</span>
+    }
+
+    public List&lt;Usuario&gt; listarTodosPorPapel(Papel papel) {
+<span class="fc" id="L83">        return usuarioRepository.findByPapel(papel);</span>
+    }
+
+    // ── Cadastro ──────────────────────────────────────────────────────────────
+
+    @Transactional
+    public Usuario cadastrar(CadastroRequest request) {
+<span class="fc bfc" id="L90" title="All 2 branches covered.">        if (usuarioRepository.existsByEmail(request.email())) {</span>
+<span class="fc" id="L91">            throw ApiException.conflito(&quot;Já existe uma conta com este e-mail&quot;);</span>
+        }
+
+<span class="fc" id="L94">        Usuario usuario = new Usuario(</span>
+<span class="fc" id="L95">                request.nome(),</span>
+<span class="fc" id="L96">                request.email(),</span>
+<span class="fc" id="L97">                passwordEncoder.encode(request.senha()),</span>
+<span class="fc" id="L98">                request.papel()</span>
+        );
+
+<span class="fc" id="L101">        return usuarioRepository.save(usuario);</span>
+    }
+
+    @Transactional
+    public Usuario cadastrarCliente(CadastroClienteRequest request) {
+<span class="fc bfc" id="L106" title="All 2 branches covered.">        if (usuarioRepository.existsByEmail(request.email())) {</span>
+<span class="fc" id="L107">            throw new IllegalArgumentException(&quot;Já existe uma conta com este e-mail&quot;);</span>
+        }
+<span class="fc bfc" id="L109" title="All 2 branches covered.">        if (usuarioRepository.existsByCpf(request.cpf())) {</span>
+<span class="fc" id="L110">            throw new IllegalArgumentException(&quot;Já existe uma conta com este CPF&quot;);</span>
+        }
+<span class="fc bfc" id="L112" title="All 2 branches covered.">        if (!request.senhasConferem()) {</span>
+<span class="fc" id="L113">            throw new IllegalArgumentException(&quot;As senhas não conferem&quot;);</span>
+        }
+<span class="fc" id="L115">        Usuario usuario = new Usuario(</span>
+<span class="fc" id="L116">                request.nome() + &quot; &quot; + request.sobrenome(),</span>
+<span class="fc" id="L117">                request.email(),</span>
+<span class="fc" id="L118">                passwordEncoder.encode(request.senha()),</span>
+                Papel.CLIENTE
+        );
+<span class="fc" id="L121">        usuario.setSobrenome(request.sobrenome());</span>
+<span class="fc" id="L122">        usuario.setCpf(request.cpf());</span>
+<span class="fc" id="L123">        usuario.setTelefone(request.telefone());</span>
+<span class="fc" id="L124">        usuario.setDataNascimento(request.dataNascimento());</span>
+<span class="fc" id="L125">        return usuarioRepository.save(usuario);</span>
+    }
+
+    // ── Atualização de perfil ─────────────────────────────────────────────────
+
+    @Transactional
+    public Usuario atualizarPerfil(Long id, String nome, String email,
+                                   String senhaAtual, String novaSenha) {
+<span class="fc" id="L133">        Usuario usuario = buscarPorId(id);</span>
+
+<span class="fc bfc" id="L135" title="All 2 branches covered.">        if (!usuario.getEmail().equalsIgnoreCase(email)</span>
+<span class="pc bpc" id="L136" title="1 of 2 branches missed.">                &amp;&amp; usuarioRepository.existsByEmail(email)) {</span>
+<span class="fc" id="L137">            throw ApiException.conflito(&quot;Este e-mail já está em uso por outro usuário&quot;);</span>
+        }
+
+<span class="fc" id="L140">        usuario.setNome(nome);</span>
+<span class="fc" id="L141">        usuario.setEmail(email);</span>
+
+<span class="pc bpc" id="L143" title="2 of 6 branches missed.">        if (senhaAtual != null &amp;&amp; !senhaAtual.isBlank()</span>
+<span class="pc bpc" id="L144" title="1 of 2 branches missed.">                &amp;&amp; novaSenha != null &amp;&amp; !novaSenha.isBlank()) {</span>
+<span class="fc bfc" id="L145" title="All 2 branches covered.">            if (!passwordEncoder.matches(senhaAtual, usuario.getSenha())) {</span>
+<span class="fc" id="L146">                throw ApiException.requisicaoInvalida(&quot;Senha atual incorreta&quot;);</span>
+            }
+<span class="fc" id="L148">            usuario.setSenha(passwordEncoder.encode(novaSenha));</span>
+        }
+
+<span class="fc" id="L151">        return usuarioRepository.save(usuario);</span>
+    }
+
+    /**
+     * Atualiza um administrador pelo SysAdmin (sem exigir senha atual).
+     * Se novaSenha for nula ou vazia, a senha existente é mantida.
+     */
+    @Transactional
+    public Usuario atualizarAdmin(Long id, String nome, String email, String novaSenha) {
+<span class="fc" id="L160">        Usuario usuario = buscarPorId(id);</span>
+
+<span class="fc bfc" id="L162" title="All 2 branches covered.">        if (!usuario.getEmail().equalsIgnoreCase(email)</span>
+<span class="fc bfc" id="L163" title="All 2 branches covered.">                &amp;&amp; usuarioRepository.existsByEmailAndIdNot(email, id)) {</span>
+<span class="fc" id="L164">            throw ApiException.conflito(&quot;Este e-mail já está em uso por outro usuário&quot;);</span>
+        }
+
+<span class="fc" id="L167">        usuario.setNome(nome);</span>
+<span class="fc" id="L168">        usuario.setEmail(email);</span>
+
+<span class="fc bfc" id="L170" title="All 4 branches covered.">        if (novaSenha != null &amp;&amp; !novaSenha.isBlank()) {</span>
+<span class="fc" id="L171">            usuario.setSenha(passwordEncoder.encode(novaSenha));</span>
+        }
+
+<span class="fc" id="L174">        return usuarioRepository.save(usuario);</span>
+    }
+
+    // ── Administração ─────────────────────────────────────────────────────────
+
+    @Transactional
+    public StatusUsuario alternarStatus(Long id) {
+<span class="fc" id="L181">        Usuario usuario = buscarPorId(id);</span>
+<span class="fc bfc" id="L182" title="All 2 branches covered.">        if (usuario.getPapel() == Papel.SYSADMIN) {</span>
+<span class="fc" id="L183">            throw ApiException.proibido(&quot;Não é possível bloquear um SYSADMIN&quot;);</span>
+        }
+<span class="fc bfc" id="L185" title="All 2 branches covered.">        StatusUsuario novoStatus = usuario.getStatus() == StatusUsuario.ATIVO</span>
+<span class="fc" id="L186">                ? StatusUsuario.BLOQUEADO</span>
+<span class="fc" id="L187">                : StatusUsuario.ATIVO;</span>
+<span class="fc" id="L188">        usuario.setStatus(novoStatus);</span>
+<span class="fc" id="L189">        usuarioRepository.save(usuario);</span>
+<span class="fc" id="L190">        return novoStatus;</span>
+    }
+
+    @Transactional
+    public void excluirConta(Long id) {
+<span class="fc" id="L195">        Usuario usuario = buscarPorId(id);</span>
+<span class="fc" id="L196">        usuarioRepository.delete(usuario);</span>
+<span class="fc" id="L197">    }</span>
+
+    // ── Endereços ─────────────────────────────────────────────────────────────
+
+    public List&lt;Endereco&gt; listarEnderecos(Long clienteId) {
+<span class="fc" id="L202">        return enderecoRepository.findByClienteIdOrderByCriadoEmDesc(clienteId);</span>
+    }
+
+    public Endereco buscarEnderecoPorId(Long enderecoId) {
+<span class="fc" id="L206">        return enderecoRepository.findById(enderecoId)</span>
+<span class="fc" id="L207">                .orElseThrow(() -&gt; ApiException.naoEncontrado(&quot;Endereço não encontrado com ID: &quot; + enderecoId));</span>
+    }
+
+    @Transactional
+    public Endereco cadastrarEndereco(Long clienteId, EnderecoDTO dto) {
+<span class="fc" id="L212">        Usuario cliente = buscarPorId(clienteId);</span>
+<span class="fc" id="L213">        List&lt;Endereco&gt; existentes = enderecoRepository.findByClienteIdOrderByCriadoEmDesc(clienteId);</span>
+
+<span class="fc" id="L215">        Endereco endereco = new Endereco();</span>
+<span class="fc" id="L216">        endereco.setCliente(cliente);</span>
+<span class="fc" id="L217">        endereco.setLogradouro(dto.logradouro());</span>
+<span class="fc" id="L218">        endereco.setNumero(dto.numero());</span>
+<span class="fc" id="L219">        endereco.setComplemento(dto.complemento());</span>
+<span class="fc" id="L220">        endereco.setBairro(dto.bairro());</span>
+<span class="fc" id="L221">        endereco.setCidade(dto.cidade());</span>
+<span class="fc" id="L222">        endereco.setEstado(dto.estado());</span>
+<span class="fc" id="L223">        endereco.setCep(dto.cep());</span>
+
+<span class="fc bfc" id="L225" title="All 4 branches covered.">        boolean serPrincipal = existentes.isEmpty() || dto.principal();</span>
+<span class="fc" id="L226">        endereco.setPrincipal(serPrincipal);</span>
+
+<span class="fc bfc" id="L228" title="All 2 branches covered.">        if (serPrincipal) {</span>
+<span class="fc" id="L229">            desmarcarEnderecosPrincipais(clienteId);</span>
+        }
+
+<span class="fc" id="L232">        return enderecoRepository.save(endereco);</span>
+    }
+
+    @Transactional
+    public void removerEndereco(Long clienteId, Long enderecoId) {
+<span class="fc" id="L237">        Endereco endereco = buscarEnderecoPorId(enderecoId);</span>
+<span class="fc bfc" id="L238" title="All 2 branches covered.">        if (!endereco.getCliente().getId().equals(clienteId)) {</span>
+<span class="fc" id="L239">            throw ApiException.proibido(&quot;Este endereço não pertence a este cliente&quot;);</span>
+        }
+
+<span class="fc" id="L242">        boolean eraPrincipal = endereco.getPrincipal();</span>
+<span class="fc" id="L243">        enderecoRepository.delete(endereco);</span>
+
+<span class="fc bfc" id="L245" title="All 2 branches covered.">        if (eraPrincipal) {</span>
+<span class="fc" id="L246">            List&lt;Endereco&gt; restantes = enderecoRepository.findByClienteIdOrderByCriadoEmDesc(clienteId);</span>
+<span class="fc bfc" id="L247" title="All 2 branches covered.">            if (!restantes.isEmpty()) {</span>
+<span class="fc" id="L248">                Endereco novoPrincipal = restantes.get(0);</span>
+<span class="fc" id="L249">                novoPrincipal.setPrincipal(true);</span>
+<span class="fc" id="L250">                enderecoRepository.save(novoPrincipal);</span>
+            }
+        }
+<span class="fc" id="L253">    }</span>
+
+    private void desmarcarEnderecosPrincipais(Long clienteId) {
+<span class="fc" id="L256">        enderecoRepository.findByClienteIdOrderByCriadoEmDesc(clienteId).stream()</span>
+<span class="fc" id="L257">                .filter(Endereco::getPrincipal)</span>
+<span class="fc" id="L258">                .forEach(e -&gt; {</span>
+<span class="fc" id="L259">                    e.setPrincipal(false);</span>
+<span class="fc" id="L260">                    enderecoRepository.save(e);</span>
+<span class="fc" id="L261">                });</span>
+<span class="fc" id="L262">    }</span>
+
+    // ── Cartões ───────────────────────────────────────────────────────────────
+
+    public List&lt;Cartao&gt; listarCartoes(Long clienteId) {
+<span class="fc" id="L267">        return cartaoRepository.findByClienteId(clienteId);</span>
+    }
+
+    public Cartao buscarCartaoPorId(Long cartaoId) {
+<span class="fc" id="L271">        return cartaoRepository.findById(cartaoId)</span>
+<span class="fc" id="L272">                .orElseThrow(() -&gt; ApiException.naoEncontrado(&quot;Cartão não encontrado com ID: &quot; + cartaoId));</span>
+    }
+
+    @Transactional
+    public Cartao cadastrarCartao(Long clienteId, CartaoSalvarDTO dto) {
+<span class="fc" id="L277">        Usuario cliente = buscarPorId(clienteId);</span>
+
+        // O token foi gerado pelo SDK JS do Mercado Pago no frontend.
+        // O backend nunca recebe o numero completo nem o CVV — apenas o token seguro.
+<span class="fc" id="L281">        Cartao cartao = new Cartao();</span>
+<span class="fc" id="L282">        cartao.setCliente(cliente);</span>
+<span class="fc" id="L283">        cartao.setNomeTitular(dto.nomeTitular());</span>
+<span class="fc" id="L284">        cartao.setBandeira(dto.bandeira());</span>
+<span class="fc" id="L285">        cartao.setQuatroUltimosDigitos(dto.quatroUltimosDigitos());</span>
+<span class="fc" id="L286">        cartao.setTokenPagamento(dto.tokenMercadoPago());</span>
+<span class="fc" id="L287">        cartao.setDataExpiracao(dto.dataExpiracao());</span>
+
+<span class="fc" id="L289">        return cartaoRepository.save(cartao);</span>
+    }
+
+    @Transactional
+    public void removerCartao(Long clienteId, Long cartaoId) {
+<span class="fc" id="L294">        Cartao cartao = buscarCartaoPorId(cartaoId);</span>
+<span class="fc bfc" id="L295" title="All 2 branches covered.">        if (!cartao.getCliente().getId().equals(clienteId)) {</span>
+<span class="fc" id="L296">            throw ApiException.proibido(&quot;Este cartão não pertence a este cliente&quot;);</span>
+        }
+<span class="fc" id="L298">        cartaoRepository.delete(cartao);</span>
+<span class="fc" id="L299">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

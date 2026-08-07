@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SysAdminController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mercado</a> &gt; <a href="index.source.html" class="el_package">br.ufpb.dsc.mercado.controller</a> &gt; <span class="el_source">SysAdminController.java</span></div><h1>SysAdminController.java</h1><pre class="source lang-java linenums">package br.ufpb.dsc.mercado.controller;
+
+import br.ufpb.dsc.mercado.audit.AuditoriaService;
+import br.ufpb.dsc.mercado.audit.LogAuditoria;
+import br.ufpb.dsc.mercado.domain.Papel;
+import br.ufpb.dsc.mercado.domain.StatusUsuario;
+import br.ufpb.dsc.mercado.domain.Usuario;
+import br.ufpb.dsc.mercado.dto.CadastroRequest;
+import br.ufpb.dsc.mercado.dto.EditarAdminRequest;
+import br.ufpb.dsc.mercado.exception.ApiException;
+import br.ufpb.dsc.mercado.repository.PedidoRepository;
+import br.ufpb.dsc.mercado.repository.ProdutoRepository;
+import br.ufpb.dsc.mercado.service.PedidoService;
+import br.ufpb.dsc.mercado.service.UsuarioService;
+import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.*;
+
+@Controller
+@RequestMapping(&quot;/sysadmin&quot;)
+public class SysAdminController {
+
+    private static final String HEADER_HTMX = &quot;HX-Request&quot;;
+
+    private final UsuarioService usuarioService;
+    private final ProdutoRepository produtoRepository;
+    private final PedidoRepository pedidoRepository;
+    private final PedidoService pedidoService;
+    private final AuditoriaService auditoriaService;
+
+    @SuppressWarnings(&quot;EI_EXPOSE_REP2&quot;)
+    public SysAdminController(UsuarioService usuarioService,
+                              ProdutoRepository produtoRepository,
+                              PedidoRepository pedidoRepository,
+                              PedidoService pedidoService,
+<span class="fc" id="L42">                              AuditoriaService auditoriaService) {</span>
+<span class="fc" id="L43">        this.usuarioService = usuarioService;</span>
+<span class="fc" id="L44">        this.produtoRepository = produtoRepository;</span>
+<span class="fc" id="L45">        this.pedidoRepository = pedidoRepository;</span>
+<span class="fc" id="L46">        this.pedidoService = pedidoService;</span>
+<span class="fc" id="L47">        this.auditoriaService = auditoriaService;</span>
+<span class="fc" id="L48">    }</span>
+
+    // ── Dashboard ─────────────────────────────────────────────────────────────
+
+    @GetMapping(&quot;/dashboard&quot;)
+    public String dashboard(Model model) {
+<span class="fc" id="L54">        model.addAttribute(&quot;totalProdutos&quot;, produtoRepository.count());</span>
+<span class="fc" id="L55">        model.addAttribute(&quot;totalPedidos&quot;, pedidoRepository.count());</span>
+<span class="fc" id="L56">        model.addAttribute(&quot;totalClientes&quot;, usuarioService.listarTodosPorPapel(Papel.CLIENTE).size());</span>
+<span class="fc" id="L57">        model.addAttribute(&quot;totalAdmins&quot;, usuarioService.listarTodosPorPapel(Papel.ADMIN).size());</span>
+<span class="fc" id="L58">        model.addAttribute(&quot;faturamentoTotal&quot;, pedidoService.calcularFaturamentoTotal());</span>
+<span class="fc" id="L59">        return &quot;sysadmin/dashboard&quot;;</span>
+    }
+
+    // ── Gerenciar Admins ──────────────────────────────────────────────────────
+
+    @GetMapping(&quot;/admins&quot;)
+    public String listarAdmins(
+            @RequestParam(name = &quot;busca&quot;, required = false, defaultValue = &quot;&quot;) String busca,
+            @RequestParam(name = &quot;pagina&quot;, defaultValue = &quot;0&quot;) int pagina,
+            @RequestHeader(value = HEADER_HTMX, required = false) String htmx,
+            Model model) {
+
+<span class="fc" id="L71">        PageRequest pageRequest = PageRequest.of(pagina, 10, Sort.by(&quot;nome&quot;).ascending());</span>
+<span class="fc" id="L72">        Page&lt;Usuario&gt; admins = usuarioService.listarPorPapel(Papel.ADMIN, busca, pageRequest);</span>
+
+<span class="fc" id="L74">        model.addAttribute(&quot;admins&quot;, admins);</span>
+<span class="fc" id="L75">        model.addAttribute(&quot;busca&quot;, busca);</span>
+<span class="fc" id="L76">        model.addAttribute(&quot;paginaAtual&quot;, pagina);</span>
+
+<span class="fc bfc" id="L78" title="All 2 branches covered.">        if (htmx != null) {</span>
+<span class="fc" id="L79">            return &quot;sysadmin/fragments/tabela_admins :: tabela&quot;;</span>
+        }
+<span class="fc" id="L81">        return &quot;sysadmin/admins&quot;;</span>
+    }
+
+    @GetMapping(&quot;/admins/novo&quot;)
+    public String novoAdminForm(Model model) {
+<span class="fc" id="L86">        model.addAttribute(&quot;form&quot;, new CadastroRequest(&quot;&quot;, &quot;&quot;, &quot;&quot;, Papel.ADMIN));</span>
+<span class="fc" id="L87">        model.addAttribute(&quot;adminId&quot;, null);</span>
+<span class="fc" id="L88">        return &quot;sysadmin/fragments/form_admin :: modal&quot;;</span>
+    }
+
+    @GetMapping(&quot;/admins/{id}/editar&quot;)
+    public String editarAdminForm(@PathVariable Long id, Model model) {
+<span class="fc" id="L93">        Usuario admin = usuarioService.buscarPorId(id);</span>
+<span class="fc" id="L94">        model.addAttribute(&quot;form&quot;, new EditarAdminRequest(admin.getNome(), admin.getEmail(), &quot;&quot;, Papel.ADMIN));</span>
+<span class="fc" id="L95">        model.addAttribute(&quot;adminId&quot;, id);</span>
+<span class="fc" id="L96">        return &quot;sysadmin/fragments/form_admin :: modal&quot;;</span>
+    }
+
+    @PostMapping(&quot;/admins&quot;)
+    public String criarAdmin(
+            @Valid @ModelAttribute(&quot;form&quot;) CadastroRequest form,
+            BindingResult bindingResult,
+            Authentication auth,
+            Model model) {
+
+<span class="fc bfc" id="L106" title="All 2 branches covered.">        if (bindingResult.hasErrors()) {</span>
+<span class="fc" id="L107">            model.addAttribute(&quot;adminId&quot;, null);</span>
+<span class="fc" id="L108">            return &quot;sysadmin/fragments/form_admin :: modal&quot;;</span>
+        }
+
+        try {
+<span class="fc" id="L112">            CadastroRequest requestAdmin = new CadastroRequest(</span>
+<span class="fc" id="L113">                    form.nome(), form.email(), form.senha(), Papel.ADMIN);</span>
+<span class="fc" id="L114">            Usuario novoAdmin = usuarioService.cadastrar(requestAdmin);</span>
+
+<span class="fc" id="L116">            auditoriaService.registrarSysAdmin(</span>
+<span class="fc" id="L117">                    atorEmail(auth),</span>
+                    &quot;USER_MGMT&quot;,
+<span class="fc" id="L119">                    &quot;Criou novo Administrador: &quot; + novoAdmin.getEmail(),</span>
+<span class="fc" id="L120">                    novoAdmin.getId());</span>
+
+<span class="fc" id="L122">            Page&lt;Usuario&gt; admins = usuarioService.listarPorPapel(</span>
+<span class="fc" id="L123">                    Papel.ADMIN, &quot;&quot;, PageRequest.of(0, 10, Sort.by(&quot;nome&quot;).ascending()));</span>
+<span class="fc" id="L124">            model.addAttribute(&quot;admins&quot;, admins);</span>
+<span class="fc" id="L125">            model.addAttribute(&quot;busca&quot;, &quot;&quot;);</span>
+<span class="fc" id="L126">            return &quot;sysadmin/fragments/tabela_admins :: tabela&quot;;</span>
+
+<span class="fc" id="L128">        } catch (IllegalArgumentException | ApiException e) {</span>
+<span class="fc" id="L129">            bindingResult.rejectValue(&quot;email&quot;, &quot;error.form&quot;, e.getMessage());</span>
+<span class="fc" id="L130">            model.addAttribute(&quot;adminId&quot;, null);</span>
+<span class="fc" id="L131">            return &quot;sysadmin/fragments/form_admin :: modal&quot;;</span>
+        }
+    }
+
+    @PutMapping(&quot;/admins/{id}&quot;)
+    public String editarAdmin(
+            @PathVariable Long id,
+            @Valid @ModelAttribute(&quot;form&quot;) EditarAdminRequest form,
+            BindingResult bindingResult,
+            Authentication auth,
+            Model model) {
+
+<span class="fc bfc" id="L143" title="All 2 branches covered.">        if (bindingResult.hasErrors()) {</span>
+<span class="fc" id="L144">            model.addAttribute(&quot;adminId&quot;, id);</span>
+<span class="fc" id="L145">            return &quot;sysadmin/fragments/form_admin :: modal&quot;;</span>
+        }
+
+        // Valida tamanho da senha apenas quando fornecida
+<span class="pc bpc" id="L149" title="2 of 6 branches missed.">        if (form.senha() != null &amp;&amp; !form.senha().isBlank() &amp;&amp; form.senha().length() &lt; 8) {</span>
+<span class="fc" id="L150">            bindingResult.rejectValue(&quot;senha&quot;, &quot;Size.form.senha&quot;, &quot;A senha deve ter no mínimo 8 caracteres&quot;);</span>
+<span class="fc" id="L151">            model.addAttribute(&quot;adminId&quot;, id);</span>
+<span class="fc" id="L152">            return &quot;sysadmin/fragments/form_admin :: modal&quot;;</span>
+        }
+
+        try {
+<span class="pc bpc" id="L156" title="2 of 4 branches missed.">            String novaSenha = (form.senha() != null &amp;&amp; !form.senha().isBlank())</span>
+<span class="pc" id="L157">                    ? form.senha() : null;</span>
+<span class="fc" id="L158">            usuarioService.atualizarAdmin(id, form.nome(), form.email(), novaSenha);</span>
+
+<span class="fc" id="L160">            auditoriaService.registrarSysAdmin(</span>
+<span class="fc" id="L161">                    atorEmail(auth),</span>
+                    &quot;USER_MGMT&quot;,
+<span class="fc" id="L163">                    &quot;Editou Administrador ID &quot; + id + &quot; → &quot; + form.email(),</span>
+                    id);
+
+<span class="fc" id="L166">            Page&lt;Usuario&gt; admins = usuarioService.listarPorPapel(</span>
+<span class="fc" id="L167">                    Papel.ADMIN, &quot;&quot;, PageRequest.of(0, 10, Sort.by(&quot;nome&quot;).ascending()));</span>
+<span class="fc" id="L168">            model.addAttribute(&quot;admins&quot;, admins);</span>
+<span class="fc" id="L169">            model.addAttribute(&quot;busca&quot;, &quot;&quot;);</span>
+<span class="fc" id="L170">            return &quot;sysadmin/fragments/tabela_admins :: tabela&quot;;</span>
+
+<span class="fc" id="L172">        } catch (IllegalArgumentException | ApiException e) {</span>
+<span class="fc" id="L173">            bindingResult.rejectValue(&quot;email&quot;, &quot;error.form&quot;, e.getMessage());</span>
+<span class="fc" id="L174">            model.addAttribute(&quot;adminId&quot;, id);</span>
+<span class="fc" id="L175">            return &quot;sysadmin/fragments/form_admin :: modal&quot;;</span>
+        }
+    }
+
+    @PostMapping(&quot;/admins/{id}/bloquear&quot;)
+    public String alternarStatus(@PathVariable Long id, Authentication auth, Model model) {
+<span class="fc" id="L181">        Usuario alvo = usuarioService.buscarPorId(id);</span>
+<span class="fc" id="L182">        StatusUsuario novoStatus = usuarioService.alternarStatus(id);</span>
+
+<span class="fc" id="L184">        auditoriaService.registrarSysAdmin(</span>
+<span class="fc" id="L185">                atorEmail(auth),</span>
+                &quot;USER_MGMT&quot;,
+<span class="fc" id="L187">                &quot;Alterou status do Administrador &quot; + alvo.getEmail() + &quot; → &quot; + novoStatus.name(),</span>
+                id);
+
+<span class="fc" id="L190">        Page&lt;Usuario&gt; admins = usuarioService.listarPorPapel(</span>
+<span class="fc" id="L191">                Papel.ADMIN, &quot;&quot;, PageRequest.of(0, 10, Sort.by(&quot;nome&quot;).ascending()));</span>
+<span class="fc" id="L192">        model.addAttribute(&quot;admins&quot;, admins);</span>
+<span class="fc" id="L193">        model.addAttribute(&quot;busca&quot;, &quot;&quot;);</span>
+<span class="fc" id="L194">        return &quot;sysadmin/fragments/tabela_admins :: tabela&quot;;</span>
+    }
+
+    @DeleteMapping(&quot;/admins/{id}&quot;)
+    public String excluirAdmin(@PathVariable Long id, Authentication auth, Model model) {
+<span class="fc" id="L199">        Usuario alvo = usuarioService.buscarPorId(id);</span>
+<span class="fc" id="L200">        String email = alvo.getEmail();</span>
+<span class="fc" id="L201">        usuarioService.excluirConta(id);</span>
+<span class="fc" id="L202">        auditoriaService.registrarSysAdmin(</span>
+<span class="fc" id="L203">                atorEmail(auth),</span>
+                &quot;USER_MGMT&quot;,
+                &quot;Excluiu Administrador: &quot; + email,
+                id);
+<span class="fc" id="L207">        Page&lt;Usuario&gt; admins = usuarioService.listarPorPapel(</span>
+<span class="fc" id="L208">                Papel.ADMIN, &quot;&quot;, PageRequest.of(0, 10, Sort.by(&quot;nome&quot;).ascending()));</span>
+<span class="fc" id="L209">        model.addAttribute(&quot;admins&quot;, admins);</span>
+<span class="fc" id="L210">        model.addAttribute(&quot;busca&quot;, &quot;&quot;);</span>
+<span class="fc" id="L211">        return &quot;sysadmin/fragments/tabela_admins :: tabela&quot;;</span>
+    }
+
+    // ── Logs ──────────────────────────────────────────────────────────────────
+
+    @GetMapping(&quot;/logs&quot;)
+    public String visualizarLogs(
+            @RequestParam(required = false) String papel,
+            @RequestParam(required = false) String ator,
+            @RequestParam(required = false) Integer dias,
+            @RequestParam(defaultValue = &quot;0&quot;) int pagina,
+            @RequestHeader(value = HEADER_HTMX, required = false) String htmx,
+            Model model) {
+
+<span class="fc" id="L225">        PageRequest pr = PageRequest.of(pagina, 25);</span>
+<span class="fc" id="L226">        Page&lt;LogAuditoria&gt; logs = auditoriaService.listar(papel, ator, dias, pr);</span>
+
+<span class="fc" id="L228">        model.addAttribute(&quot;logs&quot;, logs);</span>
+<span class="fc" id="L229">        model.addAttribute(&quot;filtroPapel&quot;, papel);</span>
+<span class="fc" id="L230">        model.addAttribute(&quot;filtroAtor&quot;, ator);</span>
+<span class="fc" id="L231">        model.addAttribute(&quot;filtroDias&quot;, dias);</span>
+<span class="fc" id="L232">        model.addAttribute(&quot;paginaAtual&quot;, pagina);</span>
+
+<span class="fc bfc" id="L234" title="All 2 branches covered.">        if (htmx != null) {</span>
+<span class="fc" id="L235">            return &quot;sysadmin/fragments/tabela_logs :: tabela&quot;;</span>
+        }
+<span class="fc" id="L237">        return &quot;sysadmin/logs&quot;;</span>
+    }
+
+    @GetMapping(&quot;/configuracoes&quot;)
+    public String configuracoes() {
+<span class="fc" id="L242">        return &quot;sysadmin/configuracoes&quot;;</span>
+    }
+
+    // ── Util ──────────────────────────────────────────────────────────────────
+
+    private String atorEmail(Authentication auth) {
+<span class="pc bpc" id="L248" title="1 of 2 branches missed.">        return (auth != null) ? auth.getName() : &quot;desconhecido&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

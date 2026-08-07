@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Observabilidade — correlação log <-> trace.
+
+    O agente Java do OpenTelemetry (opentelemetry-javaagent.jar, anexado via
+    JAVA_TOOL_OPTIONS no Dockerfile) intercepta o Logback automaticamente e:
+      1. envia cada linha de log para o Loki via OTLP (sem código nenhum aqui);
+      2. injeta trace_id/span_id no MDC de cada log emitido dentro de uma
+         requisição rastreada.
+
+    Este arquivo só ajusta o PADRÃO do log de console para exibir esses dois
+    campos, para quem estiver olhando `docker logs` também conseguir copiar o
+    trace_id e ir direto pro Tempo no Grafana. Tudo o mais (níveis, appenders)
+    continua vindo do application.yml / application-*.yml, via o base.xml
+    padrão do Spring Boot.
+-->
+<configuration>
+
+    <property name="CONSOLE_LOG_PATTERN"
+        value="%d{HH:mm:ss.SSS} %clr(%5p) [trace_id=%X{trace_id:-} span_id=%X{span_id:-}] %clr(${PID:- }){magenta} --- [%15.15t] %clr(%-40.40logger{39}){cyan} : %m%n%wEx"/>
+
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+</configuration>

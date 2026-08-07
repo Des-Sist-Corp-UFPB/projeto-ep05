@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--
+  Fragmento de uma única linha de admin.
+  Retornado após criação/edição bem-sucedida — o HTMX adiciona esta linha na tabela
+  sem recarregar a página inteira.
+
+  Nota: como usamos hx-target="#tabela-admins" hx-swap="outerHTML" no form,
+  o controller retorna a tabela inteira atualizada após criar/editar.
+  Este fragmento é mantido para compatibilidade futura.
+-->
+<tr th:fragment="linha">
+    <td class="text-muted small" th:text="${admin.id}"></td>
+    <td class="fw-semibold" th:text="${admin.nome}"></td>
+    <td><span class="text-muted small" th:text="${admin.email}"></span></td>
+    <td>
+        <span class="badge bg-success-subtle text-success border border-success-subtle">● Ativo</span>
+    </td>
+    <td class="text-muted small"
+        th:text="${#temporals.format(admin.criadoEm, 'dd/MM/yyyy')}"></td>
+    <td class="text-center">
+        <button class="btn btn-sm btn-outline-danger"
+                th:hx-post="@{/sysadmin/admins/{id}/bloquear(id=${admin.id})}"
+                hx-target="#tabela-admins"
+                hx-swap="outerHTML">
+            🔒 Bloquear
+        </button>
+    </td>
+</tr>
+
+</body>
+</html>

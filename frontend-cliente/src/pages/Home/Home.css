@@ -1,0 +1,271 @@
+/* --- CONFIGURAÇÕES GERAIS --- */
+.container-home {
+    width: 100%;
+    overflow-x: hidden; /* Evita barra de rolagem horizontal indesejada */
+    min-height: 100vh;
+}
+
+/* --- HEADER (LOGO + TEXTO CURVO) --- */
+.header-home {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    background-color: var(--cor-fundo);
+    gap: 20px;
+}
+
+.header-home img {
+    width: 100%;
+    max-width: 300px;
+    height: auto;
+    margin: 0 auto; /* Centraliza a imagem no espaço disponível */
+    padding: 20px;
+}
+
+.header-home-texto {
+    background-color: var(--cor-botao-terciario);
+    display: flex;
+    flex-direction: column;
+    padding: 4rem 2rem; /* Padding responsivo em vez de 6.5rem fixo */
+    border-radius: 120px 0 0 0;
+    flex: 1; /* Faz o bloco de texto crescer para ocupar o espaço */
+    min-height: 300px;
+    align-items: center;
+    justify-content: center;
+    color: var(--cor-texto-3);
+    text-align: center;
+    position: relative; /* âncora para os floreios */
+}
+
+.header-home-texto h1 {
+    font-size: clamp(2rem, 5vw, 3.5rem); /* Fonte que diminui conforme a tela */
+    padding-bottom: var(--esp-xs);
+    margin: 0;
+}
+
+/* --- FLOREIOS DECORATIVOS --- */
+.flourish {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 60px;
+    opacity: 0.85;
+}
+.flourish-left { left: 2rem; }
+.flourish-right { right: 2rem; transform: translateY(-50%) scaleX(-1); }
+
+@media (max-width: 768px) {
+  .flourish { display: none; } /* some no mobile pra não brigar com o texto */
+}
+
+/* --- CONTEÚDO PRINCIPAL --- */
+.home-content {
+    padding: 40px 0; 
+    background-color: var(--cor-secundaria);
+    width: 100%;
+}
+
+.home-content h2, 
+.home-texto-h2 {
+    margin: 25px 0 15px 20px;
+    color: var(--cor-texto-1);
+    font-weight: var(--peso-bold);
+    font-size: var(--font-xl);
+}
+
+/* --- CATEGORIAS --- */
+.home-categories {
+    display: flex;
+    background-color: var(--cor-detalhe-2);
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    margin-bottom: 50px;
+    gap: 20px;
+    flex-wrap: wrap; /* Importante para não quebrar no mobile */
+}
+
+.home-categories p {
+    margin: 0;
+    font-weight: 500;
+}
+
+.home-categories .divider {
+    display: inline-block;
+    width: 1px; 
+    height: 2rem; 
+    background-color: #d8d7d7;
+}
+
+.link-mais {
+    text-decoration: none; 
+    color: #000000;
+    font-weight: 600;
+    transition: 0.3s;
+}
+
+.link-mais:hover {
+    color: var(--cor-botao);
+    text-decoration: underline;
+}
+
+/* --- SEÇÃO DE FRASE --- */
+.home-search {
+    position: relative;
+    background-color: var(--cor-detalhe-2);
+    min-height: 260px;
+    padding: 50px 20px 60px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    text-align: center;
+    color: var(--cor-texto-2);
+    overflow: hidden;
+}
+
+.home-search h1 {
+    font-size: clamp(1.2rem, 4vw, 2rem);
+    line-height: 1.4;
+    margin-bottom: 10px;
+}
+
+.home-search p {
+    opacity: 0.9;
+}
+
+/* borda escalope conectando com o rodapé, no mesmo espírito do badge do logo */
+.footer-top-scallop {
+    width: 100%;
+    height: 22px;
+    background-color: var(--cor-detalhe-2);
+    background-image: radial-gradient(circle at 11px 0, var(--cor-detalhe-2) 11px, #8b2f1c 12px);
+    background-size: 22px 22px;
+    background-repeat: repeat-x;
+    background-position: top;
+    margin-bottom: -1px;
+}
+
+/* --- FOOTER --- */
+.footer {
+    background-color: #8b2f1c;
+    color: #fff;
+    padding: 0 2rem 4rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.footer-brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 2.5rem 0 2rem;
+    flex-wrap: wrap;
+}
+
+.footer-logo {
+    width: 48px;
+    height: 48px;
+}
+
+.footer-brand h2 {
+    margin-bottom: 4px;
+}
+
+.footer-columns {
+    display: flex;
+    justify-content: center;
+    gap: 4rem;
+    padding-top: 2rem;
+    border-top: 1.5px dashed rgba(255, 255, 255, 0.2);
+    flex-wrap: wrap;
+}
+
+.footer h4 {
+    margin-bottom: 1.5rem;
+    color: var(--cor-detalhe-2);
+}
+
+.footer a {
+    color: #fff;
+    text-decoration: none;
+    margin-top: 0.8rem;
+    display: block;
+    opacity: 0.8;
+    transition: 0.3s;
+}
+
+.footer a:hover {
+    opacity: 1;
+    padding-left: 5px;
+}
+
+/* --- MEDIA QUERIES (RESPONSIVIDADE) --- */
+
+@media (max-width: 1024px) {
+    .header-home img {
+        max-width: 200px;
+    }
+    .footer-columns {
+        gap: 2rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .header-home {
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .header-home img {
+        width: 150px;
+        margin: 20px auto;
+    }
+
+    .header-home-texto {
+        width: 100%;
+        border-radius: 40px 40px 0 0; /* Arredonda o topo no mobile */
+        padding: 3rem 1.5rem;
+    }
+
+    .home-categories {
+        gap: 15px;
+    }
+
+    .home-categories .divider {
+        display: none; /* Remove divisores no mobile */
+    }
+
+    .footer {
+        text-align: center;
+    }
+
+    .footer-brand {
+        justify-content: center;
+    }
+
+    .footer-columns {
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 2rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-home-texto h1 {
+        font-size: 1.8rem;
+    }
+
+    .footer-logo {
+        width: 40px;
+        height: 40px;
+    }
+
+    .footer-columns {
+        display: grid;
+        grid-template-columns: 1fr 1fr; /* Duas colunas de links no mobile */
+        text-align: left;
+    }
+}
